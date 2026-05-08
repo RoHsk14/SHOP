@@ -2,25 +2,78 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ─── Base ─── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ─── Input text color fix ─── */
+input, select, textarea {
+  color: #1a1a1a !important;
+}
+input::placeholder, select::placeholder, textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ─── Animations ─── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes checkBounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out both; }
+.animate-slide-up { animation: slideUp 0.5s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.3s ease-out both; }
+.animate-check { animation: checkBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+
+/* ─── Confetti ─── */
+.confetti-wrap { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+.confetti-dot { position: absolute; top: -12px; animation: confettiFall 3s linear forwards; }
