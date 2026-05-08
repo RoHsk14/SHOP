@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Settings, Store, LogOut, Menu, X, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminLayout({
   children,
@@ -11,7 +12,34 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session && pathname !== "/admin/login") {
+        router.push("/admin/login");
+      }
+      setChecking(false);
+    });
+  }, [pathname, router]);
+
+  const handleLogout = async () => {
+    if (!confirm("Voulez-vous vraiment vous déconnecter ?")) return;
+    await supabase.auth.signOut();
+    router.push("/admin/login");
+  };
+
+  if (pathname === "/admin/login") return <>{children}</>;
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   
   const menuItems = [
     { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
@@ -104,11 +132,7 @@ export default function AdminLayout({
           </a>
           
           <button
-            onClick={() => {
-              if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-                console.log("Déconnexion...");
-              }
-            }}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all group"
           >
             <div className="p-2 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
