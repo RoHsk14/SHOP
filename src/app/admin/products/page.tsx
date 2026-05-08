@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import { worldCurrencies } from "@/lib/currencies";
-import { Pencil, Trash2, Package } from "lucide-react";
+import { Pencil, Trash2, Package, ExternalLink } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 
 type Product = {
@@ -86,7 +86,10 @@ export default function ProductsPage() {
       .from("settings")
       .select("default_currency")
       .single();
-    if (data?.default_currency) setDefaultCurrency(data.default_currency);
+    if (data?.default_currency) {
+      setDefaultCurrency(data.default_currency);
+      setCurrencies(prev => prev.includes(data.default_currency) ? prev : [...prev, data.default_currency]);
+    }
   }, []);
 
   useEffect(() => {
@@ -368,7 +371,11 @@ export default function ProductsPage() {
           <button
             onClick={() => {
               setEditingProduct(null);
-              setForm(initialForm);
+              setForm({
+                ...initialForm,
+                selectedCurrency: defaultCurrency,
+                prices: { [defaultCurrency]: 0 },
+              });
               setModalOpen(true);
             }}
             className="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-sm"
@@ -432,6 +439,7 @@ export default function ProductsPage() {
                       <td className="p-4 text-sm text-gray-500">{product.sku || "-"}</td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <a href={`/?product=${product.id}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
                           <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><Pencil className="w-4 h-4 text-gray-500" /></button>
                           <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4 text-red-500" /></button>
                         </div>
@@ -463,6 +471,7 @@ export default function ProductsPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
+                    <a href={`/?product=${product.id}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
                     <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded-lg"><Pencil className="w-4 h-4 text-gray-500" /></button>
                     <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-500" /></button>
                   </div>

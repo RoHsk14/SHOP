@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import CheckoutForm from "@/components/CheckoutForm";
 import { supabase } from "@/lib/supabase";
+import * as metaPixel from "@/lib/metaPixel";
 
 interface Product {
   id: string;
@@ -34,6 +35,18 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
     url.searchParams.set("product", product.id);
     window.history.pushState({}, "", url.toString());
   };
+
+  useEffect(() => {
+    if (selectedProduct) {
+      metaPixel.trackViewContent({
+        content_ids: [selectedProduct.id],
+        content_name: selectedProduct.name,
+        content_type: "product",
+        value: selectedProduct.prices ? Object.values(selectedProduct.prices)[0] : 0,
+        currency: selectedProduct.prices ? Object.keys(selectedProduct.prices)[0] : "EUR",
+      });
+    }
+  }, [selectedProduct]);
 
   if (!selectedProduct) {
     return (

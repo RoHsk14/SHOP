@@ -79,6 +79,16 @@ export default function CheckoutForm({ product }: { product: any }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQty = Number(e.target.value);
+    setQuantity(newQty);
+    if (newQty > quantity) {
+      metaPixel.trackAddToCart({
+        value: currentPrice, currency: productCurrency, content_ids: [product.id], content_name: product.name, content_type: "product",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -152,6 +162,9 @@ export default function CheckoutForm({ product }: { product: any }) {
         }).catch(err => console.error("Google Sheets error:", err));
       }
       
+      metaPixel.trackPurchase({
+        value: totalPrice, currency: productCurrency, num_items: quantity, content_ids: [product.id], content_name: product.name, content_type: "product",
+      });
       router.push(`/thank-you?price=${totalPrice}&currency=${productCurrency}&product=${encodeURIComponent(product.name)}&qty=${quantity}`);
     }
   };
@@ -173,7 +186,7 @@ export default function CheckoutForm({ product }: { product: any }) {
           <label className="block text-xs font-medium text-gray-500 mb-1.5">Quantité</label>
           <input
             type="number" min="1" value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
+            onChange={handleQuantityChange}
             className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           />
         </div>

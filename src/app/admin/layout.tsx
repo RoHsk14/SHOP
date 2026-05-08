@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, Store, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, Store, LogOut, Menu, X, Share2 } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminLayout({
@@ -17,6 +17,7 @@ export default function AdminLayout({
     { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
     { href: "/admin/products", label: "Produits", icon: Package },
     { href: "/admin/orders", label: "Commandes", icon: ShoppingCart },
+    { href: "/admin/facebook", label: "Facebook & Instagram", icon: Share2 },
     { href: "/admin/settings", label: "Paramètres", icon: Settings },
   ];
 

@@ -331,7 +331,12 @@ export default function SettingsAdmin() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">CAPI Token (Optionnel)</label>
-            <input type="password" value={capiToken} onChange={(e) => setCapiToken(e.target.value)} className={inputClass} placeholder="Token Conversions API" />
+            <input type="password" value={capiToken} onChange={(e) => {
+              const val = e.target.value;
+              const match = val.match(/access_token=([^&\s]+)/);
+              setCapiToken(match ? match[1] : val);
+            }} className={inputClass} placeholder="Token ou URL complète" />
+            <p className="text-xs text-gray-400 mt-1.5">Collez le token ou l'URL complète du testeur Events Manager</p>
           </div>
           </div>
         </div>
