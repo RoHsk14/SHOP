@@ -38,9 +38,13 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            <div className="w-16 h-16 mx-auto mb-4">
+              <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
+                <rect width="120" height="120" rx="24" fill="white" stroke="#059669" strokeWidth="2"/>
+                <path d="M32 42h56l-6 34a4 4 0 01-4 3H42a4 4 0 01-4-3l-6-34z" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinejoin="round"/>
+                <circle cx="48" cy="82" r="5" fill="#059669"/>
+                <circle cx="76" cy="82" r="5" fill="#059669"/>
+                <path d="M44 42l6-14h20l6 14" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
               </svg>
             </div>
             <h1 className="text-xl font-bold text-gray-900">Administration</h1>

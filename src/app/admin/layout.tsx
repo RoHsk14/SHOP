@@ -71,8 +71,14 @@ export default function AdminLayout({
           <Link href="/admin" className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             onClick={() => setSidebarOpen(false)}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
-              <LayoutDashboard className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 flex-shrink-0">
+              <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
+                <rect width="120" height="120" rx="24" fill="white" stroke="#059669" strokeWidth="2"/>
+                <path d="M32 42h56l-6 34a4 4 0 01-4 3H42a4 4 0 01-4-3l-6-34z" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinejoin="round"/>
+                <circle cx="48" cy="82" r="5" fill="#059669"/>
+                <circle cx="76" cy="82" r="5" fill="#059669"/>
+                <path d="M44 42l6-14h20l6 14" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              </svg>
             </div>
             <div>
               <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
