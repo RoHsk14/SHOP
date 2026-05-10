@@ -2,6 +2,9 @@
   "name": "mon-ecommerce",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +13,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "clsx": "^2.1.1",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
