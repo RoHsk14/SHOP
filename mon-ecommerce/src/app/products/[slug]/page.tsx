@@ -77,6 +77,9 @@ export default function ProductPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
+      <div className="bg-emerald-600 text-white text-center text-xs sm:text-sm font-medium py-2.5 px-4">
+        🚚 Livraison gratuite pour toute commande &mdash; Profitez-en !
+      </div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <ProductShowcase products={products} initialProductId={initialProductId} />
       </div>
