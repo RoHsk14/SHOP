@@ -5,6 +5,7 @@ import Image from "next/image";
 import CheckoutForm from "@/components/CheckoutForm";
 import { supabase } from "@/lib/supabase";
 import { formatPrice } from "@/lib/currency";
+import { slugify } from "@/lib/slug";
 import * as metaPixel from "@/lib/metaPixel";
 
 interface Product {
@@ -32,9 +33,8 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
 
   const selectProduct = (product: Product) => {
     setSelectedProduct(product);
-    const url = new URL(window.location.href);
-    url.searchParams.set("product", product.id);
-    window.history.pushState({}, "", url.toString());
+    const slug = (product as any).slug || slugify(product.name);
+    window.history.pushState({}, "", `/products/${slug}`);
   };
 
   useEffect(() => {

@@ -30,32 +30,27 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateFilter, setDateFilter] = useState<'today' | '7days' | '30days' | '90days' | 'year' | 'custom'>('7days');
+  const [dateFilter, setDateFilter] = useState<'today' | '7days' | '30days' | '90days' | 'year' | 'custom'>('today');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [refreshing, setRefreshing] = useState(false);
   const [defaultCurrency, setDefaultCurrency] = useState("EUR");
   const [onlineVisitors, setOnlineVisitors] = useState(0);
-  const [todayVisits, setTodayVisits] = useState(0);
+  const [totalVisits, setTotalVisits] = useState(0);
 
   useEffect(() => { fetchData(); }, [dateFilter, customDateRange]);
 
   useEffect(() => {
-    const fetchVisitorStats = async () => {
+    const fetchOnlineVisitors = async () => {
       try {
-        const [onlineRes, todayRes] = await Promise.all([
-          fetch("/api/visitors?type=online"),
-          fetch("/api/visitors?type=today")
-        ]);
-        const onlineData = await onlineRes.json();
-        const todayData = await todayRes.json();
-        setOnlineVisitors(onlineData.online || 0);
-        setTodayVisits(todayData.visits || 0);
+        const res = await fetch("/api/visitors?type=online");
+        const data = await res.json();
+        setOnlineVisitors(data.online || 0);
       } catch (error) {
-        console.error("Error fetching visitor stats:", error);
+        console.error("Error fetching online visitors:", error);
       }
     };
-    fetchVisitorStats();
-    const interval = setInterval(fetchVisitorStats, 30000);
+    fetchOnlineVisitors();
+    const interval = setInterval(fetchOnlineVisitors, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,11 +81,16 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setRefreshing(true);
     const { start, end } = getDateRange();
-    const [ordersRes, productsRes] = await Promise.all([
+    const [ordersRes, productsRes, visitsRes] = await Promise.all([
       supabase.from("orders").select("*").gte("created_at", start).lte("created_at", end).order("created_at", { ascending: false }),
-      supabase.from("products").select("*")
+      supabase.from("products").select("*"),
+      fetch(`/api/visitors?type=visits&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
     ]);
     setOrders(ordersRes.data || []); setProducts(productsRes.data || []);
+    if (visitsRes.ok) {
+      const visitsData = await visitsRes.json();
+      setTotalVisits(visitsData.visits || 0);
+    }
     setLoading(false); setRefreshing(false);
   };
 
@@ -133,8 +133,8 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Chiffre d'affaires", value: formatPrice(totalRevenue, defaultCurrency), change: "+12.5%", up: true, icon: Euro, bg: "bg-green-50", ic: "text-green-600" },
     { label: "Commandes", value: totalOrders.toString(), change: "+8.2%", up: true, icon: ShoppingCart, bg: "bg-blue-50", ic: "text-blue-600" },
-    { label: "Visiteurs en ligne", value: onlineVisitors.toString(), change: `${todayVisits} auj.`, up: true, icon: Eye, bg: "bg-purple-50", ic: "text-purple-600" },
-    { label: "Visites aujourd'hui", value: todayVisits.toString(), change: "+5.3%", up: true, icon: TrendingUp, bg: "bg-amber-50", ic: "text-amber-600" },
+    { label: "Visiteurs en ligne", value: onlineVisitors.toString(), up: true, icon: Eye, bg: "bg-purple-50", ic: "text-purple-600" },
+    { label: "Visites totales", value: totalVisits.toString(), up: true, icon: TrendingUp, bg: "bg-amber-50", ic: "text-amber-600" },
   ];
 
   return (
@@ -168,9 +168,11 @@ export default function AdminDashboard() {
               <div className={`w-7 h-7 sm:w-10 sm:h-10 ${s.bg} rounded-lg flex items-center justify-center`}>
                 <s.icon className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${s.ic}`} />
               </div>
-              <span className={`text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full flex items-center gap-0.5 ${s.up ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-                {s.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />} {s.change}
-              </span>
+              {s.change && (
+                <span className={`text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full flex items-center gap-0.5 ${s.up ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+                  {s.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />} {s.change}
+                </span>
+              )}
             </div>
             <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 truncate">{s.label}</p>
             <p className="text-sm sm:text-xl font-bold text-gray-900">{s.value}</p>

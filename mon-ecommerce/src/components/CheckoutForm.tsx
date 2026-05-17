@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { formatPrice } from "@/lib/currency";
 import * as metaPixel from "@/lib/metaPixel";
-
+import { toast } from "sonner";
 
 interface FormField {
   name: string;
@@ -98,10 +98,11 @@ export default function CheckoutForm({ product }: { product: any }) {
     });
     setLoading(false);
     if (!res.ok) {
-      alert("Erreur lors de la commande. Veuillez réessayer.");
+      const err = await res.json().catch(() => ({ error: "Erreur inconnue" }));
+      toast.error(err.error || "Erreur lors de la commande");
     } else {
       // Send to Google Sheets
-      const { data: settings } = await supabase.from("settings").select("google_sheet_url, google_sheet_columns").single();
+      const { data: settings } = await supabase.from("settings").select("google_sheet_url, google_sheet_columns").maybeSingle();
       
       if (settings?.google_sheet_url) {
         // Utiliser les colonnes de la DB ou celles par défaut

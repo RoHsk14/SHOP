@@ -47,18 +47,16 @@ export async function POST(request: NextRequest) {
 
     if (insertError) throw insertError;
 
-    // Send push notification to admin devices
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/notify-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name,
-          total_price: realTotal,
-          currency: productCurrency,
-        }),
-      });
-    } catch { /* notification non-bloquante */ }
+    // Send push notification to admin devices (non-bloquant)
+    fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/notify-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer_name,
+        total_price: realTotal,
+        currency: productCurrency,
+      }),
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, order });
   } catch (error: any) {

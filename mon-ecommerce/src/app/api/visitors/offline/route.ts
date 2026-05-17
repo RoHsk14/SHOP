@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-// POST - Mark visitor as offline
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -13,10 +12,7 @@ export async function POST(request: NextRequest) {
 
     const { error } = await supabase
       .from("visitors")
-      .update({ 
-        is_online: false,
-        last_seen: new Date().toISOString()
-      })
+      .update({ is_online: false })
       .eq("session_id", session_id);
 
     if (error) {

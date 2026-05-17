@@ -16,13 +16,6 @@ interface Product {
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialProductId, setInitialProductId] = useState<string | undefined>();
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get("product");
-    if (productId) setInitialProductId(productId);
-  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -64,7 +57,7 @@ export default function HomePage() {
             <p className="text-sm text-gray-500">Revenez bientôt ou contactez-nous pour plus d&apos;informations, Merci</p>
           </div>
         ) : (
-          <ProductShowcase products={products} initialProductId={initialProductId} />
+          <ProductShowcase products={products} />
         )}
       </div>
 

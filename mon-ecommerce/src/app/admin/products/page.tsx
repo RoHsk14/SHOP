@@ -7,6 +7,7 @@ import Papa from "papaparse";
 import { worldCurrencies } from "@/lib/currencies";
 import { Pencil, Trash2, Package, ExternalLink } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
+import { slugify } from "@/lib/slug";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Product = {
@@ -140,8 +141,30 @@ export default function ProductsPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      let slug = slugify(form.name);
+      const editingId = editingProduct?.id;
+      const { data: existing } = await supabase
+        .from("products")
+        .select("id, slug")
+        .eq("slug", slug);
+      if (existing && existing.length > 0 && existing.some((p: any) => p.id !== editingId)) {
+        let i = 2;
+        while (true) {
+          const testSlug = `${slug}-${i}`;
+          const { data: dupes } = await supabase
+            .from("products")
+            .select("id")
+            .eq("slug", testSlug);
+          if (!dupes || dupes.length === 0 || dupes.every((p: any) => p.id === editingId)) {
+            slug = testSlug;
+            break;
+          }
+          i++;
+        }
+      }
       const productData = {
         name: form.name,
+        slug,
         description: form.description || null,
         prices: { [form.selectedCurrency]: form.prices[form.selectedCurrency] || 0 },
         sku: form.sku || null,
@@ -440,7 +463,7 @@ export default function ProductsPage() {
                       <td className="p-4 text-sm text-gray-500">{product.sku || "-"}</td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <a href={`/?product=${product.id}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
+                          <a href={`/products/${(product as any).slug || slugify(product.name)}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
                           <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><Pencil className="w-4 h-4 text-gray-500" /></button>
                           <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4 text-red-500" /></button>
                         </div>
@@ -472,7 +495,7 @@ export default function ProductsPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <a href={`/?product=${product.id}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
+                    <a href={`/products/${(product as any).slug || slugify(product.name)}`} target="_blank" rel="noopener" className="p-2 hover:bg-emerald-50 rounded-lg" title="Voir sur la boutique"><ExternalLink className="w-4 h-4 text-emerald-600" /></a>
                     <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded-lg"><Pencil className="w-4 h-4 text-gray-500" /></button>
                     <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-500" /></button>
                   </div>
