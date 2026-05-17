@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 export function useVisitorTracking() {
   const sessionIdRef = useRef<string | null>(null);
+  const pathname = usePathname();
+  const prevPathRef = useRef<string>("");
 
   const getSessionId = () => {
     if (sessionIdRef.current) return sessionIdRef.current;
-    
+
     if (typeof window !== "undefined") {
       let sessionId = localStorage.getItem("session_id");
       if (!sessionId) {
@@ -20,7 +23,7 @@ export function useVisitorTracking() {
     return null;
   };
 
-  const trackVisit = async () => {
+  const track = async (type: "pageview" | "heartbeat") => {
     const sessionId = getSessionId();
     if (!sessionId) return;
 
@@ -31,6 +34,7 @@ export function useVisitorTracking() {
         body: JSON.stringify({
           session_id: sessionId,
           path: window.location.pathname,
+          type,
         }),
       });
     } catch (error) {
@@ -39,17 +43,15 @@ export function useVisitorTracking() {
   };
 
   useEffect(() => {
-    // Track initial visit
-    trackVisit();
+    track("pageview");
+  }, [pathname]);
 
-    // Heartbeat every 30 seconds
-    const interval = setInterval(trackVisit, 30 * 1000);
+  useEffect(() => {
+    const interval = setInterval(() => track("heartbeat"), 30 * 1000);
 
-    // Mark offline when leaving
     const handleUnload = () => {
       const sessionId = getSessionId();
       if (sessionId) {
-        // Use sendBeacon for reliability
         const blob = new Blob(
           [JSON.stringify({ session_id: sessionId, is_online: false })],
           { type: "application/json" }
@@ -65,6 +67,4 @@ export function useVisitorTracking() {
       window.removeEventListener("beforeunload", handleUnload);
     };
   }, []);
-
-  return { trackVisit };
 }

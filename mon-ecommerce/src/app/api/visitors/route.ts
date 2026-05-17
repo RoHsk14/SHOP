@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { session_id, path } = body;
+    const { session_id, path, type } = body;
 
     const headers = request.headers;
     const ip = headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown";
@@ -15,18 +15,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "session_id required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("visitors").insert({
-      session_id,
-      ip_address: ip,
-      user_agent: userAgent,
-      referrer,
-      path: path || "/",
-      is_online: true,
-    });
-
-    if (error) {
-      console.error("Visitor tracking error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (type === "pageview") {
+      const { error } = await supabase.from("visitors").insert({
+        session_id,
+        ip_address: ip,
+        user_agent: userAgent,
+        referrer,
+        path: path || "/",
+        is_online: true,
+      });
+      if (error) {
+        console.error("Visitor tracking error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    } else {
+      const { error } = await supabase.from("visitors").upsert({
+        session_id,
+        ip_address: ip,
+        user_agent: userAgent,
+        referrer,
+        path: path || "/",
+        is_online: true,
+        last_seen: new Date().toISOString(),
+      }, { onConflict: "session_id" });
+      if (error) {
+        console.error("Visitor heartbeat error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -48,7 +63,7 @@ export async function GET(request: NextRequest) {
         .from("visitors")
         .select("session_id")
         .eq("is_online", true)
-        .gte("created_at", cutoff);
+        .gte("last_seen", cutoff);
 
       if (error) throw error;
       const unique = new Set((data || []).map((r: any) => r.session_id));
