@@ -15,12 +15,14 @@ export default function AdminLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session && pathname !== "/admin/login") {
         router.push("/admin/login");
       }
+      setUserEmail(session?.user?.email?.split("@")[0] || "Admin");
       setChecking(false);
     });
   }, [pathname, router]);
@@ -40,21 +42,26 @@ export default function AdminLayout({
       </div>
     );
   }
-  
+
   const menuItems = [
     { href: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard },
-    { href: "/admin/products", label: "Produits", icon: Package },
     { href: "/admin/orders", label: "Commandes", icon: ShoppingCart },
+    { href: "/admin/products", label: "Produits", icon: Package },
     { href: "/admin/facebook", label: "Facebook & Instagram", icon: Share2 },
+  ];
+
+  const secondaryItems = [
     { href: "/admin/settings", label: "Paramètres", icon: Settings },
   ];
+
+  const isActive = (href: string) => pathname === href;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="        fixed top-3 left-3 z-50 lg:hidden w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm"
+        className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm"
       >
         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -67,71 +74,116 @@ export default function AdminLayout({
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-5 border-b border-gray-100">
           <Link href="/admin" className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             onClick={() => setSidebarOpen(false)}
           >
-            <div className="w-10 h-10 flex-shrink-0">
-              <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
-                <rect width="120" height="120" rx="24" fill="white" stroke="#059669" strokeWidth="2"/>
-                <path d="M32 42h56l-6 34a4 4 0 01-4 3H42a4 4 0 01-4-3l-6-34z" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinejoin="round"/>
-                <circle cx="48" cy="82" r="5" fill="#059669"/>
-                <circle cx="76" cy="82" r="5" fill="#059669"/>
-                <path d="M44 42l6-14h20l6 14" stroke="#059669" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+            <div className="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white">
+                <path d="M4 7l8-4 8 4M4 17l8 4 8-4M4 12l8-4 8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              <h1 className="text-base font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 Admin
               </h1>
-              <p className="text-xs text-gray-500">Boutique E-commerce</p>
+              <p className="text-[10px] text-gray-400">Boutique E-commerce</p>
             </div>
           </Link>
         </div>
 
+        {/* User profile summary */}
+        <div className="mx-4 mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+              {userEmail.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-900 truncate">{userEmail}</p>
+              <p className="text-[10px] text-emerald-600 font-medium">Propriétaire</p>
+            </div>
+            <div className="ml-auto w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
+          </div>
+        </div>
+
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
-            Menu principal
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Principal
           </p>
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
-                  isActive
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                  active
                     ? "bg-emerald-50 text-emerald-700 shadow-sm"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
-                <div className={`p-2 rounded-lg transition-all ${
-                  isActive
+                <div className={`p-1.5 rounded-lg transition-all ${
+                  active
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700"
                 }`}>
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-4 h-4" />
                 </div>
                 <span className="font-medium text-sm">{item.label}</span>
-                {isActive && (
-                  <div className="ml-auto w-2 h-2 bg-emerald-500 rounded-full"></div>
+                {active && (
+                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  </div>
                 )}
               </Link>
             );
           })}
+
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2 mt-4">
+            Configuration
+          </p>
+          {secondaryItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                  active
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <div className={`p-1.5 rounded-lg transition-all ${
+                  active
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700"
+                }`}>
+                  <item.icon className="w-4 h-4" />
+                </div>
+                <span className="font-medium text-sm">{item.label}</span>
+                {active && (
+                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+
         </nav>
 
         {/* Footer sidebar */}
-        <div className="p-4 border-t border-gray-100 space-y-2">
-          
+        <div className="p-3 border-t border-gray-100">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all group"
           >
-            <div className="p-2 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
-              <LogOut className="w-5 h-5" />
+            <div className="p-1.5 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
+              <LogOut className="w-4 h-4" />
             </div>
             <span className="font-medium text-sm">Déconnexion</span>
           </button>
@@ -140,8 +192,8 @@ export default function AdminLayout({
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+        <div
+          className="fixed inset-0 bg-black/20 z-30 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
