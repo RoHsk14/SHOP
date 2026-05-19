@@ -18,14 +18,29 @@ export default function AdminLayout({
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && pathname !== "/admin/login") {
-        router.push("/admin/login");
+      if (cancelled) return;
+      if (!session) {
+        router.replace("/admin/login");
+      } else {
+        setUserEmail(session.user.email?.split("@")[0] || "Admin");
       }
-      setUserEmail(session?.user?.email?.split("@")[0] || "Admin");
       setChecking(false);
     });
-  }, [pathname, router]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        router.replace("/admin/login");
+      }
+      if (session?.user?.email) {
+        setUserEmail(session.user.email.split("@")[0]);
+      }
+    });
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLogout = async () => {
     if (!confirm("Voulez-vous vraiment vous déconnecter ?")) return;

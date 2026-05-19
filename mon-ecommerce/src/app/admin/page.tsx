@@ -305,11 +305,11 @@ export default function AdminDashboard() {
         <div className="absolute bottom-0 left-1/4 w-32 h-32 bg-white/5 rounded-full translate-y-1/2"></div>
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-xl font-bold border-2 border-white/30 shrink-0">
-            A
+            R
           </div>
           <div>
             <p className="text-white/70 text-xs sm:text-sm font-medium">Bienvenue,</p>
-            <h2 className="text-lg sm:text-2xl font-bold">Admin</h2>
+            <h2 className="text-lg sm:text-2xl font-bold">Rodrigue</h2>
             <p className="text-white/60 text-xs mt-0.5">Voici les performances de votre boutique</p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-2">

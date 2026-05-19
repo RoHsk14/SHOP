@@ -342,7 +342,7 @@ export default function SettingsAdmin() {
         </div>
 
       {/* Google Sheets - Style Shopify/Easy Sell */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
             <ShoppingCart className="w-4.5 h-4.5 text-green-600" />
@@ -439,7 +439,7 @@ export default function SettingsAdmin() {
           </div>
 
           {/* Boutons d'action */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleGoogleConnect}
               disabled={!googleSheetUrl || saving}
@@ -472,7 +472,7 @@ export default function SettingsAdmin() {
       </div>
 
       {/* Paramètres Généraux */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
             <ShoppingCart className="w-4.5 h-4.5 text-green-600" />
@@ -506,7 +506,7 @@ export default function SettingsAdmin() {
       </div>
 
       {/* Form Fields */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center">

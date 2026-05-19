@@ -140,9 +140,10 @@ export default function OrdersPage() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <>
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
 
-      {/* Breadcrumb + Header */}
+        {/* Breadcrumb + Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
@@ -220,18 +221,18 @@ export default function OrdersPage() {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+          <div className="hidden sm:block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50">
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Commande</th>
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Client</th>
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Produit</th>
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Qté</th>
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
-                    <th className="text-left px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Statut</th>
-                    <th className="text-right px-4 py-3 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Commande</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Client</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Produit</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Qté</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
+                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Statut</th>
+                    <th className="text-right px-3 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -239,18 +240,16 @@ export default function OrdersPage() {
                     const imgSrc = order.products?.images?.[0];
                     return (
                       <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="flex-shrink-0">
-                              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
-                                {getInitials(order.customer_name)}
-                              </div>
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                              {getInitials(order.customer_name)}
                             </div>
-                            <div>
-                              <p className="text-xs font-mono text-gray-400">
+                            <div className="min-w-0">
+                              <p className="text-xs font-mono text-gray-400 truncate">
                                 #{order.id.slice(0, 8)}
                               </p>
-                              <p className="text-[10px] text-gray-400">
+                              <p className="text-[10px] text-gray-400 whitespace-nowrap">
                                 {new Date(order.created_at).toLocaleDateString("fr-FR", {
                                   day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
                                 })}
@@ -258,16 +257,16 @@ export default function OrdersPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
-                            <p className="text-xs text-gray-400">{order.customer_phone}</p>
+                        <td className="px-3 py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate max-w-[100px] lg:max-w-none">{order.customer_name}</p>
+                            <p className="text-xs text-gray-400 truncate">{order.customer_phone}</p>
                             {order.customer_neighborhood && (
-                              <p className="text-[10px] text-gray-400 truncate max-w-[120px]">{order.customer_neighborhood}</p>
+                              <p className="text-[10px] text-gray-400 truncate max-w-[80px] lg:max-w-[120px] hidden lg:block">{order.customer_neighborhood}</p>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
                               {imgSrc ? (
@@ -281,34 +280,22 @@ export default function OrdersPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{order.quantity}</td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-bold text-gray-900">
+                        <td className="px-3 py-3 text-sm text-gray-900">{order.quantity}</td>
+                        <td className="px-3 py-3">
+                          <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
                             {formatPrice(order.total_price, order.currency)}
                           </p>
                         </td>
-                        <td className="px-4 py-3">{getStatusBadge(order.status)}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-3 py-3">{getStatusBadge(order.status)}</td>
+                        <td className="px-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => setSelectedOrder(order)}
-                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Détails"
-                            >
+                            <button onClick={() => setSelectedOrder(order)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors" title="Détails">
                               <Eye className="w-4 h-4 text-gray-400 hover:text-gray-700" />
                             </button>
-                            <a
-                              href={`tel:${order.customer_phone}`}
-                              className="p-2 hover:bg-emerald-50 rounded-lg transition-colors"
-                              title="Appeler"
-                            >
+                            <a href={`tel:${order.customer_phone}`} className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors" title="Appeler">
                               <Phone className="w-4 h-4 text-emerald-500 hover:text-emerald-700" />
                             </a>
-                            <button
-                              onClick={() => handleDelete(order.id)}
-                              className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Supprimer"
-                            >
+                            <button onClick={() => handleDelete(order.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
                               <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
                             </button>
                           </div>
@@ -321,50 +308,50 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {/* Mobile Cards */}
-          <div className="grid grid-cols-1 sm:hidden gap-3">
+          {/* Mobile Cards - full vertical stack, no horizontal overflow */}
+          <div className="grid grid-cols-1 gap-3 sm:hidden">
             {filteredOrders.map((order) => {
               const imgSrc = order.products?.images?.[0];
               return (
-                <div key={order.id} className="bg-white rounded-xl border border-gray-200 p-3 space-y-2 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between">
+                <div key={order.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Top: Avatar + Name + Badge */}
+                  <div className="p-3 pb-0">
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
                         {getInitials(order.customer_name)}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
-                        <p className="text-xs text-gray-400">{order.customer_phone}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{order.customer_name}</p>
+                        <p className="text-xs text-gray-400 truncate">{order.customer_phone}</p>
                       </div>
+                      {getStatusBadge(order.status)}
                     </div>
-                    {getStatusBadge(order.status)}
                   </div>
-                  <div className="flex items-center gap-2 py-1">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
-                      {imgSrc ? (
-                        <img src={imgSrc} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700 truncate">{order.products?.name || "Produit supprimé"}</span>
-                    <span className="text-xs text-gray-400 ml-auto">x{order.quantity}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                    <div>
-                      <p className="text-xs text-gray-400">
-                        {new Date(order.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                      </p>
-                    </div>
+                  {/* Product row */}
+                  <div className="px-3 pt-2 pb-1">
                     <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+                        {imgSrc ? (
+                          <img src={imgSrc} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-700 truncate flex-1">{order.products?.name || "Produit supprimé"}</span>
+                      <span className="text-xs text-gray-400 shrink-0">x{order.quantity}</span>
+                    </div>
+                  </div>
+                  {/* Bottom: Date + Price + Actions */}
+                  <div className="px-3 py-2 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
+                    <p className="text-xs text-gray-400">
+                      {new Date(order.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                    </p>
+                    <div className="flex items-center gap-1.5">
                       <p className="text-sm font-bold text-gray-900">{formatPrice(order.total_price, order.currency)}</p>
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
+                      <button onClick={() => setSelectedOrder(order)} className="p-2 hover:bg-white rounded-lg transition-colors">
                         <Eye className="w-4 h-4 text-gray-400" />
                       </button>
-                      <a href={`tel:${order.customer_phone}`} className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors">
+                      <a href={`tel:${order.customer_phone}`} className="p-2 hover:bg-white rounded-lg transition-colors">
                         <Phone className="w-4 h-4 text-emerald-500" />
                       </a>
                     </div>
@@ -375,25 +362,25 @@ export default function OrdersPage() {
           </div>
         </>
       )}
+      </div>
 
       {/* Order Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedOrder(null)} />
-          <div className="relative w-full max-w-4xl bg-gray-50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] animate-slide-up">
+          <div className="relative w-full max-w-4xl bg-gray-50 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[90vh] animate-slide-up">
             
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 bg-white border-b border-gray-100 sticky top-0 z-10">
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 font-mono">#{selectedOrder.id.slice(0, 8)}</h2>
-                <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                <p className="text-sm text-gray-500 font-medium">
-                  {new Date(selectedOrder.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            <div className="flex items-start justify-between px-4 py-3 sm:px-6 sm:py-5 bg-white border-b border-gray-100 sticky top-0 z-10 gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 min-w-0">
+                <h2 className="text-base sm:text-xl font-bold text-gray-900 font-mono shrink-0">#{selectedOrder.id.slice(0, 8)}</h2>
+                <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 shrink-0"></div>
+                <p className="text-[10px] sm:text-sm text-gray-500 font-medium truncate">
+                  {new Date(selectedOrder.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                {getStatusBadge(selectedOrder.status)}
+                <div className="w-full sm:w-auto">{getStatusBadge(selectedOrder.status)}</div>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500 shrink-0 ml-2">
+              <button onClick={() => setSelectedOrder(null)} className="p-1.5 sm:p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500 shrink-0">
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
@@ -549,13 +536,13 @@ export default function OrdersPage() {
                   {/* Danger Zone */}
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
                     <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-3">Zone de danger</h3>
-                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">La suppression d'une commande est irréversible. Toutes les données associées seront perdues.</p>
+                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">La suppression d'une commande est irréversible.</p>
                     <button
                       onClick={() => handleDelete(selectedOrder.id)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-semibold text-red-500 border border-red-200 hover:bg-red-50 hover:text-red-600 transition-all active:scale-[0.98]"
                     >
                       <Trash2 className="w-4 h-4" />
-                      Supprimer définitivement
+                      Supprimer
                     </button>
                   </div>
 
@@ -566,6 +553,6 @@ export default function OrdersPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

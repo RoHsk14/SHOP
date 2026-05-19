@@ -253,7 +253,7 @@ export default function FacebookChannelPage() {
 
       {/* Tab: Connection */}
       {activeTab === "connection" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-5">
           <div>
             <h2 className="text-sm font-bold text-gray-900">Identifiants Meta Business</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -322,7 +322,7 @@ export default function FacebookChannelPage() {
       {/* Tab: Catalog */}
       {activeTab === "catalog" && (
         <div className="space-y-5">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <Package className="w-5 h-5 text-gray-600" />
@@ -385,7 +385,7 @@ export default function FacebookChannelPage() {
 
           {/* Synced Products Preview */}
           {catalogProducts.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm font-bold text-gray-900 mb-4">Produits synchronisés ({catalogProducts.length})</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {catalogProducts.map(p => (
@@ -452,7 +452,7 @@ export default function FacebookChannelPage() {
             return (
           <>
           {/* Chart: Impressions & Reach */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-bold text-gray-900 mb-4">Impressions & Reach ({insights.length > 0 ? "réelles" : "démo"} - 7 jours)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -480,7 +480,7 @@ export default function FacebookChannelPage() {
 
           {/* Chart: Clicks & Sales */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm font-bold text-gray-900 mb-4">Clics & Ventes</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -496,7 +496,7 @@ export default function FacebookChannelPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm font-bold text-gray-900 mb-4">ROAS (Return on Ad Spend)</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">

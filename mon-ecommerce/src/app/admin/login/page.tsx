@@ -14,9 +14,9 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.push("/admin");
+      if (session) router.replace("/admin");
     });
-  }, [router]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
       setMessage(error.message);
       setMessageType("error");
     } else {
-      router.push("/admin");
+      router.replace("/admin");
     }
     setLoading(false);
   };
