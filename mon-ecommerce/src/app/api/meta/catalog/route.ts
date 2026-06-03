@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { extractSubdomain } from "@/lib/host";
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createSupabaseServerClient(request);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const host = request.headers.get("host") || "";
+    const shopSlug = extractSubdomain(host) || new URL(request.url).searchParams.get("shop_slug");
+
+    if (!shopSlug) {
+      return NextResponse.json({ error: "shop_slug requis" }, { status: 400 });
+    }
+
     const { data: settings } = await supabase
       .from("settings")
       .select("meta_access_token, meta_business_account_id, meta_catalog_id")
+      .eq("shop_slug", shopSlug)
       .single();
 
     if (!settings?.meta_access_token || !settings?.meta_business_account_id) {
@@ -43,9 +58,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Fetch products from Supabase
-    const { data: products, error: dbError } = await supabase
-      .from("products")
-      .select("*");
+    let productsQuery = supabase.from("products").select("*");
+    if (shopSlug) productsQuery = productsQuery.eq("shop_slug", shopSlug);
+    const { data: products, error: dbError } = await productsQuery;
 
     if (dbError) {
       return NextResponse.json({ error: "Database error" }, { status: 500 });

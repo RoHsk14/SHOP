@@ -34,7 +34,8 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
   const selectProduct = (product: Product) => {
     setSelectedProduct(product);
     const slug = (product as any).slug || slugify(product.name);
-    window.history.pushState({}, "", `/products/${slug}`);
+    // Ancien format : redirection via pushState
+    // window.history.pushState({}, "", `/products/${slug}`);
   };
 
   useEffect(() => {
@@ -52,8 +53,8 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
   if (!selectedProduct) {
     return (
       <div className="text-center py-20">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Aucun produit disponible</h1>
-        <p className="text-gray-500 text-sm">Veuillez ajouter des produits dans l'admin.</p>
+        <h1 className="text-xl font-bold mb-2" style={{ color: "var(--theme-text)" }}>Aucun produit disponible</h1>
+        <p className="text-sm" style={{ color: "var(--theme-text-muted)" }}>Veuillez ajouter des produits dans l'admin.</p>
       </div>
     );
   }
@@ -70,10 +71,18 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+      <div className="overflow-hidden mb-8" style={{
+        background: "var(--theme-surface)",
+        borderRadius: "var(--theme-radius-card)",
+        border: "1px solid var(--theme-border)",
+      }}>
         {/* Image principale */}
-        <div className="relative bg-gray-50 p-6 sm:p-10 flex items-center justify-center">
-          <div className="relative w-full max-w-lg aspect-square rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100">
+        <div className="relative p-6 sm:p-10 flex items-center justify-center" style={{ background: "var(--theme-secondary)" }}>
+          <div className="relative w-full max-w-lg aspect-square rounded-xl overflow-hidden" style={{
+            background: "var(--theme-surface)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            border: "1px solid var(--theme-border)",
+          }}>
             <Image
               src={images[activeImageIndex]}
               alt={selectedProduct.name}
@@ -84,7 +93,7 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
             />
           </div>
           {(selectedProduct.stock_quantity || 0) > 0 && (
-            <div className="absolute top-8 left-8 sm:top-12 sm:left-12 bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+            <div className="absolute top-8 left-8 sm:top-12 sm:left-12 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm" style={{ background: "var(--theme-primary)" }}>
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
               En stock
             </div>
@@ -99,8 +108,11 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
                 key={i}
                 onClick={() => setActiveImageIndex(i)}
                 className={`relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                  i === activeImageIndex ? "border-emerald-600" : "border-gray-200 hover:border-gray-300"
+                  i === activeImageIndex ? "border-emerald-600" : "hover:border-gray-300"
                 }`}
+                style={{
+                  borderColor: i === activeImageIndex ? "var(--theme-primary)" : "var(--theme-border)",
+                }}
               >
                 <Image src={url} alt="" fill className="object-cover" unoptimized />
               </button>
@@ -110,11 +122,14 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
 
         {/* Nom + Prix */}
         <div className="px-6 sm:px-10 pb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight" style={{
+            color: "var(--theme-text)",
+            fontFamily: "var(--theme-font-heading)",
+          }}>
             {selectedProduct.name}
           </h1>
           {selectedProduct.prices && (
-            <p className="text-xl sm:text-2xl font-bold text-emerald-600 mt-2">
+            <p className="text-xl sm:text-2xl font-bold mt-2" style={{ color: "var(--theme-primary)" }}>
               {formatPrice(Object.values(selectedProduct.prices)[0] || 0, Object.keys(selectedProduct.prices)[0])}
             </p>
           )}
@@ -127,15 +142,19 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
 
         {/* Description */}
         {selectedProduct.description && (
-          <div className="border-t border-gray-100 px-6 sm:px-10 py-6 sm:py-8">
-            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Description</h2>
+          <div className="px-6 sm:px-10 py-6 sm:py-8" style={{ borderTop: "1px solid var(--theme-border)" }}>
+            <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{
+              color: "var(--theme-text)",
+              fontFamily: "var(--theme-font-heading)",
+            }}>Description</h2>
             {selectedProduct.description.includes("<") ? (
               <div
-                className="prose prose-sm sm:prose max-w-none text-gray-600"
+                className="prose prose-sm sm:prose max-w-none"
+                style={{ color: "var(--theme-text-muted)" }}
                 dangerouslySetInnerHTML={{ __html: selectedProduct.description }}
               />
             ) : (
-              <p className="text-sm sm:text-[15px] text-gray-600 leading-relaxed">
+              <p className="text-sm sm:text-[15px] leading-relaxed" style={{ color: "var(--theme-text-muted)" }}>
                 {selectedProduct.description}
               </p>
             )}
@@ -146,19 +165,23 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
       {/* Sélecteur de produits */}
       {products.length > 1 && (
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Nos Produits</h2>
+          <h2 className="text-lg font-bold mb-4" style={{
+            color: "var(--theme-text)",
+            fontFamily: "var(--theme-font-heading)",
+          }}>Nos Produits</h2>
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
             {products.map((product) => (
               <button
                 key={product.id}
                 onClick={() => { selectProduct(product); setActiveImageIndex(0); }}
-                className={`flex-shrink-0 w-28 sm:w-32 rounded-xl border-2 transition-all ${
-                  selectedProduct.id === product.id
-                    ? "border-emerald-600 shadow-md"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                className="flex-shrink-0 w-28 sm:w-32 rounded-xl border-2 transition-all"
+                style={{
+                  borderColor: selectedProduct.id === product.id ? "var(--theme-primary)" : "var(--theme-border)",
+                  borderRadius: "var(--theme-radius-card)",
+                  boxShadow: selectedProduct.id === product.id ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none",
+                }}
               >
-                <div className="relative w-full aspect-square rounded-t-lg overflow-hidden bg-gray-50">
+                <div className="relative w-full aspect-square rounded-t-lg overflow-hidden" style={{ background: "var(--theme-secondary)" }}>
                   <Image
                     src={product.images && product.images[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop"}
                     alt={product.name}
@@ -168,8 +191,8 @@ export default function ProductShowcase({ products, initialProductId }: ProductS
                   />
                 </div>
                 <div className="p-2 text-left">
-                  <p className="text-xs font-medium text-gray-900 truncate">{product.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs font-medium truncate" style={{ color: "var(--theme-text)" }}>{product.name}</p>
+                  <p className="text-xs" style={{ color: "var(--theme-text-muted)" }}>
                     {product.prices ? 
                       `${Object.values(product.prices)[0] || 0} ${Object.keys(product.prices)[0] || "EUR"}` 
                       : "N/A"}

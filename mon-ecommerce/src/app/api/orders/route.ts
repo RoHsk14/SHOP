@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { extractSubdomain } from "@/lib/host";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,19 +11,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
 
+    const host = request.headers.get("host") || "";
+    const shopSlug = extractSubdomain(host);
+    if (!shopSlug) {
+      return NextResponse.json({ error: "Boutique non identifiée" }, { status: 400 });
+    }
+
     const { data: product, error } = await supabase
       .from("products")
-      .select("prices")
+      .select("price")
       .eq("id", product_id)
+      .eq("shop_slug", shopSlug)
       .single();
 
     if (error || !product) {
       return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
     }
 
-    const prices = product.prices || {};
-    const productCurrency = Object.keys(prices)[0];
-    const unitPrice = Object.values(prices)[0] as number;
+    const unitPrice = product.price || 0;
     const realTotal = unitPrice * quantity;
 
     if (Math.abs(realTotal - total_price) > 0.01) {
@@ -33,10 +39,11 @@ export async function POST(request: NextRequest) {
       product_id,
       quantity,
       total_price: realTotal,
-      currency: productCurrency,
+      currency: "XOF",
       customer_name,
       customer_phone,
       customer_address: customer_address || "",
+      shop_slug: shopSlug,
     };
 
     const { data: order, error: insertError } = await supabase
@@ -54,7 +61,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         customer_name,
         total_price: realTotal,
-        currency: productCurrency,
+        currency: "XOF",
+        shop_slug: shopSlug,
       }),
     }).catch(() => {});
 

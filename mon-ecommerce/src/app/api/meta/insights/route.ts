@@ -1,18 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createSupabaseServerClient(request);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const shopSlug = searchParams.get("shop_slug");
+
+    if (!shopSlug) {
+      return NextResponse.json({ error: "shop_slug requis" }, { status: 400 });
+    }
+
     const { data: settings } = await supabase
       .from("settings")
       .select("meta_access_token, meta_business_account_id")
+      .eq("shop_slug", shopSlug)
       .single();
 
     if (!settings?.meta_access_token || !settings?.meta_business_account_id) {
       return NextResponse.json({ error: "Meta access token or business account not configured" }, { status: 400 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
     const days = searchParams.get("days") || "7";
     const since = searchParams.get("since");
     const until = searchParams.get("until");

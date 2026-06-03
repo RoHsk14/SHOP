@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const headers = columns && Array.isArray(columns) ? columns.map(sanitize) : [
       "Date", "Nom du client", "Téléphone", "Adresse", "Quartier",
-      "Produit", "Quantité", "Total", "Devise", "Statut",
+      "Produit", "Quantité", "Total", "Devise", "Statut", "Pays",
     ];
 
     const sheetInfo = await sheets.spreadsheets.get({

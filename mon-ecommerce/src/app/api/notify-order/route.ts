@@ -10,11 +10,12 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { customer_name, total_price, currency } = await req.json();
+    const { customer_name, total_price, currency, shop_slug } = await req.json();
 
-    const { data: devices } = await supabase
-      .from("admin_devices")
-      .select("push_token");
+    let devicesQuery = supabase.from("admin_devices").select("push_token");
+    if (shop_slug) devicesQuery = devicesQuery.eq("shop_slug", shop_slug);
+
+    const { data: devices } = await devicesQuery;
 
     if (!devices || devices.length === 0) {
       return NextResponse.json({ sent: 0 });

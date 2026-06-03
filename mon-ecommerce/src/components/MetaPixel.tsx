@@ -2,17 +2,21 @@
 
 import Script from "next/script";
 import { useState, useEffect } from "react";
-import { FB_PIXEL_ID } from "@/lib/metaPixel";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function MetaPixel({ pixelId }: { pixelId?: string }) {
   const [dbPixelId, setDbPixelId] = useState<string | null>(null);
+  const params = useParams();
+  const subdomain = params?.subdomain as string | undefined;
 
   useEffect(() => {
     const fetchPixelId = async () => {
+      if (!subdomain) return;
       const { data } = await supabase
         .from("settings")
         .select("pixel_id")
+        .eq("shop_slug", subdomain)
         .single();
       
       if (data?.pixel_id) {
@@ -20,12 +24,12 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
       }
     };
 
-    if (!pixelId && !FB_PIXEL_ID) {
+    if (!pixelId) {
       fetchPixelId();
     }
-  }, [pixelId]);
+  }, [pixelId, subdomain]);
 
-  const id = pixelId || dbPixelId || FB_PIXEL_ID;
+  const id = pixelId || dbPixelId;
 
   if (!id) return null;
 

@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Boutique E-commerce",
-  description: "Boutique en ligne Cash On Delivery",
+  title: "ShopEazy",
+  description: "Créez votre boutique e-commerce en quelques minutes",
 };
 
 export default function RootLayout({

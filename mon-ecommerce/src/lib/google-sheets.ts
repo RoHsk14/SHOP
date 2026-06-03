@@ -31,3 +31,17 @@ export function extractSheetId(sheet_url: string): string | null {
   if (!/^[a-zA-Z0-9_-]{30,}$/.test(id)) return null;
   return id;
 }
+
+export function getServiceAccountEmail(): string | null {
+  try {
+    const credentials = JSON.parse(
+      require("fs").readFileSync(
+        require("path").join(process.cwd(), "service-account-key.json"),
+        "utf-8"
+      )
+    );
+    return credentials.client_email || null;
+  } catch {
+    return null;
+  }
+}

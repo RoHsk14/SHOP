@@ -1,20 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { extractSubdomain } from "@/lib/host";
 
 export async function POST(request: NextRequest) {
   try {
-    const { event_name, event_data } = await request.json();
+    const { event_name, event_data, shop_slug: bodySlug } = await request.json();
 
     if (!event_name) {
       return NextResponse.json({ error: "event_name required" }, { status: 400 });
     }
 
-    const { data: settings } = await supabase
+    const host = request.headers.get("host") || "";
+    const shopSlug = bodySlug || extractSubdomain(host);
+
+    if (!shopSlug) {
+      return NextResponse.json({ error: "shop_slug requis" }, { status: 400 });
+    }
+
+    const supabase = createSupabaseServerClient(request);
+
+    const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("pixel_id, capi_token")
+      .eq("shop_slug", shopSlug)
       .single();
 
-    if (!settings?.pixel_id || !settings?.capi_token) {
+    if (settingsError || !settings?.pixel_id || !settings?.capi_token) {
       return NextResponse.json({ error: "Pixel ID or CAPI token not configured" }, { status: 400 });
     }
 

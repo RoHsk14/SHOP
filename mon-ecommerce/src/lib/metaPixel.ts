@@ -5,8 +5,6 @@ declare global {
   }
 }
 
-export const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
-
 function trackCAPI(event_name: string, data?: Record<string, any>) {
   fetch("/api/meta/events", {
     method: "POST",
