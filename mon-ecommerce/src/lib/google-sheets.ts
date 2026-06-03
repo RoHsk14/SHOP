@@ -34,6 +34,14 @@ export function extractSheetId(sheet_url: string): string | null {
 
 export function getServiceAccountEmail(): string | null {
   try {
+    // Priority 1: read from env var (required on Vercel / production)
+    const envKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    if (envKey) {
+      const credentials = JSON.parse(envKey);
+      return credentials.client_email || null;
+    }
+
+    // Priority 2: local file fallback (development only)
     const credentials = JSON.parse(
       require("fs").readFileSync(
         require("path").join(process.cwd(), "service-account-key.json"),
