@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 export default function AdminLoginRedirect() {
   useEffect(() => {
-    window.location.replace("http://localhost:3000/login");
+    window.location.replace(`${window.location.origin}/login`);
   }, []);
 
   return (

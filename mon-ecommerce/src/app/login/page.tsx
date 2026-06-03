@@ -18,7 +18,7 @@ export default function LoginPage() {
   const redirectToDashboard = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
-    if (!userId) { window.location.replace("http://localhost:3000/login"); return; }
+    if (!userId) { window.location.replace(`${window.location.origin}/login`); return; }
 
     const { data: settings } = await supabase
       .from("settings")
@@ -31,9 +31,9 @@ export default function LoginPage() {
     } else if (settings && settings.length === 1) {
       const slug = settings[0].shop_slug;
       if (settings[0].owner_name && settings[0].shop_name) {
-        window.location.replace(`http://localhost:3000/boutiques/${slug}/admin`);
+        window.location.replace(`${window.location.origin}/boutiques/${slug}/admin`);
       } else {
-        window.location.replace(`http://localhost:3000/boutiques/${slug}/onboarding`);
+        window.location.replace(`${window.location.origin}/boutiques/${slug}/onboarding`);
       }
     } else {
       const newSlug = await generateUniqueShopSlug(supabase);
@@ -47,7 +47,7 @@ export default function LoginPage() {
       } else {
         await supabase.from("settings").insert([{ shop_slug: newSlug, user_id: userId }]);
       }
-      window.location.replace(`http://localhost:3000/boutiques/${newSlug}/onboarding`);
+      window.location.replace(`${window.location.origin}/boutiques/${newSlug}/onboarding`);
     }
   };
 
@@ -60,13 +60,13 @@ export default function LoginPage() {
   }, []);
 
   const redirectToAdmin = (slug: string) => {
-    window.location.replace(`http://localhost:3000/boutiques/${slug}/admin`);
+    window.location.replace(`${window.location.origin}/boutiques/${slug}/admin`);
   };
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: "http://localhost:3000/auth/callback" },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   };
 

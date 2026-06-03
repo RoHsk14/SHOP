@@ -6,13 +6,13 @@ import { generateUniqueShopSlug } from "@/lib/slug";
 
 export default function AuthCallbackPage() {
   const redirectTo = (slug: string, path: string) => {
-    window.location.replace(`http://localhost:3000/boutiques/${slug}${path}`);
+    window.location.replace(`${window.location.origin}/boutiques/${slug}${path}`);
   };
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
-        window.location.replace("http://localhost:3000/login?error=session_not_found");
+        window.location.replace(`${window.location.origin}/login?error=session_not_found`);
         return;
       }
 
@@ -31,7 +31,7 @@ export default function AuthCallbackPage() {
       }
 
       if (settings && settings.length > 1) {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
         return;
       }
 
@@ -39,7 +39,7 @@ export default function AuthCallbackPage() {
       await supabase.from("settings").insert([{ shop_slug: newSlug, user_id: session.user.id }]);
       redirectTo(newSlug, "/onboarding");
     }).catch(() => {
-      window.location.replace("http://localhost:3000/login?error=callback_error");
+      window.location.replace(`${window.location.origin}/login?error=callback_error`);
     });
   }, []);
 

@@ -15,7 +15,7 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: "http://localhost:3000/auth/callback" },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   };
 
@@ -45,7 +45,7 @@ export default function SignupPage() {
     }
 
     if (authData.session) {
-      window.location.replace(`http://localhost:3000/boutiques/${shopSlug}/onboarding`);
+      window.location.replace(`${window.location.origin}/boutiques/${shopSlug}/onboarding`);
     } else {
       setSuccess(true);
       setMessage("Vérifiez votre boîte email pour confirmer votre inscription. Vous pourrez ensuite vous connecter.");

@@ -166,7 +166,18 @@ export default function CustomizePage() {
   };
 
   const openPreview = () => {
-    window.open(`http://${subdomain}.localhost:3000?preview=1`, "_blank");
+    const host = window.location.host;
+    const protocol = window.location.protocol;
+    let previewUrl = "";
+    if (host.includes("localhost") || host.includes("lvh.me")) {
+      const port = host.split(":")[1] ? `:${host.split(":")[1]}` : "";
+      previewUrl = `${protocol}//${subdomain}.localhost${port}?preview=1`;
+    } else {
+      const parts = host.split(".");
+      const apex = parts.length > 2 ? parts.slice(-2).join(".") : host;
+      previewUrl = `${protocol}//${subdomain}.${apex}?preview=1`;
+    }
+    window.open(previewUrl, "_blank");
   };
 
   if (loading) return (

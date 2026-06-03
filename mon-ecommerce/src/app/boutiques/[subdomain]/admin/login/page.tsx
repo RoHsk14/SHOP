@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         const slug = getCurrentSlug();
-        window.location.replace(`http://localhost:3000/boutiques/${slug}/admin`);
+        window.location.replace(`${window.location.origin}/boutiques/${slug}/admin`);
       }
     });
   }, []);
@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: "http://localhost:3000/auth/callback" },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   };
 
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
       setMessageType("error");
     } else {
       const slug = getCurrentSlug();
-      window.location.replace(`http://localhost:3000/boutiques/${slug}/admin`);
+      window.location.replace(`${window.location.origin}/boutiques/${slug}/admin`);
     }
     setLoading(false);
   };

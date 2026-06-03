@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
   try { stateData = JSON.parse(stateParam); } catch { stateData = {}; }
   
   const shopSlug = stateData.shopSlug || stateParam;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const host = request.headers.get("host") || "";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const baseUrl = `${protocol}://${host}`;
   const isPopup = stateData.mode === "popup";
 
   if (error) {

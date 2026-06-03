@@ -25,6 +25,19 @@ export default function AdminLayout({
   const [fullUserEmail, setFullUserEmail] = useState("");
   const [creatingShop, setCreatingShop] = useState(false);
 
+  const getShopUrl = (slug: string) => {
+    if (typeof window === "undefined") return "";
+    const host = window.location.host;
+    const protocol = window.location.protocol;
+    if (host.includes("localhost") || host.includes("lvh.me")) {
+      const port = host.split(":")[1] ? `:${host.split(":")[1]}` : "";
+      return `${protocol}//${slug}.localhost${port}`;
+    }
+    const parts = host.split(".");
+    const apex = parts.length > 2 ? parts.slice(-2).join(".") : host;
+    return `${protocol}//${slug}.${apex}`;
+  };
+
   // Normaliser le pathname : /boutiques/{slug}/admin → /admin
   const barePath = pathname.replace(/^\/boutiques\/[^\/]+/, "") || "/";
   const slug = pathname.match(/^\/boutiques\/([^\/]+)/)?.[1] || "";
@@ -34,7 +47,7 @@ export default function AdminLayout({
     let cancelled = false;
     const safetyTimeout = setTimeout(() => {
       if (!cancelled) {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
         setChecking(false);
       }
     }, 10000);
@@ -43,7 +56,7 @@ export default function AdminLayout({
       clearTimeout(safetyTimeout);
       if (cancelled) return;
       if (!session) {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
         setChecking(false);
         return;
       }
@@ -83,13 +96,13 @@ export default function AdminLayout({
     }).catch(() => {
       clearTimeout(safetyTimeout);
       if (!cancelled) {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
         setChecking(false);
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
       }
       if (session?.user?.email) {
         setUserEmail(session.user.email.split("@")[0]);
@@ -114,7 +127,7 @@ export default function AdminLayout({
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) {
-        window.location.replace("http://localhost:3000/login");
+        window.location.replace(`${window.location.origin}/login`);
         return;
       }
       
@@ -127,7 +140,7 @@ export default function AdminLayout({
       if (error) throw error;
       
       // Redirect to onboarding of the new boutique
-      window.location.replace(`http://localhost:3000/boutiques/${newSlug}/onboarding`);
+      window.location.replace(`${window.location.origin}/boutiques/${newSlug}/onboarding`);
     } catch (e: any) {
       console.error("Error creating new shop:", e);
       alert("Erreur lors de la création de la boutique : " + e.message);
@@ -248,7 +261,7 @@ export default function AdminLayout({
 
           {shopSlug && (
             <a
-              href={`http://${shopSlug}.localhost:3000`}
+              href={getShopUrl(shopSlug)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setSidebarOpen(false)}

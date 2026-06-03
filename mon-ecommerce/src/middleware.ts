@@ -15,15 +15,18 @@ export function middleware(request: NextRequest) {
   // ── 3. Sous-domaine (détecté avant les guardrails) ──
   let subdomain: string | null = null;
 
-  for (const suffix of ["localhost", "lvh.me"]) {
-    if (host.endsWith(suffix)) {
-      if (host === suffix) {
-        subdomain = null;
-      } else {
-        subdomain = host.slice(0, host.length - suffix.length - 1);
-      }
-      break;
-    }
+  const parts = host.split(".");
+  if (parts.length > 2) {
+    // Si on a plus de 2 parties (ex: boutique.shopeazy.com), la première partie est le sous-domaine
+    subdomain = parts[0];
+  } else if (parts.length === 2 && parts[1] === "localhost") {
+    // Cas spécial pour sous.localhost
+    subdomain = parts[0];
+  }
+
+  // Ignorer 'www' comme sous-domaine
+  if (subdomain === "www") {
+    subdomain = null;
   }
 
   console.log("[DEBUG] Sous-domaine:", subdomain);

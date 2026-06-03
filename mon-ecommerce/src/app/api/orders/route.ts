@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
     if (insertError) throw insertError;
 
     // Send push notification to admin devices (non-bloquant)
-    fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/notify-order`, {
+    const protocol = host.includes("localhost") ? "http" : "https";
+    const baseUrl = `${protocol}://${host}`;
+    fetch(`${baseUrl}/api/notify-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
