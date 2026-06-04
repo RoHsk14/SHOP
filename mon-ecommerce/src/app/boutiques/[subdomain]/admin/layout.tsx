@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
+import { toast } from "sonner";
+import { playNotificationSound } from "@/lib/notification-sound";
 
 export default function AdminLayout({
   children,
@@ -24,6 +26,30 @@ export default function AdminLayout({
   const [userShops, setUserShops] = useState<{ shop_slug: string; shop_name: string }[]>([]);
   const [fullUserEmail, setFullUserEmail] = useState("");
   const [creatingShop, setCreatingShop] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("admin-theme");
+    if (stored === "dark") {
+      setDark(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleDark = () => {
+    setDark(prev => {
+      const next = !prev;
+      if (next) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("admin-theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("admin-theme", "light");
+      }
+      return next;
+    });
+  };
 
   const getShopUrl = (slug: string) => {
     if (typeof window === "undefined") return "";
@@ -89,6 +115,17 @@ export default function AdminLayout({
         if (shopsData) {
           setUserShops(shopsData);
         }
+
+        // Check if user is super admin
+        const { data: adminCheck } = await supabase
+          .from("settings")
+          .select("is_super_admin")
+          .eq("user_id", currentUserId)
+          .eq("is_super_admin", true)
+          .maybeSingle();
+        if (adminCheck) {
+          setIsSuperAdmin(true);
+        }
       } catch (e) {
         console.error("[AdminLayout] Erreur settings:", e);
       }
@@ -130,16 +167,15 @@ export default function AdminLayout({
         window.location.replace(`${window.location.origin}/login`);
         return;
       }
-      
+
       const newSlug = await generateUniqueShopSlug(supabase);
-      
+
       const { error } = await supabase
         .from("settings")
         .insert([{ shop_slug: newSlug, user_id: userId }]);
-        
+
       if (error) throw error;
-      
-      // Redirect to onboarding of the new boutique
+
       window.location.replace(`${window.location.origin}/boutiques/${newSlug}/onboarding`);
     } catch (e: any) {
       console.error("Error creating new shop:", e);
@@ -149,12 +185,49 @@ export default function AdminLayout({
     }
   };
 
+  // Realtime subscription pour les nouvelles commandes
+  useEffect(() => {
+    if (!slug) return;
+
+    const channel = supabase
+      .channel(`orders-${slug}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: `shop_slug=eq.${slug}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as any;
+          playNotificationSound();
+          toast.success(
+            `Nouvelle commande ! ${newOrder.customer_name} — ${newOrder.total_price?.toLocaleString()} XOF`,
+            {
+              action: {
+                label: "Voir",
+                onClick: () =>
+                  (window.location.href = `/boutiques/${slug}/admin/orders`),
+              },
+              duration: 6000,
+            }
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [slug]);
+
   if (barePath === "/admin/login") return <>{children}</>;
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -177,7 +250,7 @@ export default function AdminLayout({
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm"
+        className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center shadow-sm"
       >
         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -185,7 +258,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-40
-        w-64 bg-white border-r border-gray-200 flex flex-col h-screen
+        w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
@@ -202,23 +275,23 @@ export default function AdminLayout({
               </svg>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold text-gray-900 truncate">
+              <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                 {shopName || slug}
               </h1>
-              <p className="text-[10px] text-gray-400">ShopEazy</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">ShopEazy</p>
             </div>
           </Link>
         </div>
 
         {/* User profile summary */}
-        <div className="mx-4 mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
+        <div className="mx-4 mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100/50 dark:border-emerald-800/30">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
               {userEmail.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-gray-900 truncate">{userEmail}</p>
-              <p className="text-[10px] text-emerald-600 font-medium truncate">{ownerName || "Propriétaire"}</p>
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{userEmail}</p>
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium truncate">{ownerName || "Propriétaire"}</p>
             </div>
             <div className="ml-auto w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200"></div>
           </div>
@@ -226,7 +299,7 @@ export default function AdminLayout({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
+          <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 mb-2">
             Principal
           </p>
           {menuItems.map((item) => {
@@ -238,20 +311,20 @@ export default function AdminLayout({
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
                   active
-                    ? "bg-emerald-50 text-emerald-700 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                 }`}
               >
                 <div className={`p-1.5 rounded-lg transition-all ${
                   active
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
+                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:group-hover:bg-gray-700 dark:group-hover:text-gray-200"
                 }`}>
                   <item.icon className="w-4 h-4" />
                 </div>
                 <span className="font-medium text-sm">{item.label}</span>
                 {active && (
-                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                   </div>
                 )}
@@ -265,17 +338,17 @@ export default function AdminLayout({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-gray-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
             >
-              <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200 group-hover:text-emerald-700 transition-all">
+              <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200 group-hover:text-emerald-700 transition-all dark:bg-emerald-900/50 dark:text-emerald-400 dark:group-hover:bg-emerald-900/70">
                 <Store className="w-4 h-4" />
               </div>
               <span className="font-medium text-sm">Voir ma boutique</span>
-              <span className="ml-auto text-[10px] text-emerald-500 font-medium bg-emerald-50 group-hover:bg-emerald-100 px-2 py-0.5 rounded-full">↗</span>
+              <span className="ml-auto text-[10px] text-emerald-500 font-medium bg-emerald-50 group-hover:bg-emerald-100 px-2 py-0.5 rounded-full dark:bg-emerald-900/30 dark:group-hover:bg-emerald-900/50">↗</span>
             </a>
           )}
 
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2 mt-4">
+          <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 mb-2 mt-4">
             Configuration
           </p>
           {secondaryItems.map((item) => {
@@ -287,20 +360,20 @@ export default function AdminLayout({
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
                   active
-                    ? "bg-emerald-50 text-emerald-700 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                 }`}
               >
                 <div className={`p-1.5 rounded-lg transition-all ${
                   active
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
+                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:group-hover:bg-gray-700 dark:group-hover:text-gray-200"
                 }`}>
                   <item.icon className="w-4 h-4" />
                 </div>
                 <span className="font-medium text-sm">{item.label}</span>
                 {active && (
-                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <div className="ml-auto w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                   </div>
                 )}
@@ -311,12 +384,21 @@ export default function AdminLayout({
         </nav>
 
         {/* Footer sidebar */}
-        <div className="p-3 border-t border-gray-100">
+        <div className="p-3 border-t border-gray-100 dark:border-gray-700 space-y-1">
+          <button
+            onClick={toggleDark}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all group dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+          >
+            <div className="p-1.5 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-700 transition-all dark:bg-gray-700 dark:text-gray-400 dark:group-hover:bg-gray-600 dark:group-hover:text-gray-200">
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </div>
+            <span className="font-medium text-sm">{dark ? "Mode clair" : "Mode sombre"}</span>
+          </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all group dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
           >
-            <div className="p-1.5 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
+            <div className="p-1.5 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-red-100 group-hover:text-red-600 transition-all dark:bg-gray-700 dark:text-gray-400 dark:group-hover:bg-red-900/50 dark:group-hover:text-red-400">
               <LogOut className="w-4 h-4" />
             </div>
             <span className="font-medium text-sm">Déconnexion</span>
@@ -327,18 +409,18 @@ export default function AdminLayout({
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/20 dark:bg-black/60 z-30 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main content */}
-      <main className="flex-1 min-h-screen lg:ml-64 flex flex-col">
+      <main className="flex-1 min-h-screen lg:ml-64 flex flex-col dark:bg-gray-950">
         {/* Top Header */}
-        <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative">
+        <header className="h-16 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500 ml-12 lg:ml-0">
-              Boutique active : <span className="font-semibold text-gray-900">{shopName || slug}</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 ml-12 lg:ml-0">
+              Boutique active : <span className="font-semibold text-gray-900 dark:text-gray-100">{shopName || slug}</span>
             </span>
           </div>
 
@@ -359,22 +441,22 @@ export default function AdminLayout({
                     className="fixed inset-0 z-40 bg-transparent" 
                     onClick={() => setProfileModalOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-5 z-50 animate-fade-in origin-top-right">
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-700 p-5 z-50 animate-fade-in origin-top-right">
                     {/* Owner details */}
                     <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
                         {userEmail.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{ownerName || "Propriétaire"}</p>
-                        <p className="text-xs text-gray-500 truncate">{fullUserEmail}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{ownerName || "Propriétaire"}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{fullUserEmail}</p>
                       </div>
                     </div>
 
                     {/* Shops listing */}
                     <div className="pt-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Mes boutiques</span>
+                        <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Mes boutiques</span>
                         <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
                           {userShops.length}
                         </span>
@@ -390,8 +472,8 @@ export default function AdminLayout({
                               onClick={() => setProfileModalOpen(false)}
                               className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 isCurrent
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-100/50"
-                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-100/50 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/30"
+                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                               }`}
                             >
                               <span className="truncate">{shop.shop_name || shop.shop_slug}</span>
@@ -417,23 +499,34 @@ export default function AdminLayout({
                     </div>
 
                     {/* Quick actions */}
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
-                      <Link 
-                        href={`/boutiques/${slug}/admin/settings`} 
-                        onClick={() => setProfileModalOpen(false)}
-                        className="text-gray-500 hover:text-gray-900 transition-colors font-medium"
-                      >
-                        Paramètres
-                      </Link>
-                      <button 
-                        onClick={() => {
-                          setProfileModalOpen(false);
-                          handleLogout();
-                        }}
-                        className="text-red-500 hover:text-red-700 font-semibold transition-colors"
-                      >
-                        Déconnexion
-                      </button>
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <Link 
+                          href={`/boutiques/${slug}/admin/settings`} 
+                          onClick={() => setProfileModalOpen(false)}
+                          className="text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                        >
+                          Paramètres
+                        </Link>
+                        <button 
+                          onClick={() => {
+                            setProfileModalOpen(false);
+                            handleLogout();
+                          }}
+                          className="text-red-500 hover:text-red-700 font-semibold transition-colors"
+                        >
+                          Déconnexion
+                        </button>
+                      </div>
+                      {isSuperAdmin && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setProfileModalOpen(false)}
+                          className="w-full text-center bg-gray-900 text-gray-200 hover:bg-gray-800 hover:text-white rounded-lg px-3 py-2 font-semibold transition-all"
+                        >
+                          Super Admin
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </>
