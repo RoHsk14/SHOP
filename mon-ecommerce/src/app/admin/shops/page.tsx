@@ -14,12 +14,28 @@ export default function SuperAdminShops() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const { data: settingsData } = await supabase
-          .from("settings")
-          .select("id, shop_slug, shop_name, owner_name, shop_country, created_at")
-          .order("created_at", { ascending: false });
+        console.log("[Shops] Fetching all data...");
 
-        if (!settingsData) { setLoading(false); return; }
+        const { data, error } = await supabase.rpc("get_admin_shops");
+        if (error) {
+          console.error("[Shops] RPC error, falling back to direct query:", error);
+        }
+
+        if (data) {
+          console.log("[Shops] RPC returned", data.length, "shops");
+          setShops(data);
+          setLoading(false);
+          return;
+        }
+
+        const { data: settingsData, error: settingsError } = await supabase
+          .from("settings")
+          .select("*");
+
+        console.log("[Shops] Settings:", settingsData?.length, "rows", settingsError);
+        if (settingsError) console.error("[Shops] Settings error:", settingsError);
+
+        if (!settingsData || settingsData.length === 0) { setLoading(false); return; }
 
         const { data: allOrders } = await supabase
           .from("orders")
@@ -174,7 +190,6 @@ export default function SuperAdminShops() {
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-gray-700">{shop.owner_name || "—"}</p>
-                    {shop.shop_country && <p className="text-[10px] text-gray-400">{shop.shop_country}</p>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-sm font-semibold text-gray-900">{shop.products_count}</span>
