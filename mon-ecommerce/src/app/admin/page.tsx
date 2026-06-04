@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Store, ShoppingCart, Package, TrendingUp, DollarSign, ChevronRight } from "lucide-react";
+import { Store, ShoppingCart, Package, TrendingUp, ChevronRight } from "lucide-react";
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState({
@@ -18,27 +18,18 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [shopsRes, ordersRes, productsRes] = await Promise.all([
+        const [settingsRes, ordersRes, productsRes] = await Promise.all([
           supabase.from("settings").select("id", { count: "exact", head: true }),
-          supabase.from("orders").select("id, total_price, customer_name, product_id, created_at, shop_slug", { count: "exact" }).order("created_at", { ascending: false }).limit(10),
-          supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_slug", ""),
+          supabase.from("orders").select("total_price", { count: "exact" }),
+          supabase.from("products").select("id", { count: "exact", head: true }),
         ]);
 
-        const { data: allProducts, count: productCount } = await supabase
-          .from("products")
-          .select("id", { count: "exact", head: true });
-
-        const { data: ordersData, count: orderCount } = await supabase
-          .from("orders")
-          .select("total_price")
-          .order("created_at", { ascending: false });
-
-        const revenue = (ordersData || []).reduce((sum, o) => sum + (o.total_price || 0), 0);
+        const revenue = (ordersRes.data || []).reduce((sum, o) => sum + (o.total_price || 0), 0);
 
         setStats({
-          shops: shopsRes.count || 0,
-          orders: orderCount || 0,
-          products: productCount || 0,
+          shops: settingsRes.count || 0,
+          orders: ordersRes.count || 0,
+          products: productsRes.count || 0,
           revenue,
         });
 
