@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ShoppingCart, ExternalLink, ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 export default function SuperAdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -81,7 +80,6 @@ export default function SuperAdminOrders() {
                 <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Produit</th>
                 <th className="text-right px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Total</th>
                 <th className="text-right px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="text-right px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -104,14 +102,6 @@ export default function SuperAdminOrders() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString("fr-FR")}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/boutiques/${order.shop_slug}/admin/orders`}
-                      className="p-1.5 hover:bg-emerald-50 rounded-lg text-gray-400 hover:text-emerald-600 transition-all inline-block"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Link>
                   </td>
                 </tr>
               ))}
