@@ -16,6 +16,37 @@ export default function SuperAdminShops() {
       try {
         console.log("[Shops] Fetching all data...");
 
+        const { data: allOrders } = await supabase
+          .from("orders")
+          .select("total_price, shop_slug, product_id");
+
+        const { data: allProducts } = await supabase
+          .from("products")
+          .select("id, name, shop_slug");
+
+        // Compute top product from raw orders
+        const productOrders = new Map<string, { count: number; name: string; shop_slug: string }>();
+        (allOrders || []).forEach(o => {
+          if (o.product_id) {
+            const p = productOrders.get(o.product_id) || { count: 0, name: "", shop_slug: "" };
+            p.count++;
+            productOrders.set(o.product_id, p);
+          }
+        });
+        (allProducts || []).forEach(p => {
+          const existing = productOrders.get(p.id);
+          if (existing) {
+            existing.name = p.name;
+            existing.shop_slug = p.shop_slug;
+          }
+        });
+        let topProductData = { name: "", shop_slug: "", count: 0 };
+        productOrders.forEach((v) => {
+          if (v.count > topProductData.count) topProductData = v;
+        });
+        setTopProduct(topProductData.name ? topProductData : null);
+
+        // Try RPC for shops + topShop
         const { data, error } = await supabase.rpc("get_admin_shops");
         if (error) {
           console.error("[Shops] RPC error, falling back to direct query:", error);
@@ -23,7 +54,13 @@ export default function SuperAdminShops() {
 
         if (data) {
           console.log("[Shops] RPC returned", data.length, "shops");
-          setShops(data);
+          // Compute topShop from RPC result
+          let top = { shop_slug: "", revenue: 0 };
+          (data as any[]).forEach((s: any) => {
+            if ((s.revenue || 0) > top.revenue) top = { shop_slug: s.shop_slug, revenue: s.revenue || 0 };
+          });
+          setTopShop(top.shop_slug ? top : null);
+          setShops(data as any[]);
           setLoading(false);
           return;
         }
@@ -37,50 +74,20 @@ export default function SuperAdminShops() {
 
         if (!settingsData || settingsData.length === 0) { setLoading(false); return; }
 
-        const { data: allOrders } = await supabase
-          .from("orders")
-          .select("total_price, shop_slug, product_id");
-
-        const { data: allProducts } = await supabase
-          .from("products")
-          .select("id, name, shop_slug");
-
         const ordersByShop = new Map<string, { count: number; revenue: number }>();
-        const productOrders = new Map<string, { count: number; name: string; shop_slug: string }>();
 
         (allOrders || []).forEach(o => {
           const s = ordersByShop.get(o.shop_slug) || { count: 0, revenue: 0 };
           s.count++;
           s.revenue += o.total_price || 0;
           ordersByShop.set(o.shop_slug, s);
-
-          if (o.product_id) {
-            const p = productOrders.get(o.product_id) || { count: 0, name: "", shop_slug: "" };
-            p.count++;
-            productOrders.set(o.product_id, p);
-          }
-        });
-
-        (allProducts || []).forEach(p => {
-          const existing = productOrders.get(p.id);
-          if (existing) {
-            existing.name = p.name;
-            existing.shop_slug = p.shop_slug;
-          }
         });
 
         let topShopData = { shop_slug: "", revenue: 0 };
         ordersByShop.forEach((v, k) => {
           if (v.revenue > topShopData.revenue) topShopData = { shop_slug: k, revenue: v.revenue };
         });
-
-        let topProductData = { name: "", shop_slug: "", count: 0 };
-        productOrders.forEach((v) => {
-          if (v.count > topProductData.count) topProductData = v;
-        });
-
         setTopShop(topShopData.shop_slug ? topShopData : null);
-        setTopProduct(topProductData.name ? topProductData : null);
 
         const productsByShop = new Map<string, number>();
         (allProducts || []).forEach(p => {
