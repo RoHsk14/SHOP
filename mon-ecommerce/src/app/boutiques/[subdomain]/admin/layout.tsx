@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -27,18 +27,6 @@ export default function AdminLayout({
  const [fullUserEmail, setFullUserEmail] = useState("");
  const [creatingShop, setCreatingShop] = useState(false);
  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
- const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("admin-dark");
-    if (stored === "true") setDark(true);
-  }, []);
-
-  const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem("admin-dark", next ? "true" : "false");
-  };
 
  const getShopUrl = (slug: string) => {
  if (typeof window === "undefined") return "";
@@ -236,57 +224,7 @@ export default function AdminLayout({
 
   return (
   <>
-  <style>{dark ? `
-.admin-sidebar{background:#030712;border-color:#1f2937}
-.admin-sidebar a,.admin-sidebar button,.admin-sidebar span,.admin-sidebar h1,.admin-sidebar p{transition:color .15s}
-.admin-sidebar .logo-text{color:#f9fafb}
-.admin-sidebar .logo-sub{color:#6b7280}
-.admin-sidebar .nav-item{color:#9ca3af}
-.admin-sidebar .nav-item:hover{background:#1f2937;color:#e5e7eb}
-.admin-sidebar .nav-active{background:rgba(6,78,59,.3);color:#34d399}
-.admin-sidebar .nav-icon{background:#1f2937;color:#9ca3af}
-.admin-sidebar .nav-icon-active{background:rgba(6,78,59,.5);color:#34d399}
-.admin-sidebar .nav-icon:hover{background:#374151;color:#e5e7eb}
-.admin-sidebar .section-label{color:#6b7280}
-.admin-sidebar .profile-box{background:rgba(6,78,59,.2);border-color:rgba(6,78,59,.3)}
-.admin-sidebar .profile-name{color:#f9fafb}
-.admin-sidebar .profile-role{color:#34d399}
-.admin-sidebar .store-link{color:#9ca3af}
-.admin-sidebar .store-link:hover{background:rgba(6,78,59,.3);color:#34d399}
-.admin-sidebar .store-icon{background:rgba(6,78,59,.5);color:#34d399}
-.admin-sidebar .store-icon:hover{background:rgba(6,78,59,.7)}
-.admin-sidebar .store-badge{background:rgba(6,78,59,.3)}
-.admin-sidebar .store-badge:hover{background:rgba(6,78,59,.5)}
-.admin-sidebar .active-dot{background:rgba(6,78,59,.5)}
-.admin-header{background:#030712;border-color:#1f2937}
-.admin-header .header-text{color:#9ca3af}
-.admin-header .header-shop{color:#f9fafb}
-.admin-main{background:#030712}
-.admin-overlay{background:rgba(0,0,0,.6)}
-.admin-profile-dropdown{background:#1f2937;border-color:#374151;box-shadow:0 25px 50px rgba(0,0,0,.5)}
-.admin-profile-dropdown .profile-divider{border-color:#374151}
-.admin-profile-dropdown .profile-name{color:#f9fafb}
-.admin-profile-dropdown .profile-email{color:#9ca3af}
-.admin-profile-dropdown .shop-link{color:#9ca3af}
-.admin-profile-dropdown .shop-link:hover{background:#374151;color:#e5e7eb}
-.admin-profile-dropdown .shop-active{background:rgba(6,78,59,.3);color:#34d399;border-color:rgba(6,78,59,.3)}
-.admin-profile-dropdown .shop-count{background:rgba(6,78,59,.5);color:#34d399}
-.admin-profile-dropdown .settings-link{color:#9ca3af}
-.admin-profile-dropdown .settings-link:hover{color:#e5e7eb}
-.admin-profile-dropdown .logout-btn{color:#f87171}
-.admin-profile-dropdown .logout-btn:hover{color:#fca5a5}
-.admin-profile-dropdown .super-admin-btn{background:#374151;color:#d1d5db}
-.admin-profile-dropdown .super-admin-btn:hover{background:#4b5563;color:#f9fafb}
-.admin-footer-btn{color:#9ca3af}
-.admin-footer-btn:hover{background:#1f2937;color:#e5e7eb}
-.admin-footer-icon{background:#1f2937;color:#9ca3af}
-.admin-footer-icon:hover{background:#374151;color:#e5e7eb}
-.admin-red-btn{color:#9ca3af}
-.admin-red-btn:hover{background:rgba(127,29,29,.3);color:#f87171}
-.admin-red-icon{background:#1f2937;color:#9ca3af}
-.admin-red-icon:hover{background:rgba(127,29,29,.5);color:#f87171}
-.admin-mobile-btn{background:#1f2937;border-color:#374151}
-` : ''}</style>
+
   <div className="min-h-screen bg-gray-50 flex">
   {/* Mobile menu button */}
   <button
@@ -424,18 +362,9 @@ export default function AdminLayout({
 
  </nav>
 
- {/* Footer sidebar */}
-  <div className="p-3 border-t border-gray-100 space-y-1">
-  <button
-  onClick={toggleDark}
-  className="admin-footer-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all group"
-  >
-  <div className="admin-footer-icon p-1.5 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-700 transition-all">
-  {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-  </div>
-  <span className="font-medium text-sm">{dark ? "Mode clair" : "Mode sombre"}</span>
-  </button>
-  <button
+  {/* Footer sidebar */}
+   <div className="p-3 border-t border-gray-100 space-y-1">
+   <button
   onClick={handleLogout}
   className="admin-red-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all group"
   >

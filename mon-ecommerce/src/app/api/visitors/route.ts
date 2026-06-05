@@ -6,7 +6,7 @@ import { extractSubdomain } from "@/lib/host";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { session_id, path, type } = body;
+    const { session_id, path } = body;
 
     const host = request.headers.get("host") || "";
     const shopSlug = extractSubdomain(host) || "default";
@@ -20,16 +20,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "session_id required" }, { status: 400 });
     }
 
-    const { error } = await serviceSupabase.from("visitors").upsert({
+    const now = new Date().toISOString();
+
+    const { error } = await serviceSupabase.from("visitors").insert({
       session_id,
       ip_address: ip,
       user_agent: userAgent,
       referrer,
       path: path || "/",
       is_online: true,
-      last_seen: new Date().toISOString(),
+      last_seen: now,
       shop_slug: shopSlug,
-    }, { onConflict: "session_id", ignoreDuplicates: false });
+    });
 
     if (error) {
       console.error("Visitor tracking error:", error);
@@ -76,8 +78,8 @@ export async function GET(request: NextRequest) {
       let query = supabase
         .from("visitors")
         .select("*", { count: "exact", head: true })
-        .gte("created_at", startDate)
-        .lte("created_at", endDate);
+        .gte("last_seen", startDate)
+        .lte("last_seen", endDate);
 
       if (shopSlug) query = query.eq("shop_slug", shopSlug);
 
@@ -85,6 +87,39 @@ export async function GET(request: NextRequest) {
 
       if (error) throw error;
       return NextResponse.json({ visits: count || 0 });
+    }
+
+    if (type === "bucketed") {
+      const startDate = start || new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+      const endDate = end || new Date().toISOString();
+      const bucket = searchParams.get("bucket") || "hour";
+
+      let query = supabase
+        .from("visitors")
+        .select("last_seen")
+        .gte("last_seen", startDate)
+        .lte("last_seen", endDate)
+        .order("last_seen", { ascending: true });
+
+      if (shopSlug) query = query.eq("shop_slug", shopSlug);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      for (const row of data || []) {
+        const d = new Date(row.last_seen);
+        let label: string;
+        if (bucket === "hour") {
+          label = `${d.getHours().toString().padStart(2, "0")} h`;
+        } else {
+          label = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+        }
+        counts[label] = (counts[label] || 0) + 1;
+      }
+
+      const buckets = Object.entries(counts).map(([label, count]) => ({ label, count }));
+      return NextResponse.json({ buckets });
     }
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });

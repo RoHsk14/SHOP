@@ -56,6 +56,8 @@ export default function AdminDashboard() {
   const [onlineVisitors, setOnlineVisitors] = useState(0);
   const [totalVisits, setTotalVisits] = useState(0);
   const [prevVisits, setPrevVisits] = useState(0);
+  const [visitorBuckets, setVisitorBuckets] = useState<{ label: string; count: number }[]>([]);
+  const [prevVisitorBuckets, setPrevVisitorBuckets] = useState<{ label: string; count: number }[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'visits' | 'sales' | 'orders' | 'conversion'>('sales');
 
   useEffect(() => { if (subdomain) fetchData(); }, [dateFilter, customDateRange, subdomain]);
@@ -74,6 +76,34 @@ export default function AdminDashboard() {
     const interval = setInterval(fetchOnlineVisitors, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Polling visites en temps réel (aujourd'hui / hier)
+  useEffect(() => {
+    const isToday = dateFilter === 'today' || dateFilter === 'yesterday';
+    if (!isToday || !subdomain) return;
+
+    const fetchTodayBuckets = async () => {
+      const { start, end } = getDateRange();
+      const prevEnd = new Date(new Date(start).getTime() - 1);
+      const prevStart = new Date(prevEnd.getTime() - (new Date(end).getTime() - new Date(start).getTime()));
+
+      const [bucketRes, prevBucketRes] = await Promise.all([
+        fetch(`/api/visitors?type=bucketed&bucket=hour&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&shop_slug=${subdomain}`),
+        fetch(`/api/visitors?type=bucketed&bucket=hour&start=${encodeURIComponent(prevStart.toISOString())}&end=${encodeURIComponent(prevEnd.toISOString())}&shop_slug=${subdomain}`)
+      ]);
+      if (bucketRes.ok) {
+        const data = await bucketRes.json();
+        setVisitorBuckets(data.buckets || []);
+      }
+      if (prevBucketRes.ok) {
+        const data = await prevBucketRes.json();
+        setPrevVisitorBuckets(data.buckets || []);
+      }
+    };
+
+    const interval = setInterval(fetchTodayBuckets, 15_000);
+    return () => clearInterval(interval);
+  }, [dateFilter, subdomain]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -116,12 +146,17 @@ export default function AdminDashboard() {
     const prevEnd = new Date(startDate.getTime() - 1);
     const prevStart = new Date(prevEnd.getTime() - duration);
 
-    const [ordersRes, prevOrdersRes, productsRes, visitsRes, prevVisitsRes] = await Promise.all([
+    const isToday = dateFilter === 'today' || dateFilter === 'yesterday';
+    const bucket = isToday ? "hour" : "day";
+
+    const [ordersRes, prevOrdersRes, productsRes, visitsRes, prevVisitsRes, bucketRes, prevBucketRes] = await Promise.all([
       supabase.from("orders").select("*").eq("shop_slug", subdomain).gte("created_at", start).lte("created_at", end).order("created_at", { ascending: false }),
       supabase.from("orders").select("*").eq("shop_slug", subdomain).gte("created_at", prevStart.toISOString()).lte("created_at", prevEnd.toISOString()),
       supabase.from("products").select("*").eq("shop_slug", subdomain),
       fetch(`/api/visitors?type=visits&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&shop_slug=${subdomain}`),
-      fetch(`/api/visitors?type=visits&start=${encodeURIComponent(prevStart.toISOString())}&end=${encodeURIComponent(prevEnd.toISOString())}&shop_slug=${subdomain}`)
+      fetch(`/api/visitors?type=visits&start=${encodeURIComponent(prevStart.toISOString())}&end=${encodeURIComponent(prevEnd.toISOString())}&shop_slug=${subdomain}`),
+      fetch(`/api/visitors?type=bucketed&bucket=${bucket}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&shop_slug=${subdomain}`),
+      fetch(`/api/visitors?type=bucketed&bucket=${bucket}&start=${encodeURIComponent(prevStart.toISOString())}&end=${encodeURIComponent(prevEnd.toISOString())}&shop_slug=${subdomain}`)
     ]);
     
     setOrders(ordersRes.data || []);
@@ -135,6 +170,14 @@ export default function AdminDashboard() {
     if (prevVisitsRes.ok) {
       const prevVisitsData = await prevVisitsRes.json();
       setPrevVisits(prevVisitsData.visits || 0);
+    }
+    if (bucketRes.ok) {
+      const bucketData = await bucketRes.json();
+      setVisitorBuckets(bucketData.buckets || []);
+    }
+    if (prevBucketRes.ok) {
+      const prevBucketData = await prevBucketRes.json();
+      setPrevVisitorBuckets(prevBucketData.buckets || []);
     }
     
     setLoading(false);
@@ -178,15 +221,13 @@ export default function AdminDashboard() {
     const isToday = dateFilter === 'today' || dateFilter === 'yesterday';
     
     if (isToday) {
-      for (let i = 0; i < 24; i += 2) {
+      for (let i = 0; i < 24; i++) {
         const label = `${i.toString().padStart(2, '0')} h`;
         const currHourOrders = filteredOrders.filter(o => {
-          const h = new Date(o.created_at).getHours();
-          return h === i || h === i + 1;
+          return new Date(o.created_at).getHours() === i;
         });
         const prevHourOrders = prevOrders.filter(o => {
-          const h = new Date(o.created_at).getHours();
-          return h === i || h === i + 1;
+          return new Date(o.created_at).getHours() === i;
         });
 
         let current = 0, previous = 0;
@@ -197,8 +238,8 @@ export default function AdminDashboard() {
           current = currHourOrders.length;
           previous = prevHourOrders.length;
         } else if (selectedMetric === 'visits') {
-          current = currHourOrders.length * 3 + Math.floor(Math.random() * 5);
-          previous = prevHourOrders.length * 3 + Math.floor(Math.random() * 5);
+          current = visitorBuckets.find(b => b.label === label)?.count || 0;
+          previous = prevVisitorBuckets.find(b => b.label === label)?.count || 0;
         } else {
           current = currHourOrders.length > 0 ? 100 : 0;
           previous = prevHourOrders.length > 0 ? 100 : 0;
@@ -212,6 +253,7 @@ export default function AdminDashboard() {
         const prevD = new Date(d); prevD.setDate(prevD.getDate() - days);
         const currDayOrders = filteredOrders.filter(o => o.created_at?.startsWith(d.toISOString().split('T')[0]));
         const prevDayOrders = prevOrders.filter(o => o.created_at?.startsWith(prevD.toISOString().split('T')[0]));
+        const label = d.toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' });
 
         let current = 0, previous = 0;
         if (selectedMetric === 'sales') {
@@ -221,13 +263,10 @@ export default function AdminDashboard() {
           current = currDayOrders.length;
           previous = prevDayOrders.length;
         } else if (selectedMetric === 'visits') {
-          current = currDayOrders.length * 5;
-          previous = prevDayOrders.length * 5;
+          current = visitorBuckets.find(b => b.label === label)?.count || 0;
+          previous = prevVisitorBuckets.find(b => b.label === label)?.count || 0;
         }
-        data.push({ 
-          label: d.toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' }), 
-          current, previous 
-        });
+        data.push({ label, current, previous });
       }
     }
     return data;
