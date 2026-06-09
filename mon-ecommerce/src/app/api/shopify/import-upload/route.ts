@@ -17,10 +17,9 @@ export async function POST(request: NextRequest) {
 
     // Ensure bucket exists (server-side with service role)
     const bucketName = "shopify-imports";
-    try {
-      await serviceSupabase.storage.getBucket(bucketName);
-    } catch {
-      await serviceSupabase.storage.createBucket(bucketName, { public: true });
+    const { error: createError } = await serviceSupabase.storage.createBucket(bucketName, { public: true });
+    if (createError && !createError.message?.includes("already exists")) {
+      throw new Error("Impossible de créer le bucket: " + createError.message);
     }
 
     // Upload ZIP to storage
