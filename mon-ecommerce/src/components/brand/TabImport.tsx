@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, FileJson, Check, AlertCircle, Archive, Code, ImageIcon, FileText, Globe } from "lucide-react";
+import { Upload, FileJson, Check, AlertCircle, Archive, Code, ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
-import { supabase } from "@/lib/supabase";
 
 interface ShopifySettings {
   colors: Record<string, string>;
@@ -56,30 +55,13 @@ export default function TabImport({
   const importZipViaApi = async (zipFile: File) => {
     setLoading(true);
     try {
-      // 1. Upload ZIP to Supabase Storage
-      const bucketName = "shopify-imports";
-      try {
-        await supabase.storage.getBucket(bucketName);
-      } catch {
-        await supabase.storage.createBucket(bucketName, { public: true });
-      }
+      const formData = new FormData();
+      formData.append("file", zipFile);
+      formData.append("shopSlug", shopSlug || "");
 
-      const zipPath = `${shopSlug || "default"}/${Date.now()}-${zipFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(zipPath, zipFile, { upsert: true });
-
-      if (uploadError) throw new Error("Erreur d'upload: " + uploadError.message);
-
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(zipPath);
-
-      // 2. Process via the import API
-      const res = await fetch("/api/shopify/import", {
+      const res = await fetch("/api/shopify/import-upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zipUrl: publicUrl, shopSlug }),
+        body: formData,
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
