@@ -113,6 +113,40 @@ export interface LayoutSettings {
   productsPerRow?: 2 | 3 | 4;
   showSearch?: boolean;
   showCart?: boolean;
+  showBreadcrumbs?: boolean;
+  showFilters?: boolean;
+  showWishlist?: boolean;
+  showBadges?: boolean;
+  stickyAddToCart?: boolean;
+}
+
+export interface BackToTopSettings {
+  enabled: boolean;
+  position: "left" | "right";
+  backgroundColor: string;
+  iconColor: string;
+  borderRadius: string;
+}
+
+export interface NewsletterPopupSettings {
+  enabled: boolean;
+  title: string;
+  content: string;
+  image: string;
+  delay: number;
+  exitIntent: boolean;
+  backgroundColor: string;
+  textColor: string;
+  buttonBg: string;
+  buttonText: string;
+}
+
+export interface AnnouncementMessage {
+  id: string;
+  text: string;
+  url?: string;
+  background?: string;
+  text_color?: string;
 }
 
 export interface BlockSetting {

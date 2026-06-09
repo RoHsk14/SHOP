@@ -120,19 +120,29 @@ export default function TabImport({
     for (const file of fileArray) {
       if (file.name.endsWith(".zip")) {
         const zip = await JSZip.loadAsync(file);
-        const schemaFile = zip.file("config/settings_schema.json") || zip.file("settings_schema.json");
-        const dataFile = zip.file("config/settings_data.json") || zip.file("settings_data.json");
 
-        if (schemaFile) {
-          const text = await schemaFile.async("text");
+        const findFile = (name: string): string | null => {
+          const exact = zip.file(name);
+          if (exact) return name;
+          const match = Object.keys(zip.files).find(
+            (k) => !zip.files[k].dir && k.endsWith("/" + name)
+          );
+          return match || null;
+        };
+
+        const schemaPath = findFile("settings_schema.json");
+        const dataPath = findFile("settings_data.json");
+
+        if (schemaPath) {
+          const text = await zip.file(schemaPath)!.async("text");
           try {
             schema = JSON.parse(text);
             schema = Array.isArray(schema) ? schema : [schema];
             schemaRef.current = schema;
           } catch { throw new Error("settings_schema.json invalide dans le ZIP"); }
         }
-        if (dataFile) {
-          const text = await dataFile.async("text");
+        if (dataPath) {
+          const text = await zip.file(dataPath)!.async("text");
           try {
             const parsed = JSON.parse(text);
             data = parsed.current || parsed;
