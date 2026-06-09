@@ -8,7 +8,7 @@ import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
 import type { ThemeConfig, NavMenu } from "@/lib/theme-config";
 import SectionEditor from "@/components/SectionEditor";
 import { sectionComponents } from "@/components/sections";
-import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload } from "lucide-react";
+import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload, ArrowUpFromLine, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { worldCurrencies } from "@/lib/currencies";
 
@@ -24,6 +24,8 @@ import TabLayout from "@/components/brand/TabLayout";
 import TabCustomCss from "@/components/brand/TabCustomCss";
 import TabCookies from "@/components/brand/TabCookies";
 import TabImport from "@/components/brand/TabImport";
+import TabBackToTop from "@/components/brand/TabBackToTop";
+import TabNewsletter from "@/components/brand/TabNewsletter";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
 
 interface Tab {
@@ -43,6 +45,8 @@ const TABS: Tab[] = [
   { id: "menu", label: "Menu", icon: <Menu className="w-4 h-4" /> },
   { id: "layout", label: "Mise en page", icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: "sections", label: "Sections", icon: <Layers className="w-4 h-4" /> },
+  { id: "backtotop", label: "Retour haut", icon: <ArrowUpFromLine className="w-4 h-4" /> },
+  { id: "newsletter", label: "Newsletter", icon: <Mail className="w-4 h-4" /> },
   { id: "css", label: "CSS", icon: <Code className="w-4 h-4" /> },
   { id: "cookies", label: "Cookies", icon: <Cookie className="w-4 h-4" /> },
   { id: "import", label: "Import Shopify", icon: <Upload className="w-4 h-4" /> },
@@ -364,6 +368,20 @@ export default function CustomizePage() {
           />
         )}
 
+        {activeTab === "backtotop" && (
+          <TabBackToTop
+            settings={config.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }}
+            onChange={(backToTop) => updateConfig((prev) => ({ ...prev, backToTop }))}
+          />
+        )}
+
+        {activeTab === "newsletter" && (
+          <TabNewsletter
+            settings={config.newsletterPopup || { enabled: false, title: "Restez informé", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }}
+            onChange={(newsletterPopup) => updateConfig((prev) => ({ ...prev, newsletterPopup }))}
+          />
+        )}
+
         {activeTab === "css" && (
           <TabCustomCss
             customCss={config.customCss || { desktop: "", mobile: "" }}
@@ -379,7 +397,25 @@ export default function CustomizePage() {
         )}
 
         {activeTab === "import" && (
-          <TabImport onImport={handleShopifyImport} />
+          <TabImport
+            onImport={handleShopifyImport}
+            onApplyCss={(css) => {
+              const updateWithCss = (prev: ThemeConfig | null) => {
+                const config = prev || buildDefaultConfig(selectedThemeId);
+                return {
+                  ...config,
+                  customCss: {
+                    desktop: (config.customCss?.desktop || "") + "\n/* Shopify theme CSS */\n" + css,
+                    mobile: config.customCss?.mobile || "",
+                  },
+                };
+              };
+              updateConfig(updateWithCss as any);
+              setActiveTab("css");
+              toast.success("CSS ajouté — vérifiez l'onglet CSS puis publiez");
+            }}
+            shopSlug={subdomain}
+          />
         )}
       </div>
     </div>

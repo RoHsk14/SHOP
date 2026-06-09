@@ -95,7 +95,7 @@ export default function TabLayout({
       <hr className="border-gray-100" />
 
       <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Visibilité des éléments</h3>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Visibilité globale</h3>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -104,7 +104,7 @@ export default function TabLayout({
               onChange={(e) => onChange({ ...layout, showSearch: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
             />
-            <span className="text-sm text-gray-700">Icône recherche</span>
+            <span className="text-sm text-gray-700">Recherche</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -113,7 +113,52 @@ export default function TabLayout({
               onChange={(e) => onChange({ ...layout, showCart: e.target.checked })}
               className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
             />
-            <span className="text-sm text-gray-700">Icône panier</span>
+            <span className="text-sm text-gray-700">Panier</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.showBreadcrumbs !== false}
+              onChange={(e) => onChange({ ...layout, showBreadcrumbs: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Fil d'Ariane</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.showFilters !== false}
+              onChange={(e) => onChange({ ...layout, showFilters: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Filtres produits</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.showWishlist !== false}
+              onChange={(e) => onChange({ ...layout, showWishlist: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Wishlist (❤️)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.showBadges !== false}
+              onChange={(e) => onChange({ ...layout, showBadges: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Badges (Nouveau, Promo)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.stickyAddToCart !== false}
+              onChange={(e) => onChange({ ...layout, stickyAddToCart: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Panier collant (produit)</span>
           </label>
         </div>
       </div>

@@ -12,6 +12,8 @@ import CustomCssInjector from "@/components/CustomCssInjector";
 import CookieBanner from "@/components/CookieBanner";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
+import BackToTop from "@/components/BackToTop";
+import NewsletterPopup from "@/components/NewsletterPopup";
 import { ShopProvider } from "@/lib/shop-context";
 import { CheckCircle } from "lucide-react";
 
@@ -78,6 +80,8 @@ export default function ThankYouPage() {
           <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
           <CustomCssInjector customCss={config.customCss} />
           <CookieBanner settings={config.cookie} />
+          <BackToTop settings={config?.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
+          <NewsletterPopup settings={config?.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />
         </>
       )}
       <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontFamily: "var(--theme-font-body, inherit)", fontSize: config ? `${config.global.fonts.baseSize}px` : undefined } as React.CSSProperties}>

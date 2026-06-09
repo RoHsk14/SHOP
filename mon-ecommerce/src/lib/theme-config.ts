@@ -173,6 +173,8 @@ export interface ThemeConfig {
   background?: BackgroundSettings;
   cookie?: CookieSettings;
   customCss?: CustomCss;
+  backToTop?: BackToTopSettings;
+  newsletterPopup?: NewsletterPopupSettings;
 }
 
 export type ConfigValue = string | number | boolean | string[] | Record<string, any>;
@@ -266,9 +268,13 @@ export function getDefaultSections(themeId?: string): SectionSetting[] {
       id: "announcement",
       type: "announcement-bar",
       settings: {
-        text: "🚚 Livraison gratuite pour toute commande — Profitez-en !",
+        speed: 4000,
         background: "#059669",
-        text_color: "#ffffff",
+        messages: [
+          { id: "a1", text: "🚚 Livraison gratuite pour toute commande — Profitez-en !", url: "" },
+          { id: "a2", text: "🎉 Nouveautés chaque semaine — Découvrez nos derniers produits", url: "/products" },
+          { id: "a3", text: "💳 Paiement sécurisé — 100% satisfait ou remboursé", url: "" },
+        ],
       },
     },
     {
@@ -410,6 +416,11 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
       productsPerRow: 3,
       showSearch: true,
       showCart: true,
+      showBreadcrumbs: true,
+      showFilters: true,
+      showWishlist: true,
+      showBadges: true,
+      stickyAddToCart: true,
     },
     menus: [
       {
@@ -456,6 +467,25 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
     customCss: {
       desktop: "",
       mobile: "",
+    },
+    backToTop: {
+      enabled: true,
+      position: "right",
+      backgroundColor: "#1f2937",
+      iconColor: "#ffffff",
+      borderRadius: "9999px",
+    },
+    newsletterPopup: {
+      enabled: false,
+      title: "Restez informé",
+      content: "Inscrivez-vous pour recevoir nos offres exclusives et nouveautés.",
+      image: "",
+      delay: 10,
+      exitIntent: true,
+      backgroundColor: "#ffffff",
+      textColor: "#111827",
+      buttonBg: "#059669",
+      buttonText: "#ffffff",
     },
     sections: getDefaultSections(themeId),
   };

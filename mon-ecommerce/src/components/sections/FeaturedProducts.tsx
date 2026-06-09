@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
+import { useShop } from "@/lib/shop-context";
 
 interface Props {
   settings: {
@@ -14,6 +15,7 @@ interface Props {
 
 export default function FeaturedProducts({ settings }: Props) {
   const { subdomain } = useParams<{ subdomain: string }>();
+  const { config } = useShop();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ export default function FeaturedProducts({ settings }: Props) {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} subdomain={subdomain} />
+              <ProductCard key={product.id} product={product} subdomain={subdomain} showBadges={config?.layout?.showBadges !== false} showWishlist={config?.layout?.showWishlist !== false} />
             ))}
           </div>
         )}
