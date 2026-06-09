@@ -58,8 +58,9 @@ export default function TabImport({
     try {
       // 1. Upload ZIP to Supabase Storage
       const bucketName = "shopify-imports";
-      const { data: bucket } = await supabase.storage.getBucket(bucketName);
-      if (!bucket) {
+      try {
+        await supabase.storage.getBucket(bucketName);
+      } catch {
         await supabase.storage.createBucket(bucketName, { public: true });
       }
 

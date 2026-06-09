@@ -99,8 +99,9 @@ export async function POST(request: NextRequest) {
     });
 
     const bucketName = "shopify-imports";
-    const { data: bucket } = await serviceSupabase.storage.getBucket(bucketName);
-    if (!bucket) {
+    try {
+      await serviceSupabase.storage.getBucket(bucketName);
+    } catch {
       await serviceSupabase.storage.createBucket(bucketName, { public: true });
     }
 
