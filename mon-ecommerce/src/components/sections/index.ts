@@ -6,6 +6,8 @@ import TextWithImage from "./TextWithImage";
 import Video from "./Video";
 import Newsletter from "./Newsletter";
 import Footer from "./Footer";
+import Spacer from "./Spacer";
+import CustomHtml from "./CustomHtml";
 
 export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "announcement-bar": AnnouncementBar,
@@ -16,4 +18,6 @@ export const sectionComponents: Record<string, React.ComponentType<any>> = {
   video: Video,
   newsletter: Newsletter,
   footer: Footer,
+  spacer: Spacer,
+  "custom-html": CustomHtml,
 };

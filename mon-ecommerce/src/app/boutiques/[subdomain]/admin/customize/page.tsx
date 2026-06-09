@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { themes } from "@/lib/themes";
-import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections } from "@/lib/theme-config";
 import type { ThemeConfig, NavMenu } from "@/lib/theme-config";
-import SectionEditor from "@/components/SectionEditor";
+import SectionEditor, { PageSectionEditor } from "@/components/SectionEditor";
 import { sectionComponents } from "@/components/sections";
 import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload, ArrowUpFromLine, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -293,7 +293,7 @@ export default function CustomizePage() {
                   fontFamily: config.global.fonts.body,
                   fontSize: `${config.global.fonts.baseSize}px`,
                 } as React.CSSProperties}>
-                  {config.sections.filter(s => !s.disabled).map((section) => {
+                  {getPageSections(config, "/").filter(s => !s.disabled).map((section) => {
                     const Component = sectionComponents[section.type];
                     if (!Component) return null;
                     return <Component key={section.id} settings={section.settings} blocks={section.blocks} shopName={shopName} social={config.social} menus={config.menus} brand={config.brand} />;
@@ -360,9 +360,10 @@ export default function CustomizePage() {
         )}
 
         {activeTab === "sections" && (
-          <SectionEditor
-            sections={config.sections}
-            onChange={(sections) => updateConfig((prev) => ({ ...prev, sections }))}
+          <PageSectionEditor
+            pagesProp={config.pages || []}
+            defaultSections={config.sections}
+            onChange={(pages, sections) => updateConfig((prev) => ({ ...prev, pages, sections }))}
             onSaveSection={handleSaveSection}
             savingSectionIndex={savingSectionIndex}
           />

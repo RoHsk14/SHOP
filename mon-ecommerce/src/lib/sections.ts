@@ -5,7 +5,7 @@ export interface SectionDefinition {
   name: string;
   description: string;
   icon: string;
-  category: "header" | "content" | "footer" | "social";
+  category: "header" | "content" | "footer" | "social" | "advanced";
   settings: SettingDefinition[];
   blocks?: {
     type: string;
@@ -74,10 +74,25 @@ export const sectionRegistry: SectionDefinition[] = [
       { key: "speed", label: "Intervalle (ms)", type: "number", default: 5000 },
       { key: "full_width", label: "Pleine largeur", type: "boolean", default: true },
       { key: "height", label: "Hauteur", type: "select", default: "medium", options: [
-        { label: "Petite", value: "small" },
-        { label: "Moyenne", value: "medium" },
-        { label: "Grande", value: "large" },
+        { label: "Petite (300px)", value: "small" },
+        { label: "Moyenne (500px)", value: "medium" },
+        { label: "Grande (700px)", value: "large" },
+        { label: "Plein écran", value: "fullscreen" },
       ]},
+      { key: "text_position", label: "Position du texte", type: "select", default: "center", options: [
+        { label: "Centré", value: "center" },
+        { label: "Gauche", value: "left" },
+        { label: "Droite", value: "right" },
+        { label: "Bas gauche", value: "bottom-left" },
+        { label: "Bas droite", value: "bottom-right" },
+      ]},
+      { key: "text_max_width", label: "Largeur max du texte (px)", type: "number", default: 600 },
+      { key: "arrow_style", label: "Style des flèches", type: "select", default: "outline", options: [
+        { label: "Contour", value: "outline" },
+        { label: "Plein", value: "filled" },
+        { label: "Aucune", value: "none" },
+      ]},
+      { key: "show_dots", label: "Indicateurs (dots)", type: "boolean", default: true },
     ],
     blocks: [
       {
@@ -85,24 +100,57 @@ export const sectionRegistry: SectionDefinition[] = [
         name: "Slide",
         settings: [
           { key: "image", label: "Image", type: "image", default: "" },
+          { key: "image_mobile", label: "Image mobile (optionnelle)", type: "image", default: "" },
           { key: "heading", label: "Titre", type: "text", default: "" },
+          { key: "heading_size", label: "Taille du titre", type: "select", default: "large", options: [
+            { label: "Petit", value: "small" },
+            { label: "Moyen", value: "medium" },
+            { label: "Grand", value: "large" },
+            { label: "Très grand", value: "xlarge" },
+          ]},
           { key: "subheading", label: "Sous-titre", type: "text", default: "" },
           { key: "button_text", label: "Texte du bouton", type: "text", default: "" },
           { key: "button_url", label: "Lien du bouton", type: "url", default: "" },
+          { key: "button_style", label: "Style du bouton", type: "select", default: "solid", options: [
+            { label: "Plein", value: "solid" },
+            { label: "Contour", value: "outline" },
+            { label: "Sans fond", value: "ghost" },
+          ]},
+          { key: "button_color", label: "Couleur du bouton", type: "color", default: "#ffffff" },
           { key: "text_color", label: "Couleur du texte", type: "color", default: "#ffffff" },
-          { key: "overlay_opacity", label: "Opacité du fond", type: "number", default: 0.3 },
+          { key: "text_align", label: "Alignement du texte", type: "select", default: "center", options: [
+            { label: "Gauche", value: "left" },
+            { label: "Centré", value: "center" },
+            { label: "Droite", value: "right" },
+          ]},
+          { key: "overlay_color", label: "Couleur du fond overlay", type: "color", default: "#000000" },
+          { key: "overlay_opacity", label: "Opacité du fond overlay", type: "number", default: 0.3 },
         ],
       },
     ],
-    defaultSettings: { autoplay: true, speed: 5000, full_width: true, height: "medium" },
+    defaultSettings: {
+      autoplay: true,
+      speed: 5000,
+      full_width: true,
+      height: "medium",
+      text_position: "center",
+      text_max_width: 600,
+      arrow_style: "outline",
+      show_dots: true,
+    },
     defaultBlocks: [
       {
         image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop",
         heading: "Nouvelle Collection",
+        heading_size: "large",
         subheading: "Découvrez nos derniers produits",
         button_text: "Voir la collection",
         button_url: "/products",
+        button_style: "solid",
+        button_color: "#ffffff",
         text_color: "#ffffff",
+        text_align: "center",
+        overlay_color: "#000000",
         overlay_opacity: 0.3,
       },
     ],
@@ -220,6 +268,30 @@ export const sectionRegistry: SectionDefinition[] = [
       { type: "links", settings: { title: "Liens" } },
       { type: "newsletter", settings: { title: "Newsletter", content: "Recevez nos offres exclusives" } },
     ],
+  },
+  {
+    type: "spacer",
+    name: "Espacement",
+    description: "Espacement vertical personnalisable",
+    icon: "Minus",
+    category: "advanced",
+    settings: [
+      { key: "height", label: "Hauteur (px)", type: "number", default: 60 },
+      { key: "mobile_height", label: "Hauteur mobile (px)", type: "number", default: 40 },
+    ],
+    defaultSettings: { height: 60, mobile_height: 40 },
+  },
+  {
+    type: "custom-html",
+    name: "HTML personnalisé",
+    description: "Code HTML/CSS/JS libre",
+    icon: "Code",
+    category: "advanced",
+    settings: [
+      { key: "html", label: "Contenu HTML", type: "textarea", default: "" },
+      { key: "full_width", label: "Pleine largeur", type: "boolean", default: false },
+    ],
+    defaultSettings: { html: "", full_width: false },
   },
 ];
 

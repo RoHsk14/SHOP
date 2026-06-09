@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { SectionSetting, BlockSetting, SettingDefinition } from "@/lib/theme-config";
+import type { SectionSetting, BlockSetting, SettingDefinition, PageConfig } from "@/lib/theme-config";
 import { sectionRegistry, getSectionDefinition, createDefaultSection } from "@/lib/sections";
-import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff, Settings2, Save } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff, Settings2, Save, FilePlus, X, Copy } from "lucide-react";
 import ImagePicker from "@/components/ImagePicker";
 
 interface Props {
@@ -244,6 +244,7 @@ function SectionEditorPanel({ section, def, onUpdate, onDelete, onSave, saving }
 
 export default function SectionEditor({ sections, onChange, onSaveSection, savingSectionIndex }: Props) {
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [pageFilter, setPageFilter] = useState<string>("all");
 
   const moveSection = (index: number, direction: "up" | "down") => {
     const newSections = [...sections];
@@ -287,10 +288,10 @@ export default function SectionEditor({ sections, onChange, onSaveSection, savin
           {showAddMenu && (
             <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50 max-h-64 overflow-y-auto">
               {sectionRegistry
-                .filter((s) => !sections.find((existing) => existing.type === s.type && existing.id.startsWith(s.type)))
+                .filter((s) => pageFilter === "all" || s.category === pageFilter)
                 .map((s) => (
                   <button
-                    key={s.type}
+                    key={s.type + '-' + Date.now()}
                     onClick={() => addSection(s.type)}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
@@ -298,8 +299,8 @@ export default function SectionEditor({ sections, onChange, onSaveSection, savin
                     <p className="text-xs text-gray-400">{s.category}</p>
                   </button>
                 ))}
-              {sectionRegistry.filter((s) => !sections.find((existing) => existing.type === s.type)).length === 0 && (
-                <p className="px-3 py-2 text-xs text-gray-400">Toutes les sections sont ajoutées</p>
+              {sectionRegistry.length === 0 && (
+                <p className="px-3 py-2 text-xs text-gray-400">Aucune section disponible</p>
               )}
             </div>
           )}
@@ -340,6 +341,162 @@ export default function SectionEditor({ sections, onChange, onSaveSection, savin
       {sections.length === 0 && (
         <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
           <p className="text-sm text-gray-400">Aucune section. Cliquez sur "Ajouter" pour commencer.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* PageSectionEditor — manages per-page section layouts */
+interface PageEditorProps {
+  pagesProp: PageConfig[];
+  defaultSections: SectionSetting[];
+  onChange: (pages: PageConfig[], defaultSections: SectionSetting[]) => void;
+  onSaveSection?: (index: number) => Promise<void>;
+  savingSectionIndex?: number | null;
+}
+
+export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSaveSection, savingSectionIndex }: PageEditorProps) {
+  const [activePageId, setActivePageId] = useState("__default__");
+  const pages = pagesProp || [];
+
+  const activePage = activePageId === "__default__"
+    ? { id: "__default__", slug: "/", name: "Page d'accueil", sections: defaultSections }
+    : pages.find((p) => p.id === activePageId);
+
+  const setActiveSections = (sections: SectionSetting[]) => {
+    if (activePageId === "__default__") {
+      onChange(pages, sections);
+    } else {
+      onChange(
+        pages.map((p) => (p.id === activePageId ? { ...p, sections } : p)),
+        defaultSections
+      );
+    }
+  };
+
+  const addPage = () => {
+    const name = `Page ${pages.length + 1}`;
+    const slug = `/page-${pages.length + 1}`;
+    const newPage: PageConfig = {
+      id: `page-${Date.now()}`,
+      slug,
+      name,
+      sections: [
+        { id: "announcement", type: "announcement-bar", settings: { speed: 4000, background: "#059669", messages: [{ id: "a1", text: "🚚 Livraison gratuite !", url: "" }] } },
+        { id: "header", type: "header", settings: { sticky: true, logo_url: "", logo_max_width: 140, navigation_style: "inline", menu_items: [{ label: "Accueil", url: "/" }, { label: "Produits", url: "/products" }] } },
+        { id: "footer", type: "footer", settings: { show_payment_methods: true } },
+      ],
+    };
+    onChange([...pages, newPage], defaultSections);
+    setActivePageId(newPage.id);
+  };
+
+  const duplicatePage = () => {
+    if (!activePage || activePageId === "__default__") return;
+    const newPage: PageConfig = {
+      ...activePage,
+      id: `page-${Date.now()}`,
+      name: `${activePage.name} (copie)`,
+      slug: `${activePage.slug}-copy`,
+      sections: activePage.sections.map((s) => ({
+        ...s,
+        id: `${s.type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        blocks: s.blocks?.map((b) => ({ ...b, id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` })),
+      })),
+    };
+    onChange([...pages, newPage], defaultSections);
+    setActivePageId(newPage.id);
+  };
+
+  const deletePage = (id: string) => {
+    if (window.confirm("Supprimer cette page ?")) {
+      onChange(pages.filter((p) => p.id !== id), defaultSections);
+      setActivePageId("__default__");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Page selector */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-1 overflow-x-auto pb-1">
+          <button
+            onClick={() => setActivePageId("__default__")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+              activePageId === "__default__"
+                ? "bg-gray-900 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+            }`}
+          >
+            🏠 Accueil
+          </button>
+          {pages.map((p) => (
+            <span key={p.id} className="flex items-center gap-0.5">
+              <button
+                onClick={() => setActivePageId(p.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                  activePageId === p.id
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                }`}
+              >
+                📄 {p.name}
+              </button>
+              {activePageId === p.id && (
+                <button
+                  onClick={() => deletePage(p.id)}
+                  className="p-1 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Supprimer"
+                >
+                  <X className="w-3 h-3 text-red-400" />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          {activePageId !== "__default__" && (
+            <button
+              onClick={duplicatePage}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Dupliquer la page"
+            >
+              <Copy className="w-4 h-4 text-gray-400" />
+            </button>
+          )}
+          <button
+            onClick={addPage}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            title="Nouvelle page"
+          >
+            <FilePlus className="w-3.5 h-3.5" />
+            Page
+          </button>
+        </div>
+      </div>
+
+      {/* Active page editor */}
+      {activePage ? (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              {activePageId === "__default__"
+                ? "Modifiez les sections de la page d'accueil"
+                : `Modifiez les sections de : ${activePage.name} (/${activePage.slug})`}
+            </p>
+          </div>
+          <SectionEditor
+            key={activePage.id}
+            sections={activePage.sections}
+            onChange={setActiveSections}
+            onSaveSection={onSaveSection}
+            savingSectionIndex={savingSectionIndex}
+          />
+        </div>
+      ) : (
+        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+          <p className="text-sm text-gray-400">Sélectionnez ou créez une page</p>
         </div>
       )}
     </div>

@@ -163,10 +163,18 @@ export interface SectionSetting {
   disabled?: boolean;
 }
 
+export interface PageConfig {
+  id: string;
+  slug: string;
+  name: string;
+  sections: SectionSetting[];
+}
+
 export interface ThemeConfig {
   global: GlobalSettings;
   layout: LayoutSettings;
   sections: SectionSetting[];
+  pages?: PageConfig[];
   menus?: NavMenu[];
   social?: SocialLinks;
   brand?: BrandAssets;
@@ -260,6 +268,11 @@ export function themeConfigToCSS(config: ThemeConfig): Record<string, string> {
     "--theme-container-width": config.layout?.containerWidth ? `${config.layout.containerWidth}px` : "1200px",
     "--theme-section-spacing": config.layout?.sectionSpacing === "compact" ? "2rem" : config.layout?.sectionSpacing === "spacious" ? "6rem" : "4rem",
   };
+}
+
+export function getPageSections(config: ThemeConfig, slug: string): SectionSetting[] {
+  const page = config.pages?.find((p) => p.slug === slug);
+  return page?.sections || config.sections;
 }
 
 export function getDefaultSections(themeId?: string): SectionSetting[] {
@@ -488,5 +501,23 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
       buttonText: "#ffffff",
     },
     sections: getDefaultSections(themeId),
+    pages: [
+      {
+        id: "home",
+        slug: "/",
+        name: "Accueil",
+        sections: getDefaultSections(themeId),
+      },
+      {
+        id: "products",
+        slug: "/products",
+        name: "Produits",
+        sections: [
+          { id: "announcement", type: "announcement-bar", settings: { speed: 4000, background: "#059669", messages: [{ id: "a1", text: "🚚 Livraison gratuite !", url: "" }] } },
+          { id: "header", type: "header", settings: { sticky: true, logo_url: "", logo_max_width: 140, navigation_style: "inline", menu_items: [{ label: "Accueil", url: "/" }, { label: "Produits", url: "/products" }] } },
+          { id: "footer", type: "footer", settings: { show_payment_methods: true } },
+        ],
+      },
+    ],
   };
 }

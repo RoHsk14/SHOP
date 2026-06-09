@@ -14,53 +14,38 @@ import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
-import { Eye } from "lucide-react";
+import HeadManager from "@/components/HeadManager";
 
-function getPreviewParam(): boolean {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("preview") === "1";
-}
-
-export default function StorefrontPage() {
-  const { subdomain } = useParams<{ subdomain: string }>();
+export default function CustomPage() {
+  const { subdomain, pageSlug } = useParams<{ subdomain: string; pageSlug: string }>();
   const [config, setConfig] = useState<ThemeConfig | null>(null);
   const [shopName, setShopName] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
     const fetchData = async () => {
-      try {
-        const { data: settings } = await supabase
-          .from("settings")
-          .select("theme_config, theme_id, shop_name")
-          .eq("shop_slug", subdomain)
-          .maybeSingle();
+      const { data: settings } = await supabase
+        .from("settings")
+        .select("theme_config, theme_id, shop_name")
+        .eq("shop_slug", subdomain)
+        .maybeSingle();
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (settings) {
-          setShopName(settings.shop_name || "");
-          if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-            setConfig(settings.theme_config as ThemeConfig);
-          } else {
-            setConfig(buildDefaultConfig(settings.theme_id || "classic"));
-          }
+      if (settings) {
+        setShopName(settings.shop_name || "");
+        if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
+          setConfig(settings.theme_config as ThemeConfig);
         } else {
-          setConfig(buildDefaultConfig("classic"));
+          setConfig(buildDefaultConfig(settings.theme_id || "classic"));
         }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Erreur de chargement");
       }
-      if (!cancelled) setLoading(false);
+      setLoading(false);
     };
     fetchData();
     return () => { cancelled = true; };
   }, [subdomain]);
-
-  const isPreview = getPreviewParam();
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--theme-bg, #f9fafb)" }}>
@@ -68,19 +53,11 @@ export default function StorefrontPage() {
     </div>
   );
 
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--theme-bg, #f9fafb)" }}>
-      <div className="text-center">
-        <p className="text-red-600 text-sm mb-2">{error}</p>
-        <a href="/" className="text-emerald-600 hover:underline text-sm">Recharger la page</a>
-      </div>
-    </div>
-  );
-
   if (!config) return null;
 
   const cssVars = themeConfigToCSS(config);
-  const pageSections = getPageSections(config, "/");
+  const pageSlugClean = pageSlug.startsWith("/") ? pageSlug : `/${pageSlug}`;
+  const pageSections = getPageSections(config, pageSlugClean);
   const activeSections = pageSections.filter((s) => !s.disabled);
 
   const sectionSharedProps = {
@@ -91,12 +68,10 @@ export default function StorefrontPage() {
 
   return (
     <ShopProvider config={config} shopName={shopName} subdomain={subdomain}>
+      <HeadManager brand={config.brand} />
       <SearchModal />
       <CartDrawer />
-      <GoogleFontsLoader fonts={{
-        heading: config.global.fonts.heading,
-        body: config.global.fonts.body,
-      }} />
+      <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
       <CustomCssInjector customCss={config.customCss} />
       <CookieBanner settings={config.cookie} />
       <BackToTop settings={config.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
@@ -112,10 +87,13 @@ export default function StorefrontPage() {
           minHeight: "100vh",
         } as React.CSSProperties}
       >
-        {isPreview && (
-          <div className="bg-gray-900 text-white text-center text-xs py-2 px-4 flex items-center justify-center gap-2">
-            <Eye className="w-3 h-3" />
-            Aperçu — {shopName || subdomain}
+        {activeSections.length === 0 && (
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-sm" style={{ color: "var(--theme-text-muted)" }}>
+                Cette page est vide. Configurez ses sections dans l&apos;administration.
+              </p>
+            </div>
           </div>
         )}
 

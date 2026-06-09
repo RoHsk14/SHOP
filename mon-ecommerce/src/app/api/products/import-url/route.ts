@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       images: [] as string[],
     };
 
-    // 1) JSON-LD — most reliable structured data
+    // ── 1) JSON-LD ──
     const ldScripts: string[] = [];
     $('script[type="application/ld+json"]').each((_, el) => {
       ldScripts.push($(el).html() || "");
@@ -35,19 +35,13 @@ export async function POST(request: NextRequest) {
             if (item.offers?.price) {
               extracted.price ||= String(item.offers.price);
             }
-            if (item.image) {
-              const imgs = Array.isArray(item.image) ? item.image : [item.image];
-              for (const img of imgs) {
-                const src = typeof img === "string" ? img : img.url || "";
-                if (src && !extracted.images.includes(src)) extracted.images.push(src);
-              }
-            }
+            collectImages(item, extracted.images);
           }
         }
       } catch {}
     }
 
-    // 2) Open Graph tags
+    // ── 2) Open Graph tags ──
     const ogKeys: Record<string, keyof typeof extracted> = {
       "og:title": "name",
       "product:price:amount": "price",
@@ -62,21 +56,53 @@ export async function POST(request: NextRequest) {
 
       const key = ogKeys[property];
       if (key === "images") {
-        if (!extracted.images.includes(content)) extracted.images.push(content);
+        addImage(extracted.images, content);
       } else if (key && !extracted[key]) {
         (extracted[key] as string) = content;
       }
     });
 
-    // 3) Twitter card fallback
-    if (!extracted.images.length) {
+    // ── 3) Shop-specific image gallery scraping ──
+
+    // AliExpress: main image from the gallery div
+    $('[class*="gallery"] img, [class*="Gallery"] img, [class*="image"] img, [class*="Image"] img').each((_, el) => {
+      const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-zoom-src") || "";
+      if (src && looksLikeRealImage(src)) addImage(extracted.images, normalizeUrl(src, url));
+    });
+
+    // All large images in the page (skip icons, logos, thumbnails)
+    $("img").each((_, el) => {
+      const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-lazy-src") || "";
+      if (!src || !looksLikeRealImage(src)) return;
+      const w = parseInt($(el).attr("width") || "0");
+      const h = parseInt($(el).attr("height") || "0");
+      if (w > 100 && h > 100) {
+        addImage(extracted.images, normalizeUrl(src, url));
+      }
+    });
+
+    // Shopify: product media in a script tag
+    $("script").each((_, el) => {
+      const text = $(el).html() || "";
+      if (text.includes("product.media")) {
+        const urls = text.match(/https?:\/\/[^"'\s]+(?:png|jpg|jpeg|gif|webp)[^"'\s]*/gi);
+        if (urls) {
+          for (const u of urls) {
+            if (looksLikeRealImage(u)) addImage(extracted.images, u);
+          }
+        }
+      }
+    });
+
+    // ── 4) Twitter card fallback ──
+    if (extracted.images.length === 0) {
       $('meta[name="twitter:image"], meta[property="twitter:image"]').each((_, el) => {
         const src = $(el).attr("content");
-        if (src && !extracted.images.includes(src)) extracted.images.push(src);
+        if (src) addImage(extracted.images, src);
       });
     }
 
-    // 4) Basic HTML fallback
+    // ── 5) Basic HTML fallback ──
     if (!extracted.name) {
       extracted.name = $("title").first().text().trim();
     }
@@ -88,20 +114,29 @@ export async function POST(request: NextRequest) {
       extracted.description = metaDesc;
     }
     if (!extracted.price) {
-      const pricePattern = /(\d[\d\s.,]*)\s*(FCFA|XOF|€|\$|CFA)/i;
+      // Try multiple price patterns
+      const patterns = [
+        /(\d[\d\s.,]*)\s*(FCFA|XOF|€|\$|CFA|USD|EUR)/i,
+        /(FCFA|XOF|€|\$|CFA|USD|EUR)\s*(\d[\d\s.,]*)/i,
+      ];
       const bodyText = $("body").text();
-      const match = bodyText.match(pricePattern);
-      if (match) extracted.price = match[1].replace(/\s/g, "");
+      for (const pattern of patterns) {
+        const match = bodyText.match(pattern);
+        if (match) {
+          extracted.price = match[1].replace(/\s/g, "");
+          break;
+        }
+      }
     }
 
-    // Clean up description: strip excessive whitespace, truncate
+    // Clean description
     extracted.description = extracted.description.replace(/\s+/g, " ").trim();
-    if (extracted.description.length > 500) {
-      extracted.description = extracted.description.slice(0, 500) + "...";
+    if (extracted.description.length > 5000) {
+      extracted.description = extracted.description.slice(0, 5000);
     }
 
-    // Limit images to first 5
-    extracted.images = extracted.images.slice(0, 5);
+    // De-duplicate and filter images
+    extracted.images = [...new Set(extracted.images)];
 
     return NextResponse.json({ product: extracted });
   } catch (error: any) {
@@ -115,7 +150,7 @@ export async function POST(request: NextRequest) {
 
 async function fetchUrl(url: string): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
     const res = await fetch(url, {
@@ -133,9 +168,41 @@ async function fetchUrl(url: string): Promise<string> {
       throw new Error(`HTTP ${res.status} — ${res.statusText}`);
     }
 
-    const text = await res.text();
-    return text;
+    return await res.text();
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function looksLikeRealImage(src: string): boolean {
+  const lower = src.toLowerCase();
+  if (lower.startsWith("data:")) return false;
+  if (lower.includes("icon") || lower.includes("logo") || lower.includes("favicon") || lower.includes("avatar") || lower.includes("spacer") || lower.includes("pixel") || lower.includes("transparent") || lower.includes("placeholder") || lower.includes("banner")) return false;
+  if (!lower.match(/\.(png|jpg|jpeg|gif|webp|svg)/) && !lower.includes("?_")) return true;
+  return true;
+}
+
+function addImage(images: string[], src: string) {
+  const cleaned = src.split("?")[0];
+  if (cleaned && !images.includes(cleaned)) images.push(cleaned);
+}
+
+function normalizeUrl(src: string, baseUrl: string): string {
+  if (src.startsWith("http")) return src;
+  if (src.startsWith("//")) return "https:" + src;
+  try {
+    return new URL(src, baseUrl).href;
+  } catch {
+    return src;
+  }
+}
+
+function collectImages(item: any, images: string[]) {
+  if (item.image) {
+    const imgs = Array.isArray(item.image) ? item.image : [item.image];
+    for (const img of imgs) {
+      const src = typeof img === "string" ? img : img.url || "";
+      if (src && !images.includes(src)) images.push(src);
+    }
   }
 }
