@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Papa from "papaparse";
-import { Pencil, Trash2, Package, ExternalLink, ChevronRight, Search, Download, Upload, Plus, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Package, ExternalLink, ChevronRight, Search, Download, Upload, Plus, ArrowUpRight, ArrowDownRight, AlertCircle, Globe } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -53,6 +53,10 @@ export default function ProductsPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ name: string; price: string; description: string; images: string[] } | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -329,6 +333,16 @@ export default function ProductsPage() {
                 Importer {csvFile.name}
               </button>
             )}
+            <button
+              onClick={() => {
+                setImportUrl("");
+                setImportResult(null);
+                setImportModalOpen(true);
+              }}
+              className="px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-all"
+            >
+              <Globe className="w-3.5 h-3.5" /> Importer d'un site
+            </button>
             <button
               onClick={() => {
                 setEditingProduct(null);
@@ -703,6 +717,155 @@ export default function ProductsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import URL Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white">Importer depuis une URL</h2>
+              <button
+                onClick={() => { setImportModalOpen(false); setImportResult(null); }}
+                className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL du produit</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={importUrl}
+                    onChange={(e) => setImportUrl(e.target.value)}
+                    placeholder="https://example.com/produit"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!importUrl) return;
+                      setImportLoading(true);
+                      setImportResult(null);
+                      try {
+                        const res = await fetch("/api/products/import-url", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ url: importUrl }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error);
+                        setImportResult(data.product);
+                      } catch (e: any) {
+                        toast.error(e.message || "Erreur d'analyse");
+                      } finally {
+                        setImportLoading(false);
+                      }
+                    }}
+                    disabled={importLoading || !importUrl}
+                    className="px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 text-sm font-medium transition-all"
+                  >
+                    {importLoading ? "Analyse..." : "Analyser"}
+                  </button>
+                </div>
+              </div>
+
+              {importResult && (
+                <div className="space-y-4 border-t border-gray-100 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700">Aperçu</h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                    <input
+                      type="text"
+                      value={importResult.name}
+                      onChange={(e) => setImportResult({ ...importResult, name: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prix</label>
+                    <input
+                      type="text"
+                      value={importResult.price}
+                      onChange={(e) => setImportResult({ ...importResult, price: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      value={importResult.description}
+                      onChange={(e) => setImportResult({ ...importResult, description: e.target.value })}
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  {importResult.images.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                      <div className="flex flex-wrap gap-2">
+                        {importResult.images.map((img, i) => (
+                          <div key={i} className="relative w-20 h-20">
+                            <img
+                              src={img}
+                              alt=""
+                              className="w-full h-full object-cover rounded-lg border border-gray-100"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setImportResult({
+                                ...importResult,
+                                images: importResult.images.filter((_, j) => j !== i)
+                              })}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => { setImportModalOpen(false); setImportResult(null); }}
+                      className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-medium transition-all"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => {
+                        setForm({
+                          name: importResult.name,
+                          description: importResult.description,
+                          price: importResult.price,
+                          sku: "",
+                          track_stock: true,
+                          stock_quantity: "",
+                          images: importResult.images,
+                        });
+                        setImportModalOpen(false);
+                        setImportResult(null);
+                        setEditingProduct(null);
+                        setModalOpen(true);
+                      }}
+                      className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-sm font-medium transition-all shadow-sm shadow-emerald-200"
+                    >
+                      Utiliser et modifier
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
