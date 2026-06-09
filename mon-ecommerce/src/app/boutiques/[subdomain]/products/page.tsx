@@ -7,6 +7,12 @@ import type { ThemeConfig } from "@/lib/theme-config";
 import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import ProductCard from "@/components/ProductCard";
+import GoogleFontsLoader from "@/components/GoogleFontsLoader";
+import CustomCssInjector from "@/components/CustomCssInjector";
+import CookieBanner from "@/components/CookieBanner";
+import SearchModal from "@/components/SearchModal";
+import CartDrawer from "@/components/CartDrawer";
+import { ShopProvider } from "@/lib/shop-context";
 
 interface Product {
   id: string;
@@ -17,6 +23,12 @@ interface Product {
   stock_quantity: number | null;
   slug?: string;
 }
+
+const GRID_COLS: Record<number, string> = {
+  2: "sm:grid-cols-2 lg:grid-cols-2",
+  3: "sm:grid-cols-2 lg:grid-cols-3",
+  4: "sm:grid-cols-2 lg:grid-cols-4",
+};
 
 export default function ProductsPage() {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -57,54 +69,66 @@ export default function ProductsPage() {
   );
 
   const cssVars = config ? themeConfigToCSS(config) : {};
+  const cols = config?.layout?.productsPerRow || 4;
+  const gridClass = GRID_COLS[cols] || GRID_COLS[4];
+  const sectionSharedProps = {
+    social: config?.social,
+    menus: config?.menus,
+    brand: config?.brand,
+  };
 
   return (
-    <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh" } as React.CSSProperties}>
-      {/* Header section */}
-      {config && sectionComponents.header && (
-        <div>
-          {(() => {
-            const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
-            if (!headerSection) return null;
-            const HeaderComp = sectionComponents.header;
-            return <HeaderComp settings={headerSection.settings} shopName={shopName} />;
-          })()}
-        </div>
+    <ShopProvider config={config || buildDefaultConfig("classic")} shopName={shopName} subdomain={subdomain}>
+      <SearchModal />
+      <CartDrawer />
+      {config && (
+        <>
+          <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
+          <CustomCssInjector customCss={config.customCss} />
+          <CookieBanner settings={config.cookie} />
+        </>
       )}
+      <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontSize: config ? `${config.global.fonts.baseSize}px` : undefined } as React.CSSProperties}>
+        {config && sectionComponents.header && (() => {
+          const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
+          if (!headerSection) return null;
+          const HeaderComp = sectionComponents.header;
+          return <HeaderComp settings={headerSection.settings} shopName={shopName} {...sectionSharedProps} />;
+        })()}
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <h1
-          className="text-2xl sm:text-3xl font-bold mb-8"
-          style={{
-            color: "var(--theme-text)",
-            fontFamily: "var(--theme-font-heading)",
-          }}
-        >
-          Nos Produits
-        </h1>
+        <div className="mx-auto px-4 sm:px-6 py-8 sm:py-12" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
+          <h1
+            className="text-2xl sm:text-3xl font-bold mb-8"
+            style={{
+              color: "var(--theme-text)",
+              fontFamily: "var(--theme-font-heading)",
+            }}
+          >
+            Nos Produits
+          </h1>
 
-        {products.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-sm" style={{ color: "var(--theme-text-muted)" }}>
-              Aucun produit disponible pour le moment.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} subdomain={subdomain} />
-            ))}
-          </div>
-        )}
+          {products.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-sm" style={{ color: "var(--theme-text-muted)" }}>
+                Aucun produit disponible pour le moment.
+              </p>
+            </div>
+          ) : (
+            <div className={`grid grid-cols-2 ${gridClass} gap-4 sm:gap-6`}>
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} subdomain={subdomain} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {config && sectionComponents.footer && (() => {
+          const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
+          if (!footerSection) return null;
+          const FooterComp = sectionComponents.footer;
+          return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} {...sectionSharedProps} />;
+        })()}
       </div>
-
-      {/* Footer */}
-      {config && sectionComponents.footer && (() => {
-        const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
-        if (!footerSection) return null;
-        const FooterComp = sectionComponents.footer;
-        return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} />;
-      })()}
-    </div>
+    </ShopProvider>
   );
 }

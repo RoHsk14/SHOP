@@ -7,6 +7,12 @@ import { supabase } from "@/lib/supabase";
 import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
 import type { ThemeConfig } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
+import GoogleFontsLoader from "@/components/GoogleFontsLoader";
+import CustomCssInjector from "@/components/CustomCssInjector";
+import CookieBanner from "@/components/CookieBanner";
+import SearchModal from "@/components/SearchModal";
+import CartDrawer from "@/components/CartDrawer";
+import { ShopProvider } from "@/lib/shop-context";
 import { CheckCircle } from "lucide-react";
 
 export default function ThankYouPage() {
@@ -51,6 +57,11 @@ export default function ThankYouPage() {
   );
 
   const cssVars = config ? themeConfigToCSS(config) : {};
+  const sectionSharedProps = {
+    social: config?.social,
+    menus: config?.menus,
+    brand: config?.brand,
+  };
 
   const formatPrice = (val: string, cur: string) => {
     const num = parseFloat(val);
@@ -59,61 +70,72 @@ export default function ThankYouPage() {
   };
 
   return (
-    <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontFamily: "var(--theme-font-body, inherit)" } as React.CSSProperties}>
-      {config && sectionComponents.header && (() => {
-        const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
-        if (!headerSection) return null;
-        const HeaderComp = sectionComponents.header;
-        return <HeaderComp settings={headerSection.settings} shopName={shopName} />;
-      })()}
+    <ShopProvider config={config || buildDefaultConfig("classic")} shopName={shopName} subdomain={subdomain}>
+      <SearchModal />
+      <CartDrawer />
+      {config && (
+        <>
+          <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
+          <CustomCssInjector customCss={config.customCss} />
+          <CookieBanner settings={config.cookie} />
+        </>
+      )}
+      <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontFamily: "var(--theme-font-body, inherit)", fontSize: config ? `${config.global.fonts.baseSize}px` : undefined } as React.CSSProperties}>
+        {config && sectionComponents.header && (() => {
+          const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
+          if (!headerSection) return null;
+          const HeaderComp = sectionComponents.header;
+          return <HeaderComp settings={headerSection.settings} shopName={shopName} {...sectionSharedProps} />;
+        })()}
 
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <CheckCircle className="w-16 h-16 mx-auto mb-6" style={{ color: "var(--theme-primary, #059669)" }} />
-        <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--theme-text, #111827)" }}>
-          Merci pour votre commande !
-        </h1>
-        <p className="mb-8" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
-          Nous vous remercions pour votre achat. Un email de confirmation vous sera envoyé prochainement.
-        </p>
+        <div className="max-w-lg mx-auto px-4 py-20 text-center">
+          <CheckCircle className="w-16 h-16 mx-auto mb-6" style={{ color: "var(--theme-primary, #059669)" }} />
+          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--theme-text, #111827)" }}>
+            Merci pour votre commande !
+          </h1>
+          <p className="mb-8" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
+            Nous vous remercions pour votre achat. Un email de confirmation vous sera envoyé prochainement.
+          </p>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 text-left space-y-3 mb-8">
-          {product && (
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-500">Produit</span>
-              <span className="text-sm font-medium text-gray-900">{product}</span>
-            </div>
-          )}
-          {qty && (
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-500">Quantité</span>
-              <span className="text-sm font-medium text-gray-900">{qty}</span>
-            </div>
-          )}
-          {price && (
-            <div className="flex justify-between pt-3 border-t border-gray-100">
-              <span className="text-sm text-gray-500">Total payé</span>
-              <span className="text-lg font-bold" style={{ color: "var(--theme-primary, #059669)" }}>
-                {formatPrice(price, currency)}
-              </span>
-            </div>
-          )}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-left space-y-3 mb-8">
+            {product && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Produit</span>
+                <span className="text-sm font-medium text-gray-900">{product}</span>
+              </div>
+            )}
+            {qty && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Quantité</span>
+                <span className="text-sm font-medium text-gray-900">{qty}</span>
+              </div>
+            )}
+            {price && (
+              <div className="flex justify-between pt-3 border-t border-gray-100">
+                <span className="text-sm text-gray-500">Total payé</span>
+                <span className="text-lg font-bold" style={{ color: "var(--theme-primary, #059669)" }}>
+                  {formatPrice(price, currency)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <Link
+            href={`/boutiques/${subdomain}`}
+            className="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-xl transition-colors text-sm"
+            style={{ background: "var(--theme-primary, #059669)" }}
+          >
+            Retour à l'accueil
+          </Link>
         </div>
 
-        <Link
-          href={`/boutiques/${subdomain}`}
-          className="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-xl transition-colors text-sm"
-          style={{ background: "var(--theme-primary, #059669)" }}
-        >
-          Retour à l'accueil
-        </Link>
+        {config && sectionComponents.footer && (() => {
+          const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
+          if (!footerSection) return null;
+          const FooterComp = sectionComponents.footer;
+          return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} {...sectionSharedProps} />;
+        })()}
       </div>
-
-      {config && sectionComponents.footer && (() => {
-        const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
-        if (!footerSection) return null;
-        const FooterComp = sectionComponents.footer;
-        return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} />;
-      })()}
-    </div>
+    </ShopProvider>
   );
 }

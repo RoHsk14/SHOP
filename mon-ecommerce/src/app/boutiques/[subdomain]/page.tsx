@@ -6,6 +6,12 @@ import { supabase } from "@/lib/supabase";
 import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
 import type { ThemeConfig, SectionSetting } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
+import { ShopProvider } from "@/lib/shop-context";
+import GoogleFontsLoader from "@/components/GoogleFontsLoader";
+import CustomCssInjector from "@/components/CustomCssInjector";
+import CookieBanner from "@/components/CookieBanner";
+import SearchModal from "@/components/SearchModal";
+import CartDrawer from "@/components/CartDrawer";
 import { Eye } from "lucide-react";
 
 function getPreviewParam(): boolean {
@@ -74,35 +80,54 @@ export default function StorefrontPage() {
   const cssVars = themeConfigToCSS(config);
   const activeSections = config.sections.filter((s) => !s.disabled);
 
-  return (
-    <div
-      style={{
-        ...cssVars,
-        background: cssVars["--theme-bg"],
-        color: cssVars["--theme-text"],
-        fontFamily: cssVars["--theme-font-body"],
-        minHeight: "100vh",
-      } as React.CSSProperties}
-    >
-      {isPreview && (
-        <div className="bg-gray-900 text-white text-center text-xs py-2 px-4 flex items-center justify-center gap-2">
-          <Eye className="w-3 h-3" />
-          Aperçu — {shopName || subdomain}
-        </div>
-      )}
+  const sectionSharedProps = {
+    social: config.social,
+    menus: config.menus,
+    brand: config.brand,
+  };
 
-      {activeSections.map((section) => {
-        const Component = sectionComponents[section.type];
-        if (!Component) return null;
-        return (
-          <Component
-            key={section.id}
-            settings={section.settings}
-            blocks={section.blocks}
-            shopName={shopName}
-          />
-        );
-      })}
-    </div>
+  return (
+    <ShopProvider config={config} shopName={shopName} subdomain={subdomain}>
+      <SearchModal />
+      <CartDrawer />
+      <GoogleFontsLoader fonts={{
+        heading: config.global.fonts.heading,
+        body: config.global.fonts.body,
+      }} />
+      <CustomCssInjector customCss={config.customCss} />
+      <CookieBanner settings={config.cookie} />
+
+      <div
+        style={{
+          ...cssVars,
+          background: cssVars["--theme-bg"],
+          color: cssVars["--theme-text"],
+          fontFamily: cssVars["--theme-font-body"],
+          fontSize: `${config.global.fonts.baseSize}px`,
+          minHeight: "100vh",
+        } as React.CSSProperties}
+      >
+        {isPreview && (
+          <div className="bg-gray-900 text-white text-center text-xs py-2 px-4 flex items-center justify-center gap-2">
+            <Eye className="w-3 h-3" />
+            Aperçu — {shopName || subdomain}
+          </div>
+        )}
+
+        {activeSections.map((section) => {
+          const Component = sectionComponents[section.type];
+          if (!Component) return null;
+          return (
+            <Component
+              key={section.id}
+              settings={section.settings}
+              blocks={section.blocks}
+              shopName={shopName}
+              {...sectionSharedProps}
+            />
+          );
+        })}
+      </div>
+    </ShopProvider>
   );
 }

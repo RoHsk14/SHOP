@@ -21,7 +21,7 @@ export default function TextWithImage({ settings }: Props) {
 
   return (
     <section className="py-10 sm:py-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="mx-auto px-4 sm:px-6" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
         <div className="flex flex-col sm:flex-row items-center gap-8 sm:gap-12">
           {isLeft && settings.image && (
             <div className="w-full sm:w-1/2">

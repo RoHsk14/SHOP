@@ -8,6 +8,12 @@ import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
 import type { ThemeConfig } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import ProductDetail from "@/components/products/ProductDetail";
+import GoogleFontsLoader from "@/components/GoogleFontsLoader";
+import CustomCssInjector from "@/components/CustomCssInjector";
+import CookieBanner from "@/components/CookieBanner";
+import SearchModal from "@/components/SearchModal";
+import CartDrawer from "@/components/CartDrawer";
+import { ShopProvider } from "@/lib/shop-context";
 
 interface Product {
   id: string;
@@ -49,7 +55,6 @@ export default function ProductPage() {
         }
       }
 
-      // Try by slug column first
       const { data } = await supabase
         .from("products")
         .select("*")
@@ -60,7 +65,6 @@ export default function ProductPage() {
       if (data) {
         if (!cancelled) setProduct(data);
       } else {
-        // Fallback: find by slugified name
         const { data: all } = await supabase
           .from("products")
           .select("*")
@@ -101,26 +105,43 @@ export default function ProductPage() {
   }
 
   const cssVars = config ? themeConfigToCSS(config) : {};
+  const sectionSharedProps = {
+    social: config?.social,
+    menus: config?.menus,
+    brand: config?.brand,
+  };
 
   return (
-    <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh" } as React.CSSProperties}>
-      {/* Header */}
-      {config && sectionComponents.header && (() => {
-        const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
-        if (!headerSection) return null;
-        const HeaderComp = sectionComponents.header;
-        return <HeaderComp settings={headerSection.settings} shopName={shopName} />;
-      })()}
+    <ShopProvider config={config || buildDefaultConfig("classic")} shopName={shopName} subdomain={subdomain}>
+      <SearchModal />
+      <CartDrawer />
+      {config && (
+        <>
+          <GoogleFontsLoader fonts={{
+            heading: config.global.fonts.heading,
+            body: config.global.fonts.body,
+          }} />
+          <CustomCssInjector customCss={config.customCss} />
+          <CookieBanner settings={config.cookie} />
+        </>
+      )}
+      <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontSize: config ? `${config.global.fonts.baseSize}px` : undefined } as React.CSSProperties}>
+        {config && sectionComponents.header && (() => {
+          const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
+          if (!headerSection) return null;
+          const HeaderComp = sectionComponents.header;
+          return <HeaderComp settings={headerSection.settings} shopName={shopName} {...sectionSharedProps} />;
+        })()}
 
-      <ProductDetail product={product} />
+        <ProductDetail product={product} />
 
-      {/* Footer */}
-      {config && sectionComponents.footer && (() => {
-        const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
-        if (!footerSection) return null;
-        const FooterComp = sectionComponents.footer;
-        return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} />;
-      })()}
-    </div>
+        {config && sectionComponents.footer && (() => {
+          const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
+          if (!footerSection) return null;
+          const FooterComp = sectionComponents.footer;
+          return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} {...sectionSharedProps} />;
+        })()}
+      </div>
+    </ShopProvider>
   );
 }

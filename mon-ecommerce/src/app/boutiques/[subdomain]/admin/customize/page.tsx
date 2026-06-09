@@ -1,75 +1,56 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { themes, type Theme } from "@/lib/themes";
+import { themes } from "@/lib/themes";
 import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
-import type { ThemeConfig } from "@/lib/theme-config";
+import type { ThemeConfig, NavMenu } from "@/lib/theme-config";
 import SectionEditor from "@/components/SectionEditor";
 import { sectionComponents } from "@/components/sections";
-import { Save, Eye, Check } from "lucide-react";
-import ImagePicker from "@/components/ImagePicker";
+import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { worldCurrencies } from "@/lib/currencies";
 
-const COUNTRIES = [
-  "France", "Belgique", "Suisse", "Canada", "Luxembourg",
-  "Maroc", "Algérie", "Tunisie", "Sénégal", "Côte d'Ivoire",
-];
+import TabInfo from "@/components/brand/TabInfo";
+import TabTheme from "@/components/brand/TabTheme";
+import TabColors from "@/components/brand/TabColors";
+import TabTypography from "@/components/brand/TabTypography";
+import TabBackground from "@/components/brand/TabBackground";
+import TabMedia from "@/components/brand/TabMedia";
+import TabSocial from "@/components/brand/TabSocial";
+import TabMenu from "@/components/brand/TabMenu";
+import TabLayout from "@/components/brand/TabLayout";
+import TabCustomCss from "@/components/brand/TabCustomCss";
+import TabCookies from "@/components/brand/TabCookies";
+import TabImport from "@/components/brand/TabImport";
+import GoogleFontsLoader from "@/components/GoogleFontsLoader";
 
-function ThemeCard({ theme, active, onSelect }: { theme: Theme; active: boolean; onSelect: () => void }) {
-  const c = theme.colors;
-  return (
-    <button
-      onClick={onSelect}
-      className={`relative text-left w-full rounded-2xl border-2 overflow-hidden transition-all hover:shadow-lg ${
-        active ? "border-emerald-500 shadow-md" : "border-gray-200 hover:border-gray-300"
-      }`}
-    >
-      <div className="p-4 space-y-3" style={{ background: c.background }}>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style={{ background: c.primary }}>
-            S
-          </div>
-          <div className="h-2 w-16 rounded-full" style={{ background: c.text, opacity: 0.3 }} />
-          <div className="ml-auto flex gap-1">
-            <div className="w-4 h-2 rounded-full" style={{ background: c.textMuted, opacity: 0.3 }} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[1, 2].map(i => (
-            <div key={i} className="rounded-xl p-2 space-y-1.5" style={{
-              background: c.surface,
-              boxShadow: theme.cardStyle === "shadow" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-              border: theme.cardStyle === "bordered" ? `1px solid ${c.border}` : "none",
-            }}>
-              <div className={`w-full rounded-lg ${theme.productImageShape === "square" ? "aspect-square" : theme.productImageShape === "portrait" ? "aspect-[3/4]" : "aspect-[4/3]"} flex items-center justify-center`} style={{ background: c.secondary }}>
-                <div className="w-6 h-6 rounded" style={{ background: c.border }} />
-              </div>
-              <div className="h-2 w-3/4 rounded-full" style={{ background: c.text, opacity: 0.2 }} />
-              <div className="h-2 w-1/2 rounded-full" style={{ background: c.primary, opacity: 0.6 }} />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="p-3 flex items-center justify-between" style={{ background: c.surface }}>
-        <div>
-          <p className="text-sm font-semibold" style={{ color: c.text }}>{theme.name}</p>
-          <p className="text-xs mt-0.5" style={{ color: c.textMuted }}>{theme.description}</p>
-        </div>
-        {active && (
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
-            <Check className="w-3.5 h-3.5 text-white" />
-          </div>
-        )}
-      </div>
-    </button>
-  );
+interface Tab {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
 }
+
+const TABS: Tab[] = [
+  { id: "info", label: "Infos", icon: <Type className="w-4 h-4" /> },
+  { id: "theme", label: "Thème", icon: <Palette className="w-4 h-4" /> },
+  { id: "colors", label: "Couleurs", icon: <Palette className="w-4 h-4" /> },
+  { id: "typography", label: "Typographie", icon: <Type className="w-4 h-4" /> },
+  { id: "background", label: "Arrière-plan", icon: <Image className="w-4 h-4" /> },
+  { id: "media", label: "Logo & Média", icon: <Image className="w-4 h-4" /> },
+  { id: "social", label: "Réseaux", icon: <Share2 className="w-4 h-4" /> },
+  { id: "menu", label: "Menu", icon: <Menu className="w-4 h-4" /> },
+  { id: "layout", label: "Mise en page", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { id: "sections", label: "Sections", icon: <Layers className="w-4 h-4" /> },
+  { id: "css", label: "CSS", icon: <Code className="w-4 h-4" /> },
+  { id: "cookies", label: "Cookies", icon: <Cookie className="w-4 h-4" /> },
+  { id: "import", label: "Import Shopify", icon: <Upload className="w-4 h-4" /> },
+];
 
 export default function CustomizePage() {
   const { subdomain } = useParams<{ subdomain: string }>();
+  const [activeTab, setActiveTab] = useState("theme");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingSectionIndex, setSavingSectionIndex] = useState<number | null>(null);
@@ -80,34 +61,31 @@ export default function CustomizePage() {
   const [ownerName, setOwnerName] = useState("");
   const [shopCountry, setShopCountry] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState("EUR");
-  const [logo, setLogo] = useState<string | null>(null);
   const [selectedThemeId, setSelectedThemeId] = useState("classic");
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const { data, error } = await supabase
-        .from("settings")
-        .select("*")
-        .eq("shop_slug", subdomain)
-        .maybeSingle();
-      if (!error && data) {
-        setSettingsId(data.id);
-        setShopName(data.shop_name || "");
-        setShopDescription(data.shop_description || "");
-        setOwnerName(data.owner_name || "");
-        setShopCountry(data.shop_country || "");
-        setDefaultCurrency(data.default_currency || "EUR");
-        setSelectedThemeId(data.theme_id || "classic");
-        setLogo(data.logo_url || null);
-        if (data.theme_config && typeof data.theme_config === "object" && data.theme_config.global?.colors) {
-          setThemeConfig(data.theme_config as ThemeConfig);
-        }
+  const fetchSettings = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("*")
+      .eq("shop_slug", subdomain)
+      .maybeSingle();
+    if (!error && data) {
+      setSettingsId(data.id);
+      setShopName(data.shop_name || "");
+      setShopDescription(data.shop_description || "");
+      setOwnerName(data.owner_name || "");
+      setShopCountry(data.shop_country || "");
+      setDefaultCurrency(data.default_currency || "EUR");
+      setSelectedThemeId(data.theme_id || "classic");
+      if (data.theme_config && typeof data.theme_config === "object" && data.theme_config.global?.colors) {
+        setThemeConfig(data.theme_config as ThemeConfig);
       }
-      setLoading(false);
-    };
-    fetchSettings();
+    }
+    setLoading(false);
   }, [subdomain]);
+
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   const handleThemeChange = (themeId: string) => {
     setSelectedThemeId(themeId);
@@ -117,6 +95,10 @@ export default function CustomizePage() {
   const selectedTheme = themes.find(t => t.id === selectedThemeId) || themes[0];
   const config = themeConfig || buildDefaultConfig(selectedThemeId);
   const cssVars = themeConfigToCSS(config);
+
+  const updateConfig = (updater: (prev: ThemeConfig) => ThemeConfig) => {
+    setThemeConfig((prev) => updater(prev || buildDefaultConfig(selectedThemeId)));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -131,7 +113,8 @@ export default function CustomizePage() {
       theme_config: savedConfig,
       updated_at: new Date().toISOString(),
     };
-    if (logo && logo.startsWith("data:")) updateData.logo_url = logo;
+    const brand = savedConfig.brand;
+    if (brand?.logo && brand.logo.startsWith("data:")) updateData.logo_url = brand.logo;
 
     if (settingsId) {
       const { error } = await supabase.from("settings").update(updateData).eq("id", settingsId);
@@ -152,7 +135,6 @@ export default function CustomizePage() {
       theme_config: savedConfig,
       updated_at: new Date().toISOString(),
     };
-
     if (settingsId) {
       const { error } = await supabase.from("settings").update(updateData).eq("id", settingsId);
       if (error) { toast.error("Erreur : " + error.message); setSavingSectionIndex(null); return; }
@@ -180,21 +162,59 @@ export default function CustomizePage() {
     window.open(previewUrl, "_blank");
   };
 
+  const handleShopifyImport = (settings: any) => {
+    const newConfig = buildDefaultConfig(selectedThemeId);
+    if (settings.colors) {
+      const colorMap: Record<string, string> = {
+        background: "background",
+        text_color: "text",
+        text_light_color: "textMuted",
+        heading_color: "text",
+        link_color: "link",
+        button_background: "primary",
+        button_text_color: "buttonText",
+        header_background: "headerBg",
+        header_heading_color: "headerText",
+        footer_background: "footerBg",
+        footer_text_color: "footerText",
+        product_on_sale_color: "success",
+      };
+      for (const [shopifyKey, shopEazyKey] of Object.entries(colorMap)) {
+        if (settings.colors[shopifyKey]) {
+          (newConfig.global.colors as any)[shopEazyKey] = settings.colors[shopifyKey];
+        }
+      }
+    }
+    if (settings.fonts) {
+      newConfig.global.fonts.heading = settings.fonts.heading;
+      newConfig.global.fonts.body = settings.fonts.body;
+    }
+    if (settings.social) {
+      newConfig.social = { ...newConfig.social, ...settings.social };
+    }
+    if (settings.layout?.productImageSize) newConfig.layout.productImageSize = settings.layout.productImageSize;
+    if (settings.layout?.productInfoAlignment) newConfig.layout.productInfoAlignment = settings.layout.productInfoAlignment;
+    if (settings.layout?.cartType) newConfig.layout.cartType = settings.layout.cartType;
+    setThemeConfig(newConfig);
+    setActiveTab("theme");
+    toast.success("Thème Shopify appliqué !");
+  };
+
+  const tc = selectedTheme.colors;
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
     </div>
   );
 
-  const tc = selectedTheme.colors;
-
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Personnaliser la boutique</h1>
-          <p className="text-sm text-gray-500 mt-1">Choisissez un thème et composez votre page</p>
+          <p className="text-sm text-gray-500 mt-1">Tous les réglages pour votre marque</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -215,177 +235,153 @@ export default function CustomizePage() {
         </div>
       </div>
 
-      {/* Informations générales */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-900">Informations générales</h2>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de la boutique</label>
-          <input type="text" value={shopName} onChange={e => setShopName(e.target.value)}
-            placeholder="Ma Boutique"
-            className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-          <textarea value={shopDescription} onChange={e => setShopDescription(e.target.value)}
-            placeholder="Décrivez votre boutique..." rows={3}
-            className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors resize-none rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom du propriétaire</label>
-            <input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)}
-              placeholder="Votre nom"
-              className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Pays</label>
-            <select value={shopCountry} onChange={e => setShopCountry(e.target.value)}
-              className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors bg-white rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+      {/* Tabs */}
+      <div className="flex overflow-x-auto gap-1 pb-2 -mx-1 px-1 scrollbar-none">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const isSections = tab.id === "sections";
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl whitespace-nowrap transition-all ${
+                isActive
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+              } ${isSections ? "border-l border-gray-200 ml-1" : ""}`}
             >
-              <option value="">Sélectionner</option>
-              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Devise par défaut</label>
-          <select value={defaultCurrency} onChange={e => setDefaultCurrency(e.target.value)}
-            className="w-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 transition-colors bg-white rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-          >
-            {worldCurrencies.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>)}
-          </select>
-        </div>
+              {tab.icon}
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Theme browser */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Thèmes</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
-          {themes.map(theme => (
-            <ThemeCard
-              key={theme.id}
-              theme={theme}
-              active={selectedThemeId === theme.id}
-              onSelect={() => handleThemeChange(theme.id)}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Tab content */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6">
+        {activeTab === "info" && (
+          <TabInfo
+            shopName={shopName} setShopName={setShopName}
+            shopDescription={shopDescription} setShopDescription={setShopDescription}
+            ownerName={ownerName} setOwnerName={setOwnerName}
+            shopCountry={shopCountry} setShopCountry={setShopCountry}
+            defaultCurrency={defaultCurrency} setDefaultCurrency={setDefaultCurrency}
+            worldCurrencies={worldCurrencies}
+          />
+        )}
 
-      {/* Live preview */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
-            {selectedTheme.name} — <span className="text-gray-400 font-normal">Aperçu en direct</span>
-          </h3>
-          <div className="text-xs text-gray-400">{selectedThemeId}</div>
-        </div>
-        <div className="max-h-[600px] overflow-y-auto" style={{ background: config.global.colors.background }}>
-          <div style={{
-            ...cssVars,
-            background: config.global.colors.background,
-            color: config.global.colors.text,
-            fontFamily: config.global.fonts.body,
-          } as React.CSSProperties}>
-            {config.sections.filter(s => !s.disabled).map((section) => {
-              const Component = sectionComponents[section.type];
-              if (!Component) return null;
-              return (
-                <Component
-                  key={section.id}
-                  settings={section.settings}
-                  blocks={section.blocks}
-                  shopName={shopName}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Section editor */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <SectionEditor
-          sections={config.sections}
-          onChange={(sections) => setThemeConfig(prev => {
-            const base = prev || buildDefaultConfig(selectedThemeId);
-            return { ...base, sections };
-          })}
-          onSaveSection={handleSaveSection}
-          savingSectionIndex={savingSectionIndex}
-        />
-      </div>
-
-      {/* Colors */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Couleurs globales</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {Object.entries(config.global.colors).map(([key, val]) => (
-            <div key={key}>
-              <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </label>
-              <input
-                type="color"
-                value={val}
-                onChange={(e) => setThemeConfig({
-                  ...config,
-                  global: {
-                    ...config.global,
-                    colors: { ...config.global.colors, [key]: e.target.value },
-                  },
-                })}
-                className="w-full h-9 p-0.5 border border-gray-200 rounded-lg cursor-pointer bg-white"
-              />
+        {activeTab === "theme" && (
+          <div className="space-y-4">
+            <TabTheme selectedThemeId={selectedThemeId} onThemeChange={handleThemeChange} />
+            {/* Live preview */}
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-4">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {selectedTheme.name} — <span className="text-gray-400 font-normal">Aperçu en direct</span>
+                </h3>
+              </div>
+              <div className="max-h-[500px] overflow-y-auto" style={{ background: config.global.colors.background }}>
+                <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
+                <div style={{
+                  ...cssVars,
+                  background: config.global.colors.background,
+                  color: config.global.colors.text,
+                  fontFamily: config.global.fonts.body,
+                  fontSize: `${config.global.fonts.baseSize}px`,
+                } as React.CSSProperties}>
+                  {config.sections.filter(s => !s.disabled).map((section) => {
+                    const Component = sectionComponents[section.type];
+                    if (!Component) return null;
+                    return <Component key={section.id} settings={section.settings} blocks={section.blocks} shopName={shopName} social={config.social} menus={config.menus} brand={config.brand} />;
+                  })}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Radii */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Rayons de bordure</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {Object.entries(config.global.radii).map(([key, val]) => (
-            <div key={key}>
-              <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">{key}</label>
-              <select
-                value={val}
-                onChange={(e) => setThemeConfig({
-                  ...config,
-                  global: {
-                    ...config.global,
-                    radii: { ...config.global.radii, [key]: e.target.value },
-                  },
-                })}
-                className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
-              >
-                <option value="0px">Aucun</option>
-                <option value="4px">Petit</option>
-                <option value="8px">Moyen</option>
-                <option value="12px">Arrondi</option>
-                <option value="16px">Très arrondi</option>
-                <option value="24px">Pilule</option>
-                <option value="9999px">Complètement rond</option>
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
+        {activeTab === "colors" && (
+          <TabColors
+            colors={config.global.colors}
+            onChange={(colors) => updateConfig((prev) => ({
+              ...prev,
+              global: { ...prev.global, colors },
+            }))}
+          />
+        )}
 
-      {/* Logo */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Logo de la boutique</h2>
-        <ImagePicker value={logo || ""} onChange={setLogo} />
-      </div>
+        {activeTab === "typography" && (
+          <TabTypography
+            fonts={config.global.fonts}
+            onChange={(fonts) => updateConfig((prev) => ({
+              ...prev,
+              global: { ...prev.global, fonts },
+            }))}
+          />
+        )}
 
+        {activeTab === "background" && (
+          <TabBackground
+            background={config.background || { type: "color", color: config.global.colors.background }}
+            onChange={(background) => updateConfig((prev) => ({ ...prev, background }))}
+          />
+        )}
+
+        {activeTab === "media" && (
+          <TabMedia
+            brand={config.brand || { logo: "", logoMaxWidth: 140 }}
+            onChange={(brand) => updateConfig((prev) => ({ ...prev, brand }))}
+          />
+        )}
+
+        {activeTab === "social" && (
+          <TabSocial
+            social={config.social || {}}
+            onChange={(social) => updateConfig((prev) => ({ ...prev, social }))}
+          />
+        )}
+
+        {activeTab === "menu" && (
+          <TabMenu
+            menus={config.menus || []}
+            onChange={(menus: NavMenu[]) => updateConfig((prev) => ({ ...prev, menus }))}
+          />
+        )}
+
+        {activeTab === "layout" && (
+          <TabLayout
+            layout={config.layout}
+            onChange={(layout) => updateConfig((prev) => ({ ...prev, layout }))}
+          />
+        )}
+
+        {activeTab === "sections" && (
+          <SectionEditor
+            sections={config.sections}
+            onChange={(sections) => updateConfig((prev) => ({ ...prev, sections }))}
+            onSaveSection={handleSaveSection}
+            savingSectionIndex={savingSectionIndex}
+          />
+        )}
+
+        {activeTab === "css" && (
+          <TabCustomCss
+            customCss={config.customCss || { desktop: "", mobile: "" }}
+            onChange={(customCss) => updateConfig((prev) => ({ ...prev, customCss }))}
+          />
+        )}
+
+        {activeTab === "cookies" && (
+          <TabCookies
+            cookie={config.cookie || { enabled: false }}
+            onChange={(cookie) => updateConfig((prev) => ({ ...prev, cookie }))}
+          />
+        )}
+
+        {activeTab === "import" && (
+          <TabImport onImport={handleShopifyImport} />
+        )}
+      </div>
     </div>
   );
 }

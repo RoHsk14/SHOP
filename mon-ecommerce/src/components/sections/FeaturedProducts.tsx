@@ -33,7 +33,7 @@ export default function FeaturedProducts({ settings }: Props) {
 
   return (
     <section className="py-10 sm:py-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="mx-auto px-4 sm:px-6" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
         {settings.title && (
           <h2
             className="text-2xl sm:text-3xl font-bold text-center mb-2"

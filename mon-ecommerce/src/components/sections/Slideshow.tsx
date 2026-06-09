@@ -52,7 +52,7 @@ export default function Slideshow({ settings, blocks }: Props) {
   const heightClass = heightMap[settings.height || "medium"] || "h-[60vh]";
 
   return (
-    <div className={`relative overflow-hidden ${settings.full_width ? "w-full" : "max-w-5xl mx-auto"}`}>
+    <div className={`relative overflow-hidden ${settings.full_width ? "w-full" : "mx-auto"}`} style={!settings.full_width ? { maxWidth: "var(--theme-container-width, 1200px)" } : undefined}>
       <div className={`relative ${heightClass} min-h-[300px]`}>
         {slide.settings.image && (
           <Image

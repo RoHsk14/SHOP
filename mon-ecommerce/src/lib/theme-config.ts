@@ -221,6 +221,8 @@ export function themeConfigToCSS(config: ThemeConfig): Record<string, string> {
     ...radiiToCSS(config.global.radii),
     ...fontsToCSS(config.global.fonts),
     ...backgroundToCSS(config.background),
+    "--theme-container-width": config.layout?.containerWidth ? `${config.layout.containerWidth}px` : "1200px",
+    "--theme-section-spacing": config.layout?.sectionSpacing === "compact" ? "2rem" : config.layout?.sectionSpacing === "spacious" ? "6rem" : "4rem",
   };
 }
 

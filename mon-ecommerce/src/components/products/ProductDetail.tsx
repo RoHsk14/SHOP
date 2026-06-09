@@ -19,7 +19,7 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [activeImage, setActiveImage] = useState(0);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div className="mx-auto px-4 sm:px-6 py-6 sm:py-10" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
       <div
         className="overflow-hidden"
         style={{
