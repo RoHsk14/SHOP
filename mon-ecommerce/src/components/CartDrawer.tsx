@@ -53,7 +53,8 @@ export function useCartCount() {
 }
 
 export default function CartDrawer() {
-  const { cartOpen, closeCart, subdomain } = useShop();
+  const { cartOpen, closeCart, subdomain, config } = useShop();
+  if (config?.layout?.showCart === false) return null;
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {

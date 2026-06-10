@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd } from "@/lib/theme-config";
 import type { ThemeConfig, SectionSetting } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import { ShopProvider } from "@/lib/shop-context";
@@ -81,7 +81,7 @@ export default function StorefrontPage() {
 
   const cssVars = themeConfigToCSS(config);
   const pageSections = getPageSections(config, "/");
-  const activeSections = pageSections.filter((s) => !s.disabled);
+  const activeSections = enforceFooterAtEnd(pageSections.filter((s) => !s.disabled));
 
   const sectionSharedProps = {
     social: config.social,

@@ -67,8 +67,9 @@ function SubMenu({ items, parentHref }: { items: { label: string; url: string; o
 }
 
 export default function Header({ settings, shopName, menus, brand }: Props) {
-  const { openSearch, openCart, mobileMenuOpen, setMobileMenuOpen } = useShop();
+  const { openSearch, openCart, mobileMenuOpen, setMobileMenuOpen, config } = useShop();
   const cartCount = useCartCount();
+  const showCart = config?.layout?.showCart !== false;
   const mainMenu = menus?.find((m) => m.id === "main-menu")?.items;
   const menuItems: { label: string; url: string; openInNewTab?: boolean; children?: any[] }[] = (mainMenu as any) || settings.menu_items || [
     { label: "Accueil", url: "/" },
@@ -155,22 +156,24 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
             >
               <Search className="w-5 h-5" />
             </button>
-            <button
-              onClick={openCart}
-              className="p-2 relative hover:opacity-70 transition-opacity"
-              aria-label="Panier"
-              style={{ color: "var(--theme-header-text, var(--theme-text))" }}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
-                  style={{ background: "var(--theme-primary, #059669)" }}
-                >
-                  {cartCount > 9 ? "9+" : cartCount}
-                </span>
-              )}
-            </button>
+            {showCart && (
+              <button
+                onClick={openCart}
+                className="p-2 relative hover:opacity-70 transition-opacity"
+                aria-label="Panier"
+                style={{ color: "var(--theme-header-text, var(--theme-text))" }}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
+                    style={{ background: "var(--theme-primary, #059669)" }}
+                  >
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

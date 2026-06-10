@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, ensureSystemPageInConfig, enforceFooterAtEnd } from "@/lib/theme-config";
 import type { ThemeConfig } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
@@ -15,6 +14,7 @@ import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import { ShopProvider } from "@/lib/shop-context";
+import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 
 export default function ThankYouPage() {
@@ -40,7 +40,9 @@ export default function ThankYouPage() {
       if (settings) {
         setShopName(settings.shop_name || "");
         if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-          setConfig(settings.theme_config as ThemeConfig);
+          let c = settings.theme_config as ThemeConfig;
+          c = ensureSystemPageInConfig(c, "/thank-you");
+          setConfig(c);
         } else {
           setConfig(buildDefaultConfig(settings.theme_id || "classic"));
         }
@@ -58,12 +60,9 @@ export default function ThankYouPage() {
     </div>
   );
 
-  const cssVars = config ? themeConfigToCSS(config) : {};
-  const sectionSharedProps = {
-    social: config?.social,
-    menus: config?.menus,
-    brand: config?.brand,
-  };
+  const c = config || buildDefaultConfig("classic");
+  const cssVars = themeConfigToCSS(c);
+  const activeSections = enforceFooterAtEnd(getPageSections(c, "/thank-you").filter((s) => !s.disabled));
 
   const formatPrice = (val: string, cur: string) => {
     const num = parseFloat(val);
@@ -72,73 +71,72 @@ export default function ThankYouPage() {
   };
 
   return (
-    <ShopProvider config={config || buildDefaultConfig("classic")} shopName={shopName} subdomain={subdomain}>
+    <ShopProvider config={c} shopName={shopName} subdomain={subdomain}>
       <SearchModal />
       <CartDrawer />
-      {config && (
-        <>
-          <GoogleFontsLoader fonts={{ heading: config.global.fonts.heading, body: config.global.fonts.body }} />
-          <CustomCssInjector customCss={config.customCss} />
-          <CookieBanner settings={config.cookie} />
-          <BackToTop settings={config?.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
-          <NewsletterPopup settings={config?.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />
-        </>
-      )}
-      <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontFamily: "var(--theme-font-body, inherit)", fontSize: config ? `${config.global.fonts.baseSize}px` : undefined } as React.CSSProperties}>
-        {config && sectionComponents.header && (() => {
-          const headerSection = config.sections.find(s => s.type === "header" && !s.disabled);
-          if (!headerSection) return null;
-          const HeaderComp = sectionComponents.header;
-          return <HeaderComp settings={headerSection.settings} shopName={shopName} {...sectionSharedProps} />;
-        })()}
-
-        <div className="max-w-lg mx-auto px-4 py-20 text-center">
-          <CheckCircle className="w-16 h-16 mx-auto mb-6" style={{ color: "var(--theme-primary, #059669)" }} />
-          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--theme-text, #111827)" }}>
-            Merci pour votre commande !
-          </h1>
-          <p className="mb-8" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
-            Nous vous remercions pour votre achat. Un email de confirmation vous sera envoyé prochainement.
-          </p>
-
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-left space-y-3 mb-8">
-            {product && (
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Produit</span>
-                <span className="text-sm font-medium text-gray-900">{product}</span>
+      <GoogleFontsLoader fonts={{ heading: c.global.fonts.heading, body: c.global.fonts.body }} />
+      <CustomCssInjector customCss={c.customCss} />
+      <CookieBanner settings={c.cookie} />
+      <BackToTop settings={c.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
+      <NewsletterPopup settings={c.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />
+      <div style={{ ...cssVars, background: cssVars["--theme-bg"] || "#f9fafb", minHeight: "100vh", fontSize: `${c.global.fonts.baseSize}px` } as React.CSSProperties}>
+        {activeSections.map((section) => {
+          if (section.type === "thank-you") {
+            return (
+              <div key={section.id} className="max-w-lg mx-auto px-4 py-20 text-center">
+                <CheckCircle className="w-16 h-16 mx-auto mb-6" style={{ color: "var(--theme-primary, #059669)" }} />
+                <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--theme-text, #111827)" }}>
+                  Merci pour votre commande !
+                </h1>
+                <p className="mb-8" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
+                  Nous vous remercions pour votre achat. Un email de confirmation vous sera envoyé prochainement.
+                </p>
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 text-left space-y-3 mb-8">
+                  {product && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Produit</span>
+                      <span className="text-sm font-medium text-gray-900">{product}</span>
+                    </div>
+                  )}
+                  {qty && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Quantité</span>
+                      <span className="text-sm font-medium text-gray-900">{qty}</span>
+                    </div>
+                  )}
+                  {price && (
+                    <div className="flex justify-between pt-3 border-t border-gray-100">
+                      <span className="text-sm text-gray-500">Total payé</span>
+                      <span className="text-lg font-bold" style={{ color: "var(--theme-primary, #059669)" }}>
+                        {formatPrice(price, currency)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <Link
+                  href={`/boutiques/${subdomain}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-xl transition-colors text-sm"
+                  style={{ background: "var(--theme-primary, #059669)" }}
+                >
+                  Retour à l'accueil
+                </Link>
               </div>
-            )}
-            {qty && (
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Quantité</span>
-                <span className="text-sm font-medium text-gray-900">{qty}</span>
-              </div>
-            )}
-            {price && (
-              <div className="flex justify-between pt-3 border-t border-gray-100">
-                <span className="text-sm text-gray-500">Total payé</span>
-                <span className="text-lg font-bold" style={{ color: "var(--theme-primary, #059669)" }}>
-                  {formatPrice(price, currency)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <Link
-            href={`/boutiques/${subdomain}`}
-            className="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-xl transition-colors text-sm"
-            style={{ background: "var(--theme-primary, #059669)" }}
-          >
-            Retour à l'accueil
-          </Link>
-        </div>
-
-        {config && sectionComponents.footer && (() => {
-          const footerSection = config.sections.find(s => s.type === "footer" && !s.disabled);
-          if (!footerSection) return null;
-          const FooterComp = sectionComponents.footer;
-          return <FooterComp settings={footerSection.settings} blocks={footerSection.blocks} {...sectionSharedProps} />;
-        })()}
+            );
+          }
+          const Component = sectionComponents[section.type];
+          if (!Component) return null;
+          return (
+            <Component
+              key={section.id}
+              settings={section.settings}
+              blocks={section.blocks}
+              shopName={shopName}
+              social={c.social}
+              menus={c.menus}
+              brand={c.brand}
+            />
+          );
+        })}
       </div>
     </ShopProvider>
   );

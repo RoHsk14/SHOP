@@ -16,6 +16,8 @@ export default function CheckoutForm({ product }: { product: any }) {
   const { subdomain } = useParams<{ subdomain: string }>();
   const productCurrency = "XOF";
   const quantity = 1;
+  const selectedSize = product?.selectedSize;
+  const productName = product.name + (selectedSize ? ` - ${selectedSize}` : "");
   const [formData, setFormData] = useState<Record<string, string>>({
     customer_name: "", customer_phone: "", customer_address: "", customer_neighborhood: "",
   });
@@ -92,7 +94,7 @@ export default function CheckoutForm({ product }: { product: any }) {
       value: totalPrice, currency: productCurrency, num_items: quantity, content_ids: [product.id],
     });
     const orderData: any = {
-      product_id: product.id, quantity, total_price: totalPrice, currency: productCurrency,
+      product_id: product.id, quantity, total_price: totalPrice, currency: productCurrency, product_name: productName,
     };
     getFormFields().forEach((field) => {
       if (formData[field.name]) orderData[field.name] = formData[field.name];
@@ -123,7 +125,7 @@ export default function CheckoutForm({ product }: { product: any }) {
           else if (colLower.includes("adresse")) rowData[col] = formData.customer_address;
           else if (colLower.includes("quartier") || colLower.includes("neighborhood")) rowData[col] = formData.customer_neighborhood;
           else if (colLower.includes("pays") || colLower.includes("country")) rowData[col] = ""; // will be populated on the server by IP
-          else if (colLower.includes("produit") || colLower.includes("product")) rowData[col] = product.name;
+          else if (colLower.includes("produit") || colLower.includes("product")) rowData[col] = productName;
           else if (colLower.includes("quantité") || colLower.includes("quantity")) rowData[col] = quantity;
           else if (colLower.includes("total") || colLower.includes("price")) rowData[col] = totalPrice;
           else if (colLower.includes("devise") || colLower.includes("currency")) rowData[col] = productCurrency;

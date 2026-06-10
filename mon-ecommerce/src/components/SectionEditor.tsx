@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { SectionSetting, BlockSetting, SettingDefinition, PageConfig } from "@/lib/theme-config";
+import { SYSTEM_PAGES, getContentSections, getSystemPageDefaultContentSections } from "@/lib/theme-config";
 import { sectionRegistry, getSectionDefinition, createDefaultSection } from "@/lib/sections";
 import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff, Settings2, Save, FilePlus, X, Copy } from "lucide-react";
 import ImagePicker from "@/components/ImagePicker";
@@ -356,28 +357,66 @@ interface PageEditorProps {
   savingSectionIndex?: number | null;
 }
 
+const systemPageIcons: Record<string, string> = {
+  "/": "🏠",
+  "/products": "📦",
+  "/products/[slug]": "🔍",
+  "/thank-you": "✅",
+  "/wishlist": "❤️",
+};
+
 export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSaveSection, savingSectionIndex }: PageEditorProps) {
   const [activePageId, setActivePageId] = useState("__default__");
   const pages = pagesProp || [];
 
+  const allSystemPages = SYSTEM_PAGES.map((sp) => {
+    const existing = pages.find((p) => p.slug === sp.slug);
+    if (existing) return existing;
+    return {
+      id: `sys-${sp.slug.replace(/[^a-z0-9]/g, "-")}`,
+      slug: sp.slug,
+      name: sp.name,
+      sections: getSystemPageDefaultContentSections(sp.slug),
+    };
+  });
+
   const activePage = activePageId === "__default__"
     ? { id: "__default__", slug: "/", name: "Page d'accueil", sections: defaultSections }
-    : pages.find((p) => p.id === activePageId);
+    : pages.find((p) => p.id === activePageId) || allSystemPages.find((p) => p.id === activePageId);
+
+  const isEditingSystemPage = activePageId !== "__default__" && SYSTEM_PAGES.some((sp) => sp.slug === activePage?.slug);
 
   const setActiveSections = (sections: SectionSetting[]) => {
     if (activePageId === "__default__") {
       onChange(pages, sections);
     } else {
-      onChange(
-        pages.map((p) => (p.id === activePageId ? { ...p, sections } : p)),
-        defaultSections
-      );
+      const existingIndex = pages.findIndex((p) => p.id === activePageId);
+      if (existingIndex >= 0) {
+        onChange(
+          pages.map((p) => (p.id === activePageId ? { ...p, sections } : p)),
+          defaultSections
+        );
+      } else {
+        const sysPage = allSystemPages.find((p) => p.id === activePageId);
+        if (sysPage) {
+          onChange([...pages, { ...sysPage, sections }], defaultSections);
+        }
+      }
     }
   };
 
+  const displaySections = activePage
+    ? (activePageId === "__default__"
+        ? activePage.sections
+        : isEditingSystemPage
+          ? getContentSections(activePage.sections)
+          : activePage.sections)
+    : [];
+
   const addPage = () => {
-    const name = `Page ${pages.length + 1}`;
-    const slug = `/page-${pages.length + 1}`;
+    const count = pages.filter((p) => !SYSTEM_PAGES.some((sp) => sp.slug === p.slug)).length;
+    const name = `Page ${count + 1}`;
+    const slug = `/page-${count + 1}`;
     const newPage: PageConfig = {
       id: `page-${Date.now()}`,
       slug,
@@ -394,6 +433,7 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
 
   const duplicatePage = () => {
     if (!activePage || activePageId === "__default__") return;
+    if (SYSTEM_PAGES.some((sp) => sp.slug === activePage.slug)) return;
     const newPage: PageConfig = {
       ...activePage,
       id: `page-${Date.now()}`,
@@ -410,11 +450,16 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
   };
 
   const deletePage = (id: string) => {
-    if (window.confirm("Supprimer cette page ?")) {
+    const p = pages.find((p) => p.id === id);
+    if (!p) return;
+    if (SYSTEM_PAGES.some((sp) => sp.slug === p.slug)) return;
+    if (window.confirm(`Supprimer la page "${p.name}" ?`)) {
       onChange(pages.filter((p) => p.id !== id), defaultSections);
       setActivePageId("__default__");
     }
   };
+
+  const isSystemPage = activePageId !== "__default__" && SYSTEM_PAGES.some((sp) => sp.slug === activePage?.slug);
 
   return (
     <div className="space-y-4">
@@ -431,7 +476,24 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
           >
             🏠 Accueil
           </button>
-          {pages.map((p) => (
+          <span className="text-xs text-gray-300 mx-1">|</span>
+          {allSystemPages.filter((sp) => sp.slug !== "/").map((sp) => (
+            <button
+              key={sp.id}
+              onClick={() => setActivePageId(sp.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                activePageId === sp.id
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+              }`}
+            >
+              {systemPageIcons[sp.slug] || "📄"} {sp.name}
+            </button>
+          ))}
+          {pages.filter((p) => !SYSTEM_PAGES.some((sp) => sp.slug === p.slug)).length > 0 && (
+            <span className="text-xs text-gray-300 mx-1">|</span>
+          )}
+          {pages.filter((p) => !SYSTEM_PAGES.some((sp) => sp.slug === p.slug)).map((p) => (
             <span key={p.id} className="flex items-center gap-0.5">
               <button
                 onClick={() => setActivePageId(p.id)}
@@ -456,7 +518,7 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
           ))}
         </div>
         <div className="flex items-center gap-1">
-          {activePageId !== "__default__" && (
+          {activePageId !== "__default__" && !isSystemPage && (
             <button
               onClick={duplicatePage}
               className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -482,14 +544,24 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">
               {activePageId === "__default__"
-                ? "Modifiez les sections de la page d'accueil"
-                : `Modifiez les sections de : ${activePage.name} (/${activePage.slug})`}
+                ? "Personnalisez les sections de la page d'accueil"
+                : isEditingSystemPage
+                  ? `Personnalisez le contenu de : ${activePage.name} (/${activePage.slug}) — l'en-tête et le pied de page sont modifiables depuis "Accueil"`
+                  : `Personnalisez les sections de : ${activePage.name} (/${activePage.slug})`}
             </p>
           </div>
           <SectionEditor
             key={activePage.id}
-            sections={activePage.sections}
-            onChange={setActiveSections}
+            sections={displaySections}
+            onChange={(newSections) => {
+              if (activePageId === "__default__") {
+                setActiveSections(newSections);
+              } else if (isEditingSystemPage) {
+                setActiveSections(newSections);
+              } else {
+                setActiveSections(newSections);
+              }
+            }}
             onSaveSection={onSaveSection}
             savingSectionIndex={savingSectionIndex}
           />

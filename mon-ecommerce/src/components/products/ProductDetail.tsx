@@ -14,6 +14,7 @@ interface Product {
   price?: number | null;
   compareAtPrice?: number | null;
   images?: string[] | null;
+  sizes?: string[] | null;
   stock_quantity?: number | null;
   slug?: string;
 }
@@ -41,7 +42,7 @@ export default function ProductDetail({ product, subdomain, showBreadcrumbs = tr
   const hasDiscount = product.compareAtPrice && product.price && product.compareAtPrice > product.price;
   const outOfStock = product.stock_quantity != null && product.stock_quantity <= 0;
 
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  const sizes = product.sizes?.length ? product.sizes : ["XS", "S", "M", "L", "XL", "XXL"];
   const colors = [
     { name: "Noir", hex: "#000000" },
     { name: "Blanc", hex: "#ffffff" },
@@ -187,7 +188,7 @@ export default function ProductDetail({ product, subdomain, showBreadcrumbs = tr
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {sizes.map((s) => (
+                  {sizes.map((s: string) => (
                     <button
                       key={s}
                       onClick={() => setSelectedSize(s)}

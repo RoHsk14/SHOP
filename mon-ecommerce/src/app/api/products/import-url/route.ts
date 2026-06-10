@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       price: "",
       description: "",
       images: [] as string[],
+      sizes: [] as string[],
     };
 
     // ── 1) JSON-LD ──
@@ -94,7 +95,70 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // ── 4) Twitter card fallback ──
+    // ── 4) Extract sizes ──
+    // JSON-LD offers with size
+    for (const raw of ldScripts) {
+      try {
+        const parsed = JSON.parse(raw);
+        const items = parsed["@graph"] || [parsed];
+        for (const item of items) {
+          if (item["@type"] === "Product" || item["@type"] === "ProductGroup") {
+            if (item.offers && Array.isArray(item.offers)) {
+              for (const offer of item.offers) {
+                if (offer.name && /^[a-z]+$/i.test(offer.name.replace(/\s/g, ""))) {
+                  addSize(extracted.sizes, offer.name.trim());
+                }
+              }
+            }
+            // AliExpress / Shopify variant sizes
+            if (item.sizes && Array.isArray(item.sizes)) {
+              for (const s of item.sizes) addSize(extracted.sizes, typeof s === "string" ? s : s.name || "");
+            }
+            if (item.variation) {
+              const varArr = Array.isArray(item.variation) ? item.variation : [item.variation];
+              for (const v of varArr) {
+                if (v.name?.toLowerCase().includes("size") && v.value) {
+                  const vals = Array.isArray(v.value) ? v.value : [v.value];
+                  for (const val of vals) addSize(extracted.sizes, val);
+                }
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // HTML select elements with size options
+    $('select[name*="size" i], select[id*="size" i], select[class*="size" i], select[data-type="size"]').each((_, el) => {
+      $(el).find("option").each((__, opt) => {
+        const raw = $(opt).val();
+        const val = typeof raw === "string" ? raw : String(raw?.[0] || $(opt).text());
+        if (val && !/^$|select|choose/i.test(val)) addSize(extracted.sizes, val.trim());
+      });
+    });
+
+    // Button/label elements with size values
+    $('[class*="size" i] button, [class*="size" i] label, [class*="Size" i] button, [class*="Size" i] label, [data-size]').each((_, el) => {
+      const text = $(el).text().trim();
+      if (text && /^[a-z]+\d*$/i.test(text.replace(/\s/g, "")) && text.length <= 5) {
+        addSize(extracted.sizes, text.toUpperCase());
+      }
+    });
+
+    // Pattern match in body text for common sizes
+    if (extracted.sizes.length === 0) {
+      const bodyText = $("body").text();
+      const sizeMatch = bodyText.match(/(?:tailles?|sizes?|dimensions?)\s*[:\s]*([A-Za-z0-9,\s/]+?)(?:\.|$|\n)/i);
+      if (sizeMatch) {
+        const parts = sizeMatch[1].split(/[,/]/);
+        for (const p of parts) {
+          const t = p.trim().toUpperCase();
+          if (/^(XS|S|M|L|XL|XXL|XXXL|\d+)$/.test(t)) addSize(extracted.sizes, t);
+        }
+      }
+    }
+
+    // ── 5) Twitter card fallback ──
     if (extracted.images.length === 0) {
       $('meta[name="twitter:image"], meta[property="twitter:image"]').each((_, el) => {
         const src = $(el).attr("content");
@@ -205,4 +269,9 @@ function collectImages(item: any, images: string[]) {
       if (src && !images.includes(src)) images.push(src);
     }
   }
+}
+
+function addSize(sizes: string[], size: string) {
+  const clean = size.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (clean && !sizes.includes(clean)) sizes.push(clean);
 }

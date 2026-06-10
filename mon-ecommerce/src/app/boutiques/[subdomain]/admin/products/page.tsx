@@ -18,6 +18,7 @@ type Product = {
   track_stock: boolean;
   stock_quantity: number | null;
   images: string[] | null;
+  sizes: string[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -30,6 +31,7 @@ type ProductForm = {
   track_stock: boolean;
   stock_quantity: string;
   images: string[];
+  sizes: string[];
 };
 
 const initialForm: ProductForm = {
@@ -40,6 +42,7 @@ const initialForm: ProductForm = {
   track_stock: true,
   stock_quantity: "",
   images: [],
+  sizes: [],
 };
 
 export default function ProductsPage() {
@@ -56,7 +59,7 @@ export default function ProductsPage() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importUrl, setImportUrl] = useState("");
   const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<{ name: string; price: string; description: string; images: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ name: string; price: string; description: string; images: string[]; sizes: string[] } | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -151,7 +154,8 @@ export default function ProductsPage() {
         sku: form.sku || null,
         track_stock: form.track_stock,
         stock_quantity: form.track_stock && form.stock_quantity ? parseInt(form.stock_quantity) : null,
-        images: form.images.length > 0 ? form.images : null
+        images: form.images.length > 0 ? form.images : null,
+        sizes: form.sizes.length > 0 ? form.sizes : null,
       };
       if (editingProduct) {
         const { error } = await supabase
@@ -190,6 +194,7 @@ export default function ProductsPage() {
       track_stock: product.track_stock,
       stock_quantity: product.stock_quantity ? product.stock_quantity.toString() : "",
       images: product.images || [],
+      sizes: product.sizes || [],
     });
     setModalOpen(true);
   };
@@ -651,6 +656,27 @@ export default function ProductsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tailles disponibles</label>
+                <input
+                  type="text"
+                  value={form.sizes.join(", ")}
+                  onChange={(e) => setForm({ ...form, sizes: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="XS, S, M, L, XL (séparées par des virgules)"
+                />
+                {form.sizes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {form.sizes.map((s, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                        {s}
+                        <button type="button" onClick={() => setForm({ ...form, sizes: form.sizes.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-500">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -807,6 +833,20 @@ export default function ProductsPage() {
                     />
                   </div>
 
+                  {importResult.sizes.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tailles</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {importResult.sizes.map((s, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                            {s}
+                            <button type="button" onClick={() => setImportResult({ ...importResult, sizes: importResult.sizes.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-500">✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {importResult.images.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
@@ -852,6 +892,7 @@ export default function ProductsPage() {
                           track_stock: true,
                           stock_quantity: "",
                           images: importResult.images,
+                          sizes: importResult.sizes,
                         });
                         setImportModalOpen(false);
                         setImportResult(null);

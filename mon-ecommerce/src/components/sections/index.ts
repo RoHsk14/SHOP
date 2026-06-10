@@ -8,6 +8,16 @@ import Newsletter from "./Newsletter";
 import Footer from "./Footer";
 import Spacer from "./Spacer";
 import CustomHtml from "./CustomHtml";
+import SectionProductSearch from "./SectionProductSearch";
+import SectionProductFilters from "./SectionProductFilters";
+import SectionProductGrid from "./SectionProductGrid";
+import SectionProductBreadcrumbs from "./SectionProductBreadcrumbs";
+import SectionProductGallery from "./SectionProductGallery";
+import SectionProductInfo from "./SectionProductInfo";
+import SectionProductSharing from "./SectionProductSharing";
+import SectionProductStickyCart from "./SectionProductStickyCart";
+import SectionThankYou from "./SectionThankYou";
+import SectionWishlistPage from "./SectionWishlistPage";
 
 export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "announcement-bar": AnnouncementBar,
@@ -20,4 +30,14 @@ export const sectionComponents: Record<string, React.ComponentType<any>> = {
   footer: Footer,
   spacer: Spacer,
   "custom-html": CustomHtml,
+  "product-search": SectionProductSearch,
+  "product-filters": SectionProductFilters,
+  "product-grid": SectionProductGrid,
+  "product-breadcrumbs": SectionProductBreadcrumbs,
+  "product-gallery": SectionProductGallery,
+  "product-info": SectionProductInfo,
+  "product-sharing": SectionProductSharing,
+  "product-sticky-cart": SectionProductStickyCart,
+  "thank-you": SectionThankYou,
+  "wishlist-page": SectionWishlistPage,
 };

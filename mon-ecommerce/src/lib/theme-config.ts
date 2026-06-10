@@ -270,9 +270,91 @@ export function themeConfigToCSS(config: ThemeConfig): Record<string, string> {
   };
 }
 
+export const GLOBAL_SECTION_TYPES = ["announcement-bar", "header", "footer"] as const;
+
+export function getGlobalSections(sections: SectionSetting[]): SectionSetting[] {
+  return sections.filter((s) => GLOBAL_SECTION_TYPES.includes(s.type as any));
+}
+
+export function getContentSections(sections: SectionSetting[]): SectionSetting[] {
+  return sections.filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any));
+}
+
+export const SYSTEM_PAGES = [
+  { slug: "/", name: "Page d'accueil" },
+  { slug: "/products", name: "Produits" },
+  { slug: "/products/[slug]", name: "Produit" },
+  { slug: "/thank-you", name: "Merci" },
+  { slug: "/wishlist", name: "Wishlist" },
+] as const;
+
+export function isSystemPage(slug: string): boolean {
+  return SYSTEM_PAGES.some((p) => p.slug === slug);
+}
+
+export function getSystemPageDefaultContentSections(slug: string): SectionSetting[] {
+  if (slug === "/products") {
+    return [
+      { id: "product-search", type: "product-search", settings: { placeholder: "Rechercher un produit..." } },
+      { id: "product-filters", type: "product-filters", settings: { show_sort: true, show_price_range: true } },
+      { id: "product-grid", type: "product-grid", settings: {} },
+    ];
+  }
+  if (slug === "/products/[slug]") {
+    return [
+      { id: "product-breadcrumbs", type: "product-breadcrumbs", settings: {} },
+      { id: "product-gallery", type: "product-gallery", settings: { lightbox: true } },
+      { id: "product-info", type: "product-info", settings: { show_price: true, show_description: true, show_variants: true, show_quantity: true } },
+      { id: "product-sharing", type: "product-sharing", settings: {} },
+      { id: "product-sticky-cart", type: "product-sticky-cart", settings: {} },
+    ];
+  }
+  if (slug === "/thank-you") {
+    return [{ id: "thank-you", type: "thank-you", settings: {} }];
+  }
+  if (slug === "/wishlist") {
+    return [{ id: "wishlist-page", type: "wishlist-page", settings: {} }];
+  }
+  return [];
+}
+
+export function ensureSystemPageInConfig(config: ThemeConfig, slug: string): ThemeConfig {
+  const isSystem = SYSTEM_PAGES.some(p => p.slug === slug);
+  if (!isSystem) return config;
+
+  const existingIndex = (config.pages || []).findIndex(p => p.slug === slug);
+  if (existingIndex >= 0) return config;
+
+  const newPage: PageConfig = {
+    id: `sys-${slug.replace(/[^a-z0-9]/g, "-")}`,
+    slug,
+    name: SYSTEM_PAGES.find(p => p.slug === slug)?.name || slug,
+    sections: getSystemPageDefaultContentSections(slug),
+  };
+  return { ...config, pages: [...(config.pages || []), newPage] };
+}
+
 export function getPageSections(config: ThemeConfig, slug: string): SectionSetting[] {
+  if (slug === "/") return config.sections;
+
   const page = config.pages?.find((p) => p.slug === slug);
+
+  if (isSystemPage(slug)) {
+    const globals = getGlobalSections(config.sections);
+    const content = (page?.sections || getSystemPageDefaultContentSections(slug))
+      .filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any));
+    const result = [...globals, ...content];
+    return result;
+  }
+
   return page?.sections || config.sections;
+}
+
+/** Ensure footer sections are always at the end */
+export function enforceFooterAtEnd(sections: SectionSetting[]): SectionSetting[] {
+  const footer = sections.filter((s) => s.type === "footer");
+  const rest = sections.filter((s) => s.type !== "footer");
+  return [...rest, ...footer];
 }
 
 export function getDefaultSections(themeId?: string): SectionSetting[] {
