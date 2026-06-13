@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd, getPublishedConfig } from "@/lib/theme-config";
 import type { ThemeConfig, SectionSetting } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import { ShopProvider } from "@/lib/shop-context";
@@ -27,6 +27,7 @@ export default function StorefrontPage() {
   const [shopName, setShopName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isPreview = getPreviewParam();
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +45,11 @@ export default function StorefrontPage() {
         if (settings) {
           setShopName(settings.shop_name || "");
           if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-            setConfig(settings.theme_config as ThemeConfig);
+            if (isPreview && (settings.theme_config as any).__draft) {
+              setConfig((settings.theme_config as any).__draft as ThemeConfig);
+            } else {
+              setConfig(getPublishedConfig(settings.theme_config));
+            }
           } else {
             setConfig(buildDefaultConfig(settings.theme_id || "classic"));
           }
@@ -58,9 +63,7 @@ export default function StorefrontPage() {
     };
     fetchData();
     return () => { cancelled = true; };
-  }, [subdomain]);
-
-  const isPreview = getPreviewParam();
+  }, [subdomain, isPreview]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--theme-bg, #f9fafb)" }}>

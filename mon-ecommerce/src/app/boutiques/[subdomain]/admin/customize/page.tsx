@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { themes } from "@/lib/themes";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd } from "@/lib/theme-config";
-import type { ThemeConfig, NavMenu } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd, getPublishedConfig, getDraftConfig, publishDraft } from "@/lib/theme-config";
+import type { ThemeConfig, NavMenu, SavedTheme } from "@/lib/theme-config";
 import SectionEditor, { PageSectionEditor } from "@/components/SectionEditor";
 import { sectionComponents } from "@/components/sections";
-import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload, ArrowUpFromLine, Mail } from "lucide-react";
+import { Save, Eye, Palette, Type, Layers, Image, Share2, Menu, LayoutDashboard, Code, Cookie, Upload, ArrowUpFromLine, Mail, Download, FileUp, Package } from "lucide-react";
 import { toast } from "sonner";
 import { worldCurrencies } from "@/lib/currencies";
 
@@ -26,6 +26,7 @@ import TabCookies from "@/components/brand/TabCookies";
 import TabImport from "@/components/brand/TabImport";
 import TabBackToTop from "@/components/brand/TabBackToTop";
 import TabNewsletter from "@/components/brand/TabNewsletter";
+import TabThemes from "@/components/brand/TabThemes";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
 
 interface Tab {
@@ -50,6 +51,7 @@ const TABS: Tab[] = [
   { id: "css", label: "CSS", icon: <Code className="w-4 h-4" /> },
   { id: "cookies", label: "Cookies", icon: <Cookie className="w-4 h-4" /> },
   { id: "import", label: "Import Shopify", icon: <Upload className="w-4 h-4" /> },
+  { id: "savedthemes", label: "Thèmes", icon: <Package className="w-4 h-4" /> },
 ];
 
 export default function CustomizePage() {
@@ -67,6 +69,8 @@ export default function CustomizePage() {
   const [defaultCurrency, setDefaultCurrency] = useState("EUR");
   const [selectedThemeId, setSelectedThemeId] = useState("classic");
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null);
+  const [lastPublished, setLastPublished] = useState<ThemeConfig | null>(null);
+  const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
 
   const fetchSettings = useCallback(async () => {
     const { data, error } = await supabase
@@ -83,7 +87,19 @@ export default function CustomizePage() {
       setDefaultCurrency(data.default_currency || "EUR");
       setSelectedThemeId(data.theme_id || "classic");
       if (data.theme_config && typeof data.theme_config === "object" && data.theme_config.global?.colors) {
-        setThemeConfig(data.theme_config as ThemeConfig);
+        const published = getPublishedConfig(data.theme_config);
+        const draft = getDraftConfig(data.theme_config, published);
+        setLastPublished(published);
+        setThemeConfig(draft);
+        if (data.theme_config.savedThemes) {
+          setSavedThemes(data.theme_config.savedThemes);
+        }
+      } else if (data.theme_config?.__draft) {
+        setLastPublished(buildDefaultConfig(data.theme_id || "classic"));
+        setThemeConfig(data.theme_config.__draft as ThemeConfig);
+        if (data.theme_config.savedThemes) {
+          setSavedThemes(data.theme_config.savedThemes);
+        }
       }
     }
     setLoading(false);
@@ -104,9 +120,23 @@ export default function CustomizePage() {
     setThemeConfig((prev) => updater(prev || buildDefaultConfig(selectedThemeId)));
   };
 
-  const handleSave = async () => {
+  const [publishing, setPublishing] = useState(false);
+
+  const saveToDb = async (savedConfig: ThemeConfig, isPublish: boolean, themes?: SavedTheme[]) => {
     setSaving(true);
-    const savedConfig = themeConfig || buildDefaultConfig(selectedThemeId);
+    const st = themes ?? savedThemes;
+    let configToSave: any;
+    if (isPublish) {
+      configToSave = { ...publishDraft(savedConfig) };
+      setLastPublished(savedConfig);
+    } else {
+      const published = lastPublished || savedConfig;
+      configToSave = { ...published, __draft: { ...savedConfig } };
+    }
+    // Preserve saved themes
+    if (st.length > 0) {
+      configToSave.savedThemes = st;
+    }
     const updateData: Record<string, any> = {
       shop_name: shopName,
       shop_description: shopDescription,
@@ -114,7 +144,7 @@ export default function CustomizePage() {
       shop_country: shopCountry,
       default_currency: defaultCurrency,
       theme_id: selectedThemeId,
-      theme_config: savedConfig,
+      theme_config: configToSave,
       updated_at: new Date().toISOString(),
     };
     const brand = savedConfig.brand;
@@ -122,21 +152,49 @@ export default function CustomizePage() {
 
     if (settingsId) {
       const { error } = await supabase.from("settings").update(updateData).eq("id", settingsId);
-      if (error) { toast.error("Erreur : " + error.message); setSaving(false); return; }
+      if (error) { toast.error("Erreur : " + error.message); setSaving(false); return false; }
     } else {
       const { data: { session } } = await supabase.auth.getSession();
       const { error } = await supabase.from("settings").insert([{ ...updateData, shop_slug: subdomain, user_id: session?.user?.id }]);
-      if (error) { toast.error("Erreur : " + error.message); setSaving(false); return; }
+      if (error) { toast.error("Erreur : " + error.message); setSaving(false); return false; }
     }
     setSaving(false);
-    toast.success("Boutique personnalisée !");
+    return true;
   };
+
+  const handleSave = async () => {
+    const savedConfig = themeConfig || buildDefaultConfig(selectedThemeId);
+    const ok = await saveToDb(savedConfig, false);
+    if (ok) toast.success("Brouillon enregistré !");
+  };
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    const savedConfig = themeConfig || buildDefaultConfig(selectedThemeId);
+    const ok = await saveToDb(savedConfig, true);
+    if (ok) toast.success("Boutique publiée !");
+    setPublishing(false);
+  };
+
+  const handlePublishWithConfig = async (config: ThemeConfig) => {
+    setPublishing(true);
+    const ok = await saveToDb(config, true);
+    if (ok) toast.success(`Thème publié !`);
+    setPublishing(false);
+  };
+
+  const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const handleSaveSection = async (index: number) => {
     setSavingSectionIndex(index);
     const savedConfig = themeConfig || buildDefaultConfig(selectedThemeId);
+    const published = lastPublished || savedConfig;
+    const configToSave: any = { ...published, __draft: { ...savedConfig } };
+    if (savedThemes.length > 0) {
+      configToSave.savedThemes = savedThemes;
+    }
     const updateData: Record<string, any> = {
-      theme_config: savedConfig,
+      theme_config: configToSave,
       updated_at: new Date().toISOString(),
     };
     if (settingsId) {
@@ -151,7 +209,55 @@ export default function CustomizePage() {
     toast.success("Section enregistrée !");
   };
 
-  const openPreview = () => {
+  const handleExport = () => {
+    const config = themeConfig || buildDefaultConfig(selectedThemeId);
+    const clean = publishDraft(config);
+    const blob = new Blob([JSON.stringify(clean, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `theme-${subdomain}-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Thème exporté !");
+  };
+
+  const importFileRef = useRef<HTMLInputElement>(null);
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      if (!imported.global || !imported.sections) {
+        toast.error("Fichier de thème invalide (global.sections requis)");
+        return;
+      }
+      const name = file.name.replace(/\.json$/i, "");
+      const clean = publishDraft(imported);
+      setThemeConfig(clean);
+      const newTheme: SavedTheme = {
+        id: genId(),
+        name,
+        config: clean,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const updated = [...savedThemes, newTheme];
+      setSavedThemes(updated);
+      saveToDb(clean, false, updated);
+      toast.success(`Thème "${name}" importé et sauvegardé !`);
+    } catch {
+      toast.error("Erreur de lecture du fichier JSON");
+    }
+    e.target.value = "";
+  };
+
+  const openPreview = async () => {
+    const savedConfig = themeConfig || buildDefaultConfig(selectedThemeId);
+    const ok = await saveToDb(savedConfig, false);
+    if (!ok) return;
     const host = window.location.host;
     const protocol = window.location.protocol;
     let previewUrl = "";
@@ -201,7 +307,19 @@ export default function CustomizePage() {
     if (settings.layout?.cartType) newConfig.layout.cartType = settings.layout.cartType;
     setThemeConfig(newConfig);
     setActiveTab("theme");
-    toast.success("Thème Shopify appliqué !");
+    // Save as a saved theme
+    const themeName = settings.themeName || "Import Shopify";
+    const newTheme: SavedTheme = {
+      id: genId(),
+      name: themeName,
+      config: { ...newConfig },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updated = [...savedThemes, newTheme];
+    setSavedThemes(updated);
+    saveToDb(newConfig, false, updated);
+    toast.success("Thème Shopify importé et sauvegardé !");
   };
 
   const tc = selectedTheme.colors;
@@ -221,6 +339,21 @@ export default function CustomizePage() {
           <p className="text-sm text-gray-500 mt-1">Tous les réglages pour votre marque</p>
         </div>
         <div className="flex items-center gap-3">
+          <input ref={importFileRef} type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+          <button
+            onClick={() => importFileRef.current?.click()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <FileUp className="w-4 h-4" />
+            Import
+          </button>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
           <button
             onClick={openPreview}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
@@ -230,11 +363,18 @@ export default function CustomizePage() {
           </button>
           <button
             onClick={handleSave} disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? "..." : "Brouillon"}
+          </button>
+          <button
+            onClick={handlePublish} disabled={publishing}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 text-sm shadow-sm"
             style={{ background: tc.primary }}
           >
             <Save className="w-4 h-4" />
-            {saving ? "..." : "Publier"}
+            {publishing ? "..." : "Publier"}
           </button>
         </div>
       </div>
@@ -416,6 +556,56 @@ export default function CustomizePage() {
               toast.success("CSS ajouté — vérifiez l'onglet CSS puis publiez");
             }}
             shopSlug={subdomain}
+          />
+        )}
+
+        {activeTab === "savedthemes" && (
+          <TabThemes
+            themeConfig={themeConfig || buildDefaultConfig(selectedThemeId)}
+            savedThemes={savedThemes}
+            onSaveTheme={(name) => {
+              const config = themeConfig || buildDefaultConfig(selectedThemeId);
+              const clean = publishDraft(config);
+              const newTheme: SavedTheme = {
+                id: genId(),
+                name,
+                config: clean,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+              const updated = [...savedThemes, newTheme];
+              setSavedThemes(updated);
+              saveToDb(config, false, updated);
+              toast.success(`Thème "${name}" sauvegardé !`);
+            }}
+            onApplyTheme={(theme) => {
+              setThemeConfig(theme.config);
+              toast.success(`Thème "${theme.name}" appliqué (brouillon)`);
+            }}
+            onPublishTheme={(theme) => {
+              setThemeConfig(theme.config);
+              setActiveTab("theme");
+              setTimeout(() => {
+                handlePublishWithConfig(theme.config);
+              }, 100);
+            }}
+            onDeleteTheme={(id) => {
+              const updated = savedThemes.filter((t) => t.id !== id);
+              setSavedThemes(updated);
+              const config = themeConfig || buildDefaultConfig(selectedThemeId);
+              saveToDb(config, false, updated);
+              toast.success("Thème supprimé");
+            }}
+            onExportTheme={(theme) => {
+              const blob = new Blob([JSON.stringify(theme.config, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `theme-${theme.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success(`Thème "${theme.name}" exporté !`);
+            }}
           />
         )}
       </div>

@@ -15,9 +15,12 @@ interface FormField {
 export default function CheckoutForm({ product }: { product: any }) {
   const { subdomain } = useParams<{ subdomain: string }>();
   const productCurrency = "XOF";
-  const quantity = 1;
+  const offerInfo = product?.offer;
+  const quantity = offerInfo?.quantity || 1;
   const selectedSize = product?.selectedSize;
   const productName = product.name + (selectedSize ? ` - ${selectedSize}` : "");
+  const currentPrice = offerInfo ? (offerInfo.totalPrice / quantity) : (product.price ?? 0);
+  const totalPrice = currentPrice * quantity;
   const [formData, setFormData] = useState<Record<string, string>>({
     customer_name: "", customer_phone: "", customer_address: "", customer_neighborhood: "",
   });
@@ -80,9 +83,6 @@ export default function CheckoutForm({ product }: { product: any }) {
       { name: "customer_address", label: "Adresse", required: true },
     ];
 
-  const currentPrice = product.price ?? 0;
-  const totalPrice = currentPrice * quantity;
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -96,6 +96,9 @@ export default function CheckoutForm({ product }: { product: any }) {
     const orderData: any = {
       product_id: product.id, quantity, total_price: totalPrice, currency: productCurrency, product_name: productName,
     };
+    if (offerInfo) {
+      orderData.offer_id = offerInfo.id;
+    }
     getFormFields().forEach((field) => {
       if (formData[field.name]) orderData[field.name] = formData[field.name];
     });

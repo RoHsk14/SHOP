@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, enforceFooterAtEnd, getPublishedConfig, ensureSystemPageInConfig } from "@/lib/theme-config";
 import type { ThemeConfig, SectionSetting } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import { ShopProvider } from "@/lib/shop-context";
@@ -15,6 +15,11 @@ import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import HeadManager from "@/components/HeadManager";
+
+function getPreviewParam(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("preview") === "1";
+}
 
 export default function CustomPage() {
   const { subdomain, pageSlug } = useParams<{ subdomain: string; pageSlug: string }>();
@@ -36,7 +41,16 @@ export default function CustomPage() {
       if (settings) {
         setShopName(settings.shop_name || "");
         if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-          setConfig(settings.theme_config as ThemeConfig);
+          const isPreview = getPreviewParam();
+          if (isPreview && (settings.theme_config as any).__draft) {
+            let c = (settings.theme_config as any).__draft as ThemeConfig;
+            c = ensureSystemPageInConfig(c, `/${pageSlug}`);
+            setConfig(c);
+          } else {
+            let c = getPublishedConfig(settings.theme_config);
+            c = ensureSystemPageInConfig(c, `/${pageSlug}`);
+            setConfig(c);
+          }
         } else {
           setConfig(buildDefaultConfig(settings.theme_id || "classic"));
         }

@@ -16,6 +16,9 @@ import SectionProductGallery from "./SectionProductGallery";
 import SectionProductInfo from "./SectionProductInfo";
 import SectionProductSharing from "./SectionProductSharing";
 import SectionProductStickyCart from "./SectionProductStickyCart";
+import SectionProductAccordion from "./SectionProductAccordion";
+import SectionProductMessaging from "./SectionProductMessaging";
+import SectionBundleOffer from "./SectionBundleOffer";
 import SectionThankYou from "./SectionThankYou";
 import SectionWishlistPage from "./SectionWishlistPage";
 
@@ -36,6 +39,9 @@ export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "product-breadcrumbs": SectionProductBreadcrumbs,
   "product-gallery": SectionProductGallery,
   "product-info": SectionProductInfo,
+  "product-accordion": SectionProductAccordion,
+  "product-messaging": SectionProductMessaging,
+  "bundle-offer": SectionBundleOffer,
   "product-sharing": SectionProductSharing,
   "product-sticky-cart": SectionProductStickyCart,
   "thank-you": SectionThankYou,

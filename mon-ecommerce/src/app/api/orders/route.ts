@@ -5,7 +5,7 @@ import { extractSubdomain } from "@/lib/host";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { product_id, quantity, total_price, currency, customer_name, customer_phone, customer_address } = body;
+    const { product_id, quantity, total_price, currency, customer_name, customer_phone, customer_address, offer_id } = body;
 
     if (!product_id || !quantity || !customer_name || !customer_phone) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
@@ -28,16 +28,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
     }
 
-    const unitPrice = product.price || 0;
-    const realTotal = unitPrice * quantity;
+    let unitPrice = product.price || 0;
+    let finalQuantity = Number(quantity);
 
-    if (Math.abs(realTotal - total_price) > 0.01) {
+    if (offer_id) {
+      const { data: offer } = await supabase
+        .from("offers")
+        .select("discount_type, discount_value, min_quantity")
+        .eq("id", offer_id)
+        .eq("shop_slug", shopSlug)
+        .eq("status", "active")
+        .single();
+
+      if (offer) {
+        if (offer.discount_type === "percentage") {
+          unitPrice = unitPrice * (1 - offer.discount_value / 100);
+        } else {
+          const discountPerUnit = offer.discount_value / Math.max(offer.min_quantity, 1);
+          unitPrice = Math.max(0, unitPrice - discountPerUnit);
+        }
+        finalQuantity = Math.max(Number(quantity), offer.min_quantity);
+      }
+    }
+
+    const realTotal = Math.round(unitPrice * finalQuantity);
+
+    if (Math.abs(realTotal - total_price) > 1) {
       return NextResponse.json({ error: "Prix invalide" }, { status: 400 });
     }
 
     const orderData = {
       product_id,
-      quantity,
+      quantity: finalQuantity,
       total_price: realTotal,
       currency: "XOF",
       customer_name,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -209,12 +209,13 @@ export default function AdminLayout({
  );
  }
 
- const menuItems = [
- { href: `${base}/admin`, label: "Vue d'ensemble", icon: LayoutDashboard },
- { href: `${base}/admin/orders`, label: "Commandes", icon: ShoppingCart },
- { href: `${base}/admin/products`, label: "Produits", icon: Package },
- { href: `${base}/admin/customize`, label: "Personnaliser", icon: Palette },
- ];
+const menuItems = [
+  { href: `${base}/admin`, label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: `${base}/admin/orders`, label: "Commandes", icon: ShoppingCart },
+  { href: `${base}/admin/products`, label: "Produits", icon: Package },
+  { href: `${base}/admin/offers`, label: "Offres", icon: Tag },
+  { href: `${base}/admin/customize`, label: "Personnaliser", icon: Palette },
+];
 
  const secondaryItems = [
  { href: `${base}/admin/settings`, label: "Paramètres", icon: Settings },

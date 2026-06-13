@@ -46,6 +46,7 @@ export function ProductGridProvider({ children }: { children: ReactNode }) {
       .from("products")
       .select("*")
       .eq("shop_slug", subdomain)
+      .eq("status", "active")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data) setProducts(data);

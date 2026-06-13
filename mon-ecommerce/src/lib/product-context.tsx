@@ -45,6 +45,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
         .select("*")
         .eq("slug", slug)
         .eq("shop_slug", subdomain)
+        .eq("status", "active")
         .maybeSingle();
 
       if (cancelled) return;
@@ -55,7 +56,8 @@ export function ProductProvider({ children }: { children: ReactNode }) {
         const { data: all } = await supabase
           .from("products")
           .select("*")
-          .eq("shop_slug", subdomain);
+          .eq("shop_slug", subdomain)
+          .eq("status", "active");
 
         if (cancelled) return;
 

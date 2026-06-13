@@ -19,6 +19,7 @@ type Product = {
   stock_quantity: number | null;
   images: string[] | null;
   sizes: string[] | null;
+  status: string;
   created_at: string;
   updated_at: string;
 };
@@ -65,13 +66,13 @@ export default function ProductsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select("id, name, description, price, sku, track_stock, stock_quantity, images, status, created_at, updated_at")
       .eq("shop_slug", subdomain)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erreur de chargement des produits");
     } else {
-      setProducts(data || []);
+      setProducts((data || []).map((p: any) => ({ ...p, sizes: [] })));
     }
     setLoading(false);
   }, [subdomain]);
@@ -145,7 +146,7 @@ export default function ProductsPage() {
           i++;
         }
       }
-      const productData = {
+      const productData: Record<string, any> = {
         name: form.name,
         slug,
         shop_slug: subdomain,
@@ -155,8 +156,10 @@ export default function ProductsPage() {
         track_stock: form.track_stock,
         stock_quantity: form.track_stock && form.stock_quantity ? parseInt(form.stock_quantity) : null,
         images: form.images.length > 0 ? form.images : null,
-        sizes: form.sizes.length > 0 ? form.sizes : null,
       };
+      if (!editingProduct) {
+        productData.status = "active";
+      }
       if (editingProduct) {
         const { error } = await supabase
           .from("products")
@@ -215,6 +218,21 @@ export default function ProductsPage() {
     }
   };
 
+  const handleToggleStatus = async (product: Product) => {
+    const newStatus = product.status === "active" ? "inactive" : "active";
+    const { error } = await supabase
+      .from("products")
+      .update({ status: newStatus })
+      .eq("shop_slug", subdomain)
+      .eq("id", product.id);
+    if (error) {
+      toast.error("Erreur de mise à jour du statut");
+    } else {
+      toast.success(newStatus === "active" ? "Produit activé" : "Produit désactivé");
+      fetchProducts();
+    }
+  };
+
   const handleCsvImport = () => {
     if (!csvFile) return;
     Papa.parse(csvFile, {
@@ -230,7 +248,8 @@ export default function ProductsPage() {
             sku: row.sku || null,
             track_stock: row.track_stock !== "false",
             stock_quantity: row.stock_quantity ? parseInt(row.stock_quantity) : null,
-            images: row.images ? row.images.split(",").map((i: string) => i.trim()) : null
+            images: row.images ? row.images.split(",").map((i: string) => i.trim()) : null,
+            status: "active",
           }));
         const { error } = await supabase
           .from("products")
@@ -300,7 +319,7 @@ export default function ProductsPage() {
     toast.success("Modèle téléchargé");
   };
 
-  const isActive = (p: Product) => p.stock_quantity !== null && p.stock_quantity > 0;
+  const isActive = (p: Product) => p.status === "active";
 
   const filteredProducts = products.filter(p => {
     if (statusFilter === "active") return isActive(p);
@@ -525,6 +544,9 @@ export default function ProductsPage() {
                               >
                                 <ExternalLink className="w-4 h-4 text-emerald-500" />
                               </a>
+                              <button onClick={() => handleToggleStatus(product)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title={product.status === "active" ? "Désactiver" : "Activer"}>
+                                <span className={`w-4 h-4 block rounded-full ${product.status === "active" ? "bg-emerald-500" : "bg-gray-300"}`} />
+                              </button>
                               <button onClick={() => handleEdit(product)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Modifier">
                                 <Pencil className="w-4 h-4 text-gray-400 hover:text-gray-700" />
                               </button>
@@ -587,6 +609,9 @@ export default function ProductsPage() {
                         <a href={`/boutiques/${subdomain}/products/${(product as any).slug || slugify(product.name)}`} target="_blank" rel="noopener" className="p-2 hover:bg-white rounded-lg">
                           <ExternalLink className="w-4 h-4 text-emerald-500" />
                         </a>
+                        <button onClick={() => handleToggleStatus(product)} className="p-2 hover:bg-white rounded-lg" title={product.status === "active" ? "Désactiver" : "Activer"}>
+                          <span className={`w-4 h-4 block rounded-full ${product.status === "active" ? "bg-emerald-500" : "bg-gray-300"}`} />
+                        </button>
                         <button onClick={() => handleEdit(product)} className="p-2 hover:bg-white rounded-lg">
                           <Pencil className="w-4 h-4 text-gray-400" />
                         </button>

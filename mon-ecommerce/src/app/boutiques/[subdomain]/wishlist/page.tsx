@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections, ensureSystemPageInConfig, enforceFooterAtEnd } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, ensureSystemPageInConfig, enforceFooterAtEnd, getPublishedConfig } from "@/lib/theme-config";
 import type { ThemeConfig } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
@@ -15,6 +15,11 @@ import BackToTop from "@/components/BackToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import HeadManager from "@/components/HeadManager";
 import { ShopProvider } from "@/lib/shop-context";
+
+function getPreviewParam(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("preview") === "1";
+}
 
 export default function WishlistPage() {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -31,9 +36,16 @@ export default function WishlistPage() {
         if (settings) {
           setShopName(settings.shop_name || "");
           if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-            let c = settings.theme_config as ThemeConfig;
-            c = ensureSystemPageInConfig(c, "/wishlist");
-            setConfig(c);
+            const isPreview = getPreviewParam();
+            if (isPreview && (settings.theme_config as any).__draft) {
+              let c = (settings.theme_config as any).__draft as ThemeConfig;
+              c = ensureSystemPageInConfig(c, "/wishlist");
+              setConfig(c);
+            } else {
+              let c = getPublishedConfig(settings.theme_config);
+              c = ensureSystemPageInConfig(c, "/wishlist");
+              setConfig(c);
+            }
           } else {
             setConfig(buildDefaultConfig(settings.theme_id || "classic"));
           }

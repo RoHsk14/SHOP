@@ -31,6 +31,7 @@ export default function AnnouncementBar({ settings }: Props) {
   }, [messages.length, settings.speed, next]);
 
   const msg = messages[current];
+  if (!msg) return null;
 
   return (
     <div className="text-center text-xs sm:text-sm font-medium py-2.5 px-4 relative overflow-hidden" style={{
@@ -50,7 +51,7 @@ export default function AnnouncementBar({ settings }: Props) {
           {msg.text}
         </Link>
       ) : (
-        <span style={{ color: msg?.text_color || "#ffffff" }}>{msg.text}</span>
+        <span style={{ color: msg?.text_color || "#ffffff" }}>{msg?.text}</span>
       )}
     </div>
   );

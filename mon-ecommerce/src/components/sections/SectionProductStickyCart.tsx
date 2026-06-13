@@ -6,7 +6,15 @@ import { addToCart } from "@/components/CartDrawer";
 import { useProduct } from "@/lib/product-context";
 import { useShop } from "@/lib/shop-context";
 
-export default function SectionProductStickyCart() {
+interface Props {
+  settings?: {
+    show_image?: boolean;
+    show_price?: boolean;
+    button_text?: string;
+  };
+}
+
+export default function SectionProductStickyCart({ settings }: Props) {
   const { product, loading } = useProduct();
   const { config } = useShop();
   const showCart = config?.layout?.showCart !== false;
@@ -33,6 +41,9 @@ export default function SectionProductStickyCart() {
     "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop",
   ];
   const slug = product.slug || product.name.toLowerCase().replace(/\s+/g, "-");
+  const showImage = settings?.show_image !== false;
+  const showPrice = settings?.show_price !== false;
+  const btnText = settings?.button_text || "Ajouter au panier";
 
   const handleAdd = () => {
     addToCart({
@@ -59,14 +70,18 @@ export default function SectionProductStickyCart() {
         >
           <div className="mx-auto flex items-center justify-between gap-4" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "var(--theme-secondary)" }}>
-                {images[0] && <img src={images[0]} alt="" className="w-full h-full object-cover" />}
-              </div>
+              {showImage && (
+                <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "var(--theme-secondary)" }}>
+                  {images[0] && <img src={images[0]} alt="" className="w-full h-full object-cover" />}
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate" style={{ color: "var(--theme-text)" }}>{product.name}</p>
-                <p className="text-sm font-bold" style={{ color: "var(--theme-primary)" }}>
-                  {product.price?.toLocaleString()} XOF
-                </p>
+                {showPrice && (
+                  <p className="text-sm font-bold" style={{ color: "var(--theme-primary)" }}>
+                    {product.price?.toLocaleString()} XOF
+                  </p>
+                )}
               </div>
             </div>
             <button
@@ -75,7 +90,7 @@ export default function SectionProductStickyCart() {
               style={{ background: "var(--theme-primary, #059669)", color: "#ffffff" }}
             >
               <ShoppingCart className="w-4 h-4" />
-              {added ? "Ajouté ✓" : "Ajouter au panier"}
+              {added ? "Ajouté ✓" : btnText}
             </button>
           </div>
         </div>

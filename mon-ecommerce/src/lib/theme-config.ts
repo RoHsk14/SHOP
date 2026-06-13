@@ -185,6 +185,20 @@ export interface ThemeConfig {
   newsletterPopup?: NewsletterPopupSettings;
 }
 
+export interface SavedTheme {
+  id: string;
+  name: string;
+  config: ThemeConfig;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ThemeConfigWrapper {
+  published?: ThemeConfig;
+  draft?: ThemeConfig;
+  savedThemes?: SavedTheme[];
+}
+
 export type ConfigValue = string | number | boolean | string[] | Record<string, any>;
 
 export interface SettingDefinition {
@@ -303,10 +317,16 @@ export function getSystemPageDefaultContentSections(slug: string): SectionSettin
   if (slug === "/products/[slug]") {
     return [
       { id: "product-breadcrumbs", type: "product-breadcrumbs", settings: {} },
-      { id: "product-gallery", type: "product-gallery", settings: { lightbox: true } },
-      { id: "product-info", type: "product-info", settings: { show_price: true, show_description: true, show_variants: true, show_quantity: true } },
-      { id: "product-sharing", type: "product-sharing", settings: {} },
-      { id: "product-sticky-cart", type: "product-sticky-cart", settings: {} },
+      { id: "product-gallery", type: "product-gallery", settings: { lightbox: true, layout: "sidebar", thumbnails_position: "bottom", sticky: false, zoom: true } },
+      { id: "product-info", type: "product-info", settings: { show_title: true, show_price: true, show_description: true, show_variants: true, show_quantity: true, show_badges: true, show_wishlist: true, description_mode: "inline", description_placement: "below", description_title: "Description", description_bg: "", button_style: "full", image_position: "left" } },
+      { id: "product-messaging", type: "product-messaging", settings: { show_delivery: false, delivery_text: "", show_payment: false, payment_text: "", show_returns: false, returns_text: "", show_guarantee: false, guarantee_text: "", layout: "row" } },
+      { id: "product-accordion", type: "product-accordion", settings: {}, blocks: [
+        { id: "panel-desc", type: "panel", settings: { title: "Description", content: "", icon: "info", open_by_default: true } },
+        { id: "panel-delivery", type: "panel", settings: { title: "Livraison", content: "Livraison sous 3-5 jours ouvrés.", icon: "truck", open_by_default: false } },
+        { id: "panel-returns", type: "panel", settings: { title: "Retours", content: "Retour gratuit sous 30 jours.", icon: "refresh", open_by_default: false } },
+      ] },
+      { id: "product-sharing", type: "product-sharing", settings: { show_facebook: true, show_twitter: true, show_linkedin: true, show_share: true, label: "Partager" } },
+      { id: "product-sticky-cart", type: "product-sticky-cart", settings: { show_image: true, show_price: true, button_text: "Ajouter au panier" } },
     ];
   }
   if (slug === "/thank-you") {
@@ -417,6 +437,15 @@ export function getDefaultSections(themeId?: string): SectionSetting[] {
       settings: {
         title: "Nos Produits",
         description: "",
+      },
+    },
+    {
+      id: "bundle-offer",
+      type: "bundle-offer",
+      settings: {
+        title: "Offres groupées",
+        subtitle: "Profitez de nos offres spéciales",
+        layout: "list",
       },
     },
     {
@@ -602,4 +631,44 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
       },
     ],
   };
+}
+
+/** Extract the published config from a raw DB object (supports __draft) */
+export function getPublishedConfig(raw: any): ThemeConfig {
+  // If __draft exists, the root is the published version
+  if (raw?.__draft) {
+    const { __draft, ...published } = raw;
+    return published as ThemeConfig;
+  }
+  return raw as ThemeConfig;
+}
+
+/** Extract the draft config from a raw DB object */
+export function getDraftConfig(raw: any, published: ThemeConfig): ThemeConfig {
+  if (raw?.__draft) return raw.__draft as ThemeConfig;
+  return published; // if no draft, use published as draft
+}
+
+/** Merge draft into published and return a clean config (no __draft) */
+export function publishDraft(draft: ThemeConfig): ThemeConfig {
+  const clean = { ...draft } as any;
+  delete clean.__draft;
+  return clean as ThemeConfig;
+}
+
+/** Extract saved themes from raw DB object */
+export function getSavedThemes(raw: any): SavedTheme[] {
+  return raw?.savedThemes || [];
+}
+
+/** Build the DB config with saved themes */
+export function withSavedThemes(
+  config: ThemeConfig,
+  savedThemes: SavedTheme[],
+  isPublish: boolean,
+): any {
+  if (isPublish) {
+    return { ...config, savedThemes };
+  }
+  return { ...config, __draft: { ...config }, savedThemes };
 }

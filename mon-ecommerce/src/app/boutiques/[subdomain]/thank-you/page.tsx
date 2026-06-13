@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildDefaultConfig, themeConfigToCSS, getPageSections, ensureSystemPageInConfig, enforceFooterAtEnd } from "@/lib/theme-config";
+import { buildDefaultConfig, themeConfigToCSS, getPageSections, ensureSystemPageInConfig, enforceFooterAtEnd, getPublishedConfig } from "@/lib/theme-config";
 import type { ThemeConfig } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
@@ -16,6 +16,11 @@ import NewsletterPopup from "@/components/NewsletterPopup";
 import { ShopProvider } from "@/lib/shop-context";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+
+function getPreviewParam(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("preview") === "1";
+}
 
 export default function ThankYouPage() {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -40,9 +45,16 @@ export default function ThankYouPage() {
       if (settings) {
         setShopName(settings.shop_name || "");
         if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-          let c = settings.theme_config as ThemeConfig;
-          c = ensureSystemPageInConfig(c, "/thank-you");
-          setConfig(c);
+          const isPreview = getPreviewParam();
+          if (isPreview && (settings.theme_config as any).__draft) {
+            let c = (settings.theme_config as any).__draft as ThemeConfig;
+            c = ensureSystemPageInConfig(c, "/thank-you");
+            setConfig(c);
+          } else {
+            let c = getPublishedConfig(settings.theme_config);
+            c = ensureSystemPageInConfig(c, "/thank-you");
+            setConfig(c);
+          }
         } else {
           setConfig(buildDefaultConfig(settings.theme_id || "classic"));
         }
