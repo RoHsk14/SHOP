@@ -117,7 +117,6 @@ export interface LayoutSettings {
   showFilters?: boolean;
   showWishlist?: boolean;
   showBadges?: boolean;
-  stickyAddToCart?: boolean;
 }
 
 export interface BackToTopSettings {
@@ -318,7 +317,7 @@ export function getSystemPageDefaultContentSections(slug: string): SectionSettin
     return [
       { id: "product-breadcrumbs", type: "product-breadcrumbs", settings: {} },
       { id: "product-gallery", type: "product-gallery", settings: { lightbox: true, layout: "sidebar", thumbnails_position: "bottom", sticky: false, zoom: true } },
-      { id: "product-info", type: "product-info", settings: { show_title: true, show_price: true, show_description: true, show_variants: true, show_quantity: true, show_badges: true, show_wishlist: true, description_mode: "inline", description_placement: "below", description_title: "Description", description_bg: "", button_style: "full", image_position: "left" } },
+      { id: "product-info", type: "product-info", settings: { show_title: true, show_price: true, show_description: true, show_badges: true, description_mode: "inline", description_placement: "below", description_title: "Description", description_bg: "", image_position: "left" } },
       { id: "product-messaging", type: "product-messaging", settings: { show_delivery: false, delivery_text: "", show_payment: false, payment_text: "", show_returns: false, returns_text: "", show_guarantee: false, guarantee_text: "", layout: "row" } },
       { id: "product-accordion", type: "product-accordion", settings: {}, blocks: [
         { id: "panel-desc", type: "panel", settings: { title: "Description", content: "", icon: "info", open_by_default: true } },
@@ -326,7 +325,6 @@ export function getSystemPageDefaultContentSections(slug: string): SectionSettin
         { id: "panel-returns", type: "panel", settings: { title: "Retours", content: "Retour gratuit sous 30 jours.", icon: "refresh", open_by_default: false } },
       ] },
       { id: "product-sharing", type: "product-sharing", settings: { show_facebook: true, show_twitter: true, show_linkedin: true, show_share: true, label: "Partager" } },
-      { id: "product-sticky-cart", type: "product-sticky-cart", settings: { show_image: true, show_price: true, button_text: "Ajouter au panier" } },
     ];
   }
   if (slug === "/thank-you") {
@@ -584,7 +582,6 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
       showFilters: true,
       showWishlist: true,
       showBadges: true,
-      stickyAddToCart: true,
     },
     menus: [
       {

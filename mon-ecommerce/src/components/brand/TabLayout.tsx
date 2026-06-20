@@ -151,15 +151,6 @@ export default function TabLayout({
             />
             <span className="text-sm text-gray-700">Badges (Nouveau, Promo)</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={layout.stickyAddToCart !== false}
-              onChange={(e) => onChange({ ...layout, stickyAddToCart: e.target.checked })}
-              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-            />
-            <span className="text-sm text-gray-700">Panier collant (produit)</span>
-          </label>
         </div>
       </div>
     </div>

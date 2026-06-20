@@ -363,17 +363,14 @@ export const sectionRegistry: SectionDefinition[] = [
   {
     type: "product-info",
     name: "Infos produit",
-    description: "Nom, prix, description, variantes, ajout au panier",
+    description: "Nom, prix, description, formulaire de commande",
     icon: "FileText",
     category: "content",
     settings: [
       { key: "show_title", label: "Afficher le titre", type: "boolean", default: true },
       { key: "show_price", label: "Afficher le prix", type: "boolean", default: true },
       { key: "show_description", label: "Afficher la description", type: "boolean", default: true },
-      { key: "show_variants", label: "Afficher les variantes (couleurs/taille)", type: "boolean", default: true },
-      { key: "show_quantity", label: "Afficher le sélecteur de quantité", type: "boolean", default: true },
       { key: "show_badges", label: "Afficher les badges (promo, nouveau)", type: "boolean", default: true },
-      { key: "show_wishlist", label: "Afficher le bouton favori", type: "boolean", default: true },
       { key: "description_mode", label: "Mode description", type: "select", default: "inline", options: [
         { label: "En ligne", value: "inline" },
         { label: "Accordéon", value: "accordion" },
@@ -385,22 +382,16 @@ export const sectionRegistry: SectionDefinition[] = [
       ]},
       { key: "description_title", label: "Titre de la description", type: "text", default: "Description" },
       { key: "description_bg", label: "Fond de la description", type: "color", default: "" },
-      { key: "button_style", label: "Style bouton ajout panier", type: "select", default: "full", options: [
-        { label: "Pleine largeur", value: "full" },
-        { label: "Compact", value: "compact" },
-        { label: "Sans bordure", value: "ghost" },
-      ]},
       { key: "image_position", label: "Position de l'image", type: "select", default: "left", options: [
         { label: "À gauche", value: "left" },
         { label: "À droite", value: "right" },
       ]},
     ],
     defaultSettings: {
-      show_title: true, show_price: true, show_description: true, show_variants: true,
-      show_quantity: true, show_badges: true, show_wishlist: true,
+      show_title: true, show_price: true, show_description: true, show_badges: true,
       description_mode: "inline", description_placement: "inline",
       description_title: "Description", description_bg: "",
-      button_style: "full", image_position: "left",
+      image_position: "left",
     },
   },
   {
@@ -498,19 +489,6 @@ export const sectionRegistry: SectionDefinition[] = [
       subtitle: "Profitez de nos offres spéciales",
       layout: "list",
     },
-  },
-  {
-    type: "product-sticky-cart",
-    name: "Panier fixe",
-    description: "Barre d'achat fixe en bas de l'écran",
-    icon: "ShoppingCart",
-    category: "content",
-    settings: [
-      { key: "show_image", label: "Afficher l'image", type: "boolean", default: true },
-      { key: "show_price", label: "Afficher le prix", type: "boolean", default: true },
-      { key: "button_text", label: "Texte du bouton", type: "text", default: "Ajouter au panier" },
-    ],
-    defaultSettings: { show_image: true, show_price: true, button_text: "Ajouter au panier" },
   },
   {
     type: "thank-you",
