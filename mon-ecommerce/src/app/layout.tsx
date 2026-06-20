@@ -1,13 +1,20 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Instrument_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import MetaPixel from "@/components/MetaPixel";
 import ToasterWrapper from "@/components/ToasterWrapper";
 import VisitorTracker from "@/components/VisitorTracker";
 
+const instrumentSans = Instrument_Sans({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
 const inter = Inter({
-  variable: "--font-inter",
+  variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 });
@@ -23,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body className={`${inter.variable} antialiased`} style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <html lang="fr" className={`${instrumentSans.variable} ${inter.variable}`} style={{ scrollBehavior: "smooth" }}>
+      <body className="antialiased" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
         <Suspense fallback={null}>
           <MetaPixel />
           <VisitorTracker />

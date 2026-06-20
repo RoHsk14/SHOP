@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -18,6 +18,7 @@ export default function AdminLayout({
  const router = useRouter();
  const [sidebarOpen, setSidebarOpen] = useState(false);
  const [checking, setChecking] = useState(true);
+ const [adminTheme, setAdminTheme] = useState<"dark" | "light">("light");
  const [userEmail, setUserEmail] = useState("");
  const [shopSlug, setShopSlug] = useState<string | null>(null);
  const [shopName, setShopName] = useState("");
@@ -199,11 +200,25 @@ export default function AdminLayout({
  };
  }, [slug]);
 
+  // Initialize admin theme from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("admin-theme");
+    if (stored === "light" || stored === "dark") {
+      setAdminTheme(stored);
+    }
+  }, []);
+
+  const toggleAdminTheme = () => {
+    const next = adminTheme === "dark" ? "light" : "dark";
+    setAdminTheme(next);
+    localStorage.setItem("admin-theme", next);
+  };
+
  if (barePath === "/admin/login") return <>{children}</>;
 
  if (checking) {
  return (
-   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+   <div data-admin-theme={adminTheme} className="min-h-screen bg-gray-50 flex items-center justify-center">
    <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin"></div>
  </div>
  );
@@ -226,7 +241,7 @@ const menuItems = [
   return (
   <>
 
-  <div className="min-h-screen bg-gray-50 flex">
+  <div data-admin-theme={adminTheme} className="min-h-screen bg-gray-50 flex">
   {/* Mobile menu button */}
   <button
  onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -395,7 +410,16 @@ const menuItems = [
    </span>
  </div>
 
- <div className="flex items-center gap-4 ml-auto">
+ <div className="flex items-center gap-2 ml-auto">
+  {/* Theme Toggle */}
+  <button
+    onClick={toggleAdminTheme}
+    className="w-8 h-8 bg-white border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-all text-gray-500 hover:text-gray-900"
+    title={adminTheme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+  >
+    {adminTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+  </button>
+
  {/* Profile Avatar Button */}
  <div className="relative">
  <button

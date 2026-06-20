@@ -530,6 +530,158 @@ export const sectionRegistry: SectionDefinition[] = [
     settings: [],
     defaultSettings: {},
   },
+  /* — Statistiques — */
+  {
+    type: "stats-bar",
+    name: "Barre de statistiques",
+    description: "Chiffres clés (clients, produits, livraisons...)",
+    icon: "BarChart3",
+    category: "content",
+    settings: [
+      { key: "background", label: "Couleur de fond", type: "color", default: "" },
+      { key: "text_color", label: "Couleur du texte", type: "color", default: "#ffffff" },
+    ],
+    defaultSettings: { background: "", text_color: "#ffffff" },
+    blocks: [
+      {
+        type: "stat",
+        name: "Statistique",
+        settings: [
+          { key: "icon", label: "Icône (emoji)", type: "text", default: "" },
+          { key: "value", label: "Valeur", type: "text", default: "" },
+          { key: "label", label: "Libellé", type: "text", default: "" },
+        ],
+      },
+    ],
+    defaultBlocks: [
+      { settings: { icon: "🛍️", value: "500+", label: "Produits" } },
+      { settings: { icon: "😊", value: "10 000+", label: "Clients satisfaits" } },
+      { settings: { icon: "🚚", value: "5 000+", label: "Commandes livrées" } },
+      { settings: { icon: "⭐", value: "4.8/5", label: "Avis clients" } },
+    ],
+  },
+  /* — Témoignages — */
+  {
+    type: "testimonials",
+    name: "Témoignages",
+    description: "Avis clients avec notes et témoignages",
+    icon: "MessageSquare",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Ce que disent nos clients" },
+      { key: "description", label: "Description", type: "textarea", default: "" },
+    ],
+    defaultSettings: { title: "Ce que disent nos clients", description: "" },
+    blocks: [
+      {
+        type: "testimonial",
+        name: "Témoignage",
+        settings: [
+          { key: "quote", label: "Citation", type: "textarea", default: "" },
+          { key: "author", label: "Auteur", type: "text", default: "" },
+          { key: "role", label: "Rôle", type: "text", default: "" },
+          { key: "avatar", label: "Avatar", type: "image", default: "" },
+          { key: "rating", label: "Note (1-5)", type: "number", default: 5 },
+        ],
+      },
+    ],
+    defaultBlocks: [
+      { settings: { quote: "Produits de qualité, livraison rapide. Je recommande !", author: "Marie K.", role: "Cliente fidèle", avatar: "", rating: 5 } },
+      { settings: { quote: "Super boutique, service client au top. Commande parfaitement emballée.", author: "Thomas L.", role: "Acheteur régulier", avatar: "", rating: 5 } },
+      { settings: { quote: "Rapport qualité-prix imbattable. Ma nouvelle boutique préférée !", author: "Sophie M.", role: "Nouvelle cliente", avatar: "", rating: 5 } },
+    ],
+  },
+  /* — Grille de fonctionnalités — */
+  {
+    type: "features-grid",
+    name: "Grille d'avantages",
+    description: "Grille d'avantages (livraison, paiement, support...)",
+    icon: "Grid3X3",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Pourquoi nous choisir ?" },
+      { key: "description", label: "Description", type: "textarea", default: "" },
+      { key: "columns", label: "Colonnes", type: "number", default: 3 },
+    ],
+    defaultSettings: { title: "Pourquoi nous choisir ?", description: "", columns: 3 },
+    blocks: [
+      {
+        type: "feature",
+        name: "Avantage",
+        settings: [
+          { key: "icon", label: "Icône", type: "select", default: "truck", options: [
+            { label: "Livraison", value: "truck" },
+            { label: "Sécurité", value: "shield" },
+            { label: "Support", value: "headphones" },
+            { label: "Retour", value: "rotate-ccw" },
+            { label: "Rapidité", value: "clock" },
+            { label: "Cadeau", value: "gift" },
+          ]},
+          { key: "title", label: "Titre", type: "text", default: "" },
+          { key: "description", label: "Description", type: "textarea", default: "" },
+        ],
+      },
+    ],
+    defaultBlocks: [
+      { settings: { icon: "truck", title: "Livraison rapide", description: "Expédition sous 24h partout en France et en Afrique." } },
+      { settings: { icon: "shield", title: "Paiement sécurisé", description: "Vos transactions sont protégées par un système de cryptage avancé." } },
+      { settings: { icon: "headphones", title: "Service client", description: "Une équipe dédiée à votre écoute 7j/7 pour vous accompagner." } },
+    ],
+  },
+  /* — FAQ — */
+  {
+    type: "faq",
+    name: "FAQ",
+    description: "Questions fréquentes avec accordéon",
+    icon: "HelpCircle",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Questions fréquentes" },
+      { key: "description", label: "Description", type: "textarea", default: "" },
+    ],
+    defaultSettings: { title: "Questions fréquentes", description: "" },
+    blocks: [
+      {
+        type: "qa",
+        name: "Question/Réponse",
+        settings: [
+          { key: "question", label: "Question", type: "text", default: "" },
+          { key: "answer", label: "Réponse", type: "textarea", default: "" },
+        ],
+      },
+    ],
+    defaultBlocks: [
+      { settings: { question: "Quels sont les délais de livraison ?", answer: "La livraison prend généralement 3 à 5 jours ouvrés selon votre localisation." } },
+      { settings: { question: "Puis-je retourner un produit ?", answer: "Oui, vous disposez de 30 jours pour retourner un produit gratuitement." } },
+      { settings: { question: "Quels moyens de paiement acceptez-vous ?", answer: "Nous acceptons les cartes bancaires, Orange Money, MTN Mobile Money et Wave." } },
+    ],
+  },
+  /* — Bannette CTA — */
+  {
+    type: "cta-banner",
+    name: "Bannière CTA",
+    description: "Bannière d'appel à l'action avec bouton",
+    icon: "Megaphone",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Prêt à passer commande ?" },
+      { key: "description", label: "Description", type: "textarea", default: "Découvrez notre sélection de produits uniques." },
+      { key: "button_text", label: "Texte du bouton", type: "text", default: "Voir les produits" },
+      { key: "button_url", label: "Lien du bouton", type: "url", default: "/products" },
+      { key: "background", label: "Couleur de fond", type: "color", default: "" },
+      { key: "text_color", label: "Couleur du texte", type: "color", default: "#ffffff" },
+      { key: "button_color", label: "Couleur du bouton", type: "color", default: "#ffffff" },
+    ],
+    defaultSettings: {
+      title: "Prêt à passer commande ?",
+      description: "Découvrez notre sélection de produits uniques.",
+      button_text: "Voir les produits",
+      button_url: "/products",
+      background: "",
+      text_color: "#ffffff",
+      button_color: "#ffffff",
+    },
+  },
 ];
 
 export function getSectionDefinition(type: string): SectionDefinition | undefined {

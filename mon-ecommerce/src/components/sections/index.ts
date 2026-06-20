@@ -21,6 +21,11 @@ import SectionProductMessaging from "./SectionProductMessaging";
 import SectionBundleOffer from "./SectionBundleOffer";
 import SectionThankYou from "./SectionThankYou";
 import SectionWishlistPage from "./SectionWishlistPage";
+import StatsBar from "./StatsBar";
+import Testimonials from "./Testimonials";
+import FeaturesGrid from "./FeaturesGrid";
+import FAQ from "./FAQ";
+import CTABanner from "./CTABanner";
 
 export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "announcement-bar": AnnouncementBar,
@@ -46,4 +51,9 @@ export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "product-sticky-cart": SectionProductStickyCart,
   "thank-you": SectionThankYou,
   "wishlist-page": SectionWishlistPage,
+  "stats-bar": StatsBar,
+  testimonials: Testimonials,
+  "features-grid": FeaturesGrid,
+  faq: FAQ,
+  "cta-banner": CTABanner,
 };
