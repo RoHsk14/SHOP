@@ -22,6 +22,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ShopEazy",
   description: "Créez votre boutique e-commerce en quelques minutes",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
