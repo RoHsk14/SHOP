@@ -3,16 +3,17 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default function AuthCallbackPage() {
   const redirectTo = (slug: string, path: string) => {
-    window.location.replace(`${window.location.origin}/boutiques/${slug}${path}`);
+    window.location.replace(`${getSiteUrl()}/boutiques/${slug}${path}`);
   };
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
-        window.location.replace(`${window.location.origin}/login?error=session_not_found`);
+        window.location.replace(`${getSiteUrl()}/login?error=session_not_found`);
         return;
       }
 
@@ -31,7 +32,7 @@ export default function AuthCallbackPage() {
       }
 
       if (settings && settings.length > 1) {
-        window.location.replace(`${window.location.origin}/login`);
+        window.location.replace(`${getSiteUrl()}/login`);
         return;
       }
 
@@ -39,7 +40,7 @@ export default function AuthCallbackPage() {
       await supabase.from("settings").insert([{ shop_slug: newSlug, user_id: session.user.id }]);
       redirectTo(newSlug, "/onboarding");
     }).catch(() => {
-      window.location.replace(`${window.location.origin}/login?error=callback_error`);
+      window.location.replace(`${getSiteUrl()}/login?error=callback_error`);
     });
   }, []);
 
