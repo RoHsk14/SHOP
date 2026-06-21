@@ -127,6 +127,17 @@ export default function TabImport({
 
   return (
     <div className="space-y-5">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Fonctionnalité en développement</p>
+          <p className="text-xs text-amber-700">L&apos;import Shopify est encore en cours d&apos;amélioration — certains éléments peuvent ne pas être parfaitement compatibles.</p>
+        </div>
+      </div>
       <p className="text-xs text-gray-500">
         Importez un thème Shopify complet — couleurs, polices, CSS, images et assets sont extraits automatiquement.
         Déposez le fichier <code className="bg-gray-100 px-1 rounded">.zip</code> du thème ou les fichiers JSON individuels.
