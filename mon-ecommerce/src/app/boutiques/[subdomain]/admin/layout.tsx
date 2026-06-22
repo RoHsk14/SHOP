@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -232,9 +232,10 @@ const menuItems = [
   { href: `${base}/admin/customize`, label: "Personnaliser", icon: Palette },
 ];
 
- const secondaryItems = [
- { href: `${base}/admin/settings`, label: "Paramètres", icon: Settings },
- ];
+  const secondaryItems = [
+    { href: `${base}/admin/settings`, label: "Paramètres", icon: Settings },
+    { href: `${base}/admin/whatsapp`, label: "WhatsApp", icon: MessageCircle },
+  ];
 
  const isActive = (href: string) => barePath === href;
 
