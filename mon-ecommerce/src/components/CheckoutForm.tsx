@@ -132,7 +132,7 @@ export default function CheckoutForm({ product }: { product: any }) {
           else if (colLower.includes("quantité") || colLower.includes("quantity")) rowData[col] = quantity;
           else if (colLower.includes("total") || colLower.includes("price")) rowData[col] = totalPrice;
           else if (colLower.includes("devise") || colLower.includes("currency")) rowData[col] = productCurrency;
-          else if (colLower.includes("statut") || colLower.includes("status")) rowData[col] = "pending";
+          else if (colLower.includes("statut") || colLower.includes("status")) rowData[col] = "À traiter";
           else rowData[col] = formData[colLower.replace(/\s/g, '_')] || "";
         });
         

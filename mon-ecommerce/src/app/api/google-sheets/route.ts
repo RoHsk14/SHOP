@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         sanitize(finalRowData?.Quantité || 1),
         sanitize(finalRowData?.Total || 0),
         sanitize(finalRowData?.Devise || "EUR"),
-        sanitize(finalRowData?.Statut || "pending"),
+        sanitize(finalRowData?.Statut || "À traiter"),
         sanitize(countryName),
       ]);
     }

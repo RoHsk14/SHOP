@@ -185,7 +185,7 @@ export default function SettingsAdmin() {
           "Quantité": 1,
           "Total": 10000,
           "Devise": "XAF",
-          "Statut": "pending",
+          "Statut": "À traiter",
           "Pays": ""
         }
       };
