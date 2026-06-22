@@ -113,10 +113,15 @@ export default function CheckoutForm({ product }: { product: any }) {
       toast.error(err.error || "Erreur lors de la commande");
     } else {
       if (settings?.google_sheet_url) {
-        const columns = settings.google_sheet_columns || [
+        let columns = settings.google_sheet_columns || [
           "Date", "Nom du client", "Téléphone", "Adresse", "Quartier", 
           "Produit", "Quantité", "Total", "Devise", "Statut", "Pays"
         ];
+        
+        // Ensure "Pays" column is always present (populated server-side by IP)
+        if (!columns.some((c: string) => c.toLowerCase().includes("pays") || c.toLowerCase().includes("country"))) {
+          columns = [...columns, "Pays"];
+        }
         
         const rowData: any = {};
         
