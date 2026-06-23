@@ -167,7 +167,7 @@ router.use(function (req, res, next) {
 
 router.get('/status', function (req, res) {
   res.json({
-    clientStatus: clientStatus,
+    status: clientStatus,
     hasQr: !!qrCodeData,
     hasPairing: !!pairingCodeData,
   });

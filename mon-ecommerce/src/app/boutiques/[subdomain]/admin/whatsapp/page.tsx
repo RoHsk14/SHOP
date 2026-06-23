@@ -75,15 +75,15 @@ export default function WhatsAppAdmin() {
 
   const fetchBotStatus = async () => {
     try {
-      console.log("[WhatsApp] fetching status from:", `${BOT_URL}/status`);
-const res = await fetch(`${BOT_URL}/status`);
+      console.log("[WhatsApp] fetching status from:", `/api/whatsapp/status`);
+const res = await fetch(`/api/whatsapp/status`);
       if (!res.ok) throw new Error("Bot indisponible");
       const data: BotStatus = await res.json();
       setBotStatus(data);
       setBotError(false);
 
       if (data.hasQr) {
-        setQrImage(`${BOT_URL}/qr-image?${Date.now()}`);
+        setQrImage(`/api/whatsapp/qr-image?${Date.now()}`);
       } else {
         setQrImage("");
       }
@@ -99,8 +99,8 @@ const res = await fetch(`${BOT_URL}/status`);
 
   const fetchGroups = async () => {
     try {
-      console.log("[WhatsApp] fetching groups from:", `${BOT_URL}/groups`);
-const res = await fetch(`${BOT_URL}/groups`);
+      console.log("[WhatsApp] fetching groups from:", `/api/whatsapp/groups`);
+const res = await fetch(`/api/whatsapp/groups`);
       if (res.ok) {
         const data: Group[] = await res.json();
         setGroups(data);
@@ -113,8 +113,8 @@ const res = await fetch(`${BOT_URL}/groups`);
   const handlePairing = async () => {
     if (!phone) { toast.error("Entrez un numéro"); return; }
     try {
-      console.log("[WhatsApp] sending pairing request to:", `${BOT_URL}/pairing`);
-const res = await fetch(`${BOT_URL}/pairing`, {
+      console.log("[WhatsApp] sending pairing request to:", `/api/whatsapp/pairing`);
+const res = await fetch(`/api/whatsapp/pairing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
