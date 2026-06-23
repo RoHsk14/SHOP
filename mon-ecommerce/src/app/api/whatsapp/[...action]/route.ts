@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Proxy the incoming request to the external WhatsApp bot service.
- */
 async function proxy(request: NextRequest) {
   const botBase = process.env.WHATSAPP_BOT_URL;
   if (!botBase) {
@@ -13,38 +10,46 @@ async function proxy(request: NextRequest) {
   const action = url.pathname.replace(/^\/api\/whatsapp\//, "");
   const proxyUrl = `${botBase}/${action}${url.search}`;
 
-  // Build request options – preserve method, headers, body (except for GET/HEAD)
   const headers = new Headers(request.headers);
   headers.delete("host");
+  headers.delete("accept-encoding");
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.delete("transfer-encoding");
+  headers.delete("connection");
+
   const init: RequestInit = {
     method: request.method,
     headers,
     redirect: "manual",
   };
 
-  // Attach body for non‑GET/HEAD requests
   if (request.method !== "GET" && request.method !== "HEAD") {
-    const bodyText = await request.text();
-    init.body = bodyText;
-    if (!headers.has("content-type")) {
-      headers.set("content-type", "application/json");
-    }
+    init.body = request.clone().body;
+    (init as any).duplex = "half";
   }
 
   const botRes = await fetch(proxyUrl, init);
+
   const resHeaders = new Headers();
+  const skipHeaders = new Set([
+    "content-encoding",
+    "content-length",
+    "transfer-encoding",
+    "connection",
+    "keep-alive",
+  ]);
   botRes.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "transfer-encoding") return;
-    resHeaders.set(key, value);
+    if (!skipHeaders.has(key.toLowerCase())) {
+      resHeaders.set(key, value);
+    }
   });
 
-  const data = await botRes.text();
-  return new NextResponse(data, {
+  return new NextResponse(botRes.body, {
     status: botRes.status,
     statusText: botRes.statusText,
     headers: resHeaders,
   });
 }
 
-// Export as handler for all HTTP methods
 export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE, proxy as PATCH };
