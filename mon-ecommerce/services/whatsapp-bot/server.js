@@ -132,7 +132,7 @@ async function checkSheets() {
               valueInputOption: 'RAW',
               resource: { values: [['Envoye']] },
             });
-          } catch (_) {}
+          } catch (_) { }
         }
       } catch (sheetErr) {
         if (sheetErr.code === 404) console.error('[' + shop.shop_slug + '] Sheet introuvable');
@@ -187,12 +187,26 @@ router.post('/pairing', async function (req, res) {
   const phone = req.body.phone;
   if (!phone) return res.status(400).json({ error: 'Numero requis' });
   if (clientStatus === 'connected') return res.status(400).json({ error: 'Deja connecte' });
-  try { await client.destroy(); } catch (_) {}
+  try { await client.destroy(); } catch (_) { }
   qrCodeData = null; pairingCodeData = null; clientStatus = 'initializing';
   client = new Client({
     authStrategy: new LocalAuth({ dataPath: authDataPath }),
-    puppeteer: { headless: true, protocolTimeout: 120000, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu', '--single-process'] },
-    pairWithPhoneNumber: { phoneNumber: phone },
+    puppeteer: {
+      headless: true,
+      // Utilise le chrome déjà présent sur l’image Render (ou celui que vous indiquez via CHROME_PATH)
+      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+      protocolTimeout: 120000,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--single-process'
+      ]
+    }, pairWithPhoneNumber: { phoneNumber: phone },
   });
   attachClientEvents();
   client.initialize();
@@ -232,7 +246,7 @@ function attachClientEvents() {
         console.log('--- GROUPES DISPONIBLES (' + groups.length + ') ---');
         groups.forEach(function (g) { console.log('  ' + g.name + ' | ' + g.id._serialized); });
       }
-    } catch (_) {}
+    } catch (_) { }
     startPolling();
   });
   client.on('disconnected', function (reason) {
