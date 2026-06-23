@@ -5,6 +5,11 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Save, Smartphone, RefreshCw, CheckCircle, XCircle, Loader } from "lucide-react";
 import { toast } from "sonner";
+// Public URL of the WhatsApp bot (set in env)
+const BOT_URL = process.env.NEXT_PUBLIC_WHATSAPP_BOT_URL;
+if (!BOT_URL) {
+  console.error("NEXT_PUBLIC_WHATSAPP_BOT_URL is not defined");
+}
 
 interface Settings {
   id: string;
@@ -70,14 +75,15 @@ export default function WhatsAppAdmin() {
 
   const fetchBotStatus = async () => {
     try {
-      const res = await fetch("/api/whatsapp/status");
+      console.log("[WhatsApp] fetching status from:", `${BOT_URL}/status`);
+const res = await fetch(`${BOT_URL}/status`);
       if (!res.ok) throw new Error("Bot indisponible");
       const data: BotStatus = await res.json();
       setBotStatus(data);
       setBotError(false);
 
       if (data.hasQr) {
-        setQrImage("/api/whatsapp/qr-image?" + Date.now());
+        setQrImage(`${BOT_URL}/qr-image?${Date.now()}`);
       } else {
         setQrImage("");
       }
@@ -93,7 +99,8 @@ export default function WhatsAppAdmin() {
 
   const fetchGroups = async () => {
     try {
-      const res = await fetch("/api/whatsapp/groups");
+      console.log("[WhatsApp] fetching groups from:", `${BOT_URL}/groups`);
+const res = await fetch(`${BOT_URL}/groups`);
       if (res.ok) {
         const data: Group[] = await res.json();
         setGroups(data);
@@ -106,7 +113,8 @@ export default function WhatsAppAdmin() {
   const handlePairing = async () => {
     if (!phone) { toast.error("Entrez un numéro"); return; }
     try {
-      const res = await fetch("/api/whatsapp/pairing", {
+      console.log("[WhatsApp] sending pairing request to:", `${BOT_URL}/pairing`);
+const res = await fetch(`${BOT_URL}/pairing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -201,7 +209,7 @@ export default function WhatsAppAdmin() {
             <XCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
             <p className="text-sm font-medium text-red-800">Service WhatsApp indisponible</p>
             <p className="text-xs text-red-600 mt-1">
-              Vérifiez que le service WhatsApp Bot est démarré (port 3001)
+              Vérifiez que le service WhatsApp Bot est démarré (port 3000)
             </p>
           </div>
         ) : botStatus ? (
