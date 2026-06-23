@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node server.js",
-    "postinstall": "PUPPETEER_SKIP_DOWNLOAD=1 npm ci --prefix services/whatsapp-bot",
+    "postinstall": "npm ci --prefix services/whatsapp-bot && npx puppeteer browsers install chrome",
     "build": "next build",
     "start": "node server.js",
     "lint": "eslint"
