@@ -194,7 +194,7 @@ router.post('/pairing', async function (req, res) {
     puppeteer: {
       headless: true,
       // Utilise le chrome déjà présent sur l’image Render (ou celui que vous indiquez via CHROME_PATH)
-      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+      executablePath: process.env.CHROME_PATH || undefined,
       protocolTimeout: 120000,
       args: [
         '--no-sandbox',

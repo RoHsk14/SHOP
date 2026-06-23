@@ -45,3 +45,6 @@ service-account-key.json
 
 # SQL Files
 *.sql
+
+# whatsapp-web.js cache
+.wwebjs_cache/
