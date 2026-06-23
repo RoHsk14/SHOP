@@ -21,9 +21,10 @@ interface Group {
 }
 
 interface BotStatus {
-  clientStatus: string;
+  status: string;
   hasQr: boolean;
   hasPairing: boolean;
+  sheetConfigured?: boolean;
 }
 
 export default function WhatsAppAdmin() {
@@ -81,7 +82,7 @@ export default function WhatsAppAdmin() {
         setQrImage("");
       }
 
-      if (data.clientStatus === "connected") {
+      if (data.status === "connected") {
         fetchGroups();
       }
     } catch {
@@ -123,7 +124,7 @@ export default function WhatsAppAdmin() {
   };
 
   useEffect(() => {
-    if (!botStatus || botStatus.clientStatus === "connected") return;
+    if (!botStatus || botStatus.status === "connected") return;
     const interval = setInterval(fetchBotStatus, 4000);
     return () => clearInterval(interval);
   }, [botStatus]);
@@ -207,9 +208,9 @@ export default function WhatsAppAdmin() {
           <div>
             {/* Status badge */}
             <div className="flex items-center gap-2 mb-4">
-              <div className={`w-2.5 h-2.5 rounded-full ${statusLabel(botStatus.clientStatus).dot}`}></div>
-              <span className={`text-sm font-medium ${statusLabel(botStatus.clientStatus).color}`}>
-                {statusLabel(botStatus.clientStatus).text}
+              <div className={`w-2.5 h-2.5 rounded-full ${statusLabel(botStatus.status).dot}`}></div>
+              <span className={`text-sm font-medium ${statusLabel(botStatus.status).color}`}>
+                {statusLabel(botStatus.status).text}
               </span>
               <button onClick={fetchBotStatus} className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <RefreshCw className="w-4 h-4" />
@@ -217,7 +218,7 @@ export default function WhatsAppAdmin() {
             </div>
 
             {/* QR Code */}
-            {botStatus.clientStatus === "awaiting_scan" && botStatus.hasQr && (
+            {botStatus.status === "awaiting_scan" && botStatus.hasQr && (
               <div className="text-center mb-4">
                 <img src={qrImage} alt="QR Code" className="w-48 h-48 mx-auto rounded-lg border p-2" />
                 <p className="text-xs text-gray-500 mt-2">
@@ -227,7 +228,7 @@ export default function WhatsAppAdmin() {
             )}
 
             {/* Pairing code form */}
-            {botStatus.clientStatus !== "connected" && (
+            {botStatus.status !== "connected" && (
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs font-medium text-gray-700 mb-2">Code de couplage (alternative)</p>
                 <div className="flex gap-2">
@@ -249,7 +250,7 @@ export default function WhatsAppAdmin() {
             )}
 
             {/* Group selector (only when connected) */}
-            {botStatus.clientStatus === "connected" && (
+            {botStatus.status === "connected" && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">
                   Groupe WhatsApp de notification
@@ -366,14 +367,14 @@ export default function WhatsAppAdmin() {
       {/* Save */}
       <button
         onClick={handleSave}
-        disabled={saving || botStatus?.clientStatus !== "connected"}
+        disabled={saving || botStatus?.status !== "connected"}
         className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm"
       >
         <Save size={16} />
         {saving ? "Enregistrement..." : "Enregistrer"}
       </button>
 
-      {botStatus?.clientStatus !== "connected" && (
+      {botStatus?.status !== "connected" && (
         <p className="text-xs text-center text-gray-400">
           Connectez WhatsApp d&apos;abord pour pouvoir enregistrer
         </p>
