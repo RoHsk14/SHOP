@@ -5,11 +5,6 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Save, Smartphone, RefreshCw, CheckCircle, XCircle, Loader } from "lucide-react";
 import { toast } from "sonner";
-// Public URL of the WhatsApp bot (set in env)
-const BOT_URL = process.env.NEXT_PUBLIC_WHATSAPP_BOT_URL;
-if (!BOT_URL) {
-  console.error("NEXT_PUBLIC_WHATSAPP_BOT_URL is not defined");
-}
 
 interface Settings {
   id: string;
@@ -209,7 +204,7 @@ const res = await fetch(`/api/whatsapp/pairing`, {
             <XCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
             <p className="text-sm font-medium text-red-800">Service WhatsApp indisponible</p>
             <p className="text-xs text-red-600 mt-1">
-              Vérifiez que le service WhatsApp Bot est démarré (port 3000)
+              Vérifiez que le service WhatsApp Bot est démarré
             </p>
           </div>
         ) : botStatus ? (
