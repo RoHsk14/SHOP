@@ -38,7 +38,8 @@ async function proxy(request: NextRequest) {
     resHeaders.set(key, value);
   });
 
-  return new NextResponse(botRes.body, {
+  const data = await botRes.text();
+  return new NextResponse(data, {
     status: botRes.status,
     statusText: botRes.statusText,
     headers: resHeaders,
