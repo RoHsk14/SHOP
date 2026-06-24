@@ -179,6 +179,11 @@ const res = await fetch(`/api/whatsapp/pairing`, {
         }]);
       }
 
+      await fetch(`/api/whatsapp/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheetId: googleSheetUrl, groupId }),
+      });
       toast.success("Configuration WhatsApp enregistrée !");
     } catch (err) {
       toast.error("Erreur lors de l'enregistrement");
