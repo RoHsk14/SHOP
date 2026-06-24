@@ -219,25 +219,27 @@ const res = await fetch(`/api/whatsapp/pairing`, {
   const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors";
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-3xl animate-fade-in">
+    <div className="relative space-y-4 sm:space-y-5 max-w-3xl animate-fade-in">
+      {!isAuthorized && (
+        <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-[2px] rounded-xl flex items-center justify-center min-h-[300px]">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center max-w-md mx-4 shadow-sm">
+            <p className="text-sm font-semibold text-amber-800">
+              Fonctionnalité en développement
+            </p>
+            <p className="text-xs text-amber-600 mt-2">
+              La notification WhatsApp n&apos;est pas encore disponible pour votre boutique.
+              Elle sera activée prochainement.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div>
         <h1 className="text-lg sm:text-xl font-bold text-gray-900">WhatsApp</h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
           Notifications automatiques des commandes par WhatsApp
         </p>
       </div>
-
-      {!isAuthorized && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <p className="text-sm font-medium text-amber-800">
-            Fonctionnalité en développement
-          </p>
-          <p className="text-xs text-amber-600 mt-1">
-            La notification WhatsApp n&apos;est pas encore disponible pour votre boutique.
-            Elle sera activée prochainement.
-          </p>
-        </div>
-      )}
 
       {/* Statut connexion WhatsApp */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
@@ -331,7 +333,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
                   <select
                     value={groupId}
                     onChange={(e) => setGroupId(e.target.value)}
-                    disabled={!isAuthorized}
                     className={inputClass}
                   >
                     <option value="">Sélectionner un groupe...</option>
@@ -346,7 +347,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
                     type="text"
                     value={groupId}
                     onChange={(e) => setGroupId(e.target.value)}
-                    disabled={!isAuthorized}
                     placeholder="ID du groupe (ex: 229XXXXXXXX-@g.us)"
                     className={inputClass}
                   />
@@ -433,9 +433,8 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           </div>
           <button
             onClick={() => setEnabled(!enabled)}
-            disabled={!isAuthorized}
             className={`relative w-11 h-6 rounded-full transition-colors ${enabled ? "bg-green-500" : "bg-gray-300"
-              } ${!isAuthorized ? "opacity-50 cursor-not-allowed" : ""}`}
+              }`}
           >
             <div
               className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5.5" : "translate-x-0.5"
@@ -457,7 +456,7 @@ const res = await fetch(`/api/whatsapp/pairing`, {
       {/* Save */}
       <button
         onClick={handleSave}
-        disabled={saving || botStatus?.status !== "connected" || !isAuthorized}
+        disabled={saving || botStatus?.status !== "connected"}
         className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm"
       >
         <Save size={16} />
