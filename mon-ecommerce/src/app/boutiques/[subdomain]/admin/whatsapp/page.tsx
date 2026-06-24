@@ -131,17 +131,24 @@ const res = await fetch(`/api/whatsapp/pairing`, {
     }
   };
 
+  const [resetting, setResetting] = useState(false);
+
   const handleReset = async () => {
+    if (!confirm("Voulez-vous vraiment réinitialiser la connexion WhatsApp ? Vous devrez scanner le QR code à nouveau avec votre nouveau numéro.")) return;
+    setResetting(true);
     try {
       const res = await fetch("/api/whatsapp/reset", { method: "POST" });
       if (res.ok) {
-        toast.success("Bot redémarré, nouveau QR généré");
+        toast.success("Connexion réinitialisée, scannez le nouveau QR");
+        setPhone("");
         fetchBotStatus();
       } else {
-        toast.error("Impossible de redémarrer le bot");
+        toast.error("Impossible de réinitialiser le bot");
       }
     } catch {
       toast.error("Erreur de connexion au bot");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -237,9 +244,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
               <button onClick={fetchBotStatus} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Rafraîchir">
                 <RefreshCw className="w-4 h-4" />
               </button>
-              <button onClick={handleReset} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Réinitialiser le bot">
-                <RotateCw className="w-4 h-4" />
-              </button>
             </div>
 
             {/* QR Code */}
@@ -271,6 +275,23 @@ const res = await fetch(`/api/whatsapp/pairing`, {
                     Envoyer
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Reset connection button */}
+            {botStatus.status === "connected" && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleReset}
+                  disabled={resetting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  <RotateCw className={`w-4 h-4 ${resetting ? "animate-spin" : ""}`} />
+                  {resetting ? "Réinitialisation..." : "Changer de numéro WhatsApp — Réinitialiser la connexion"}
+                </button>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Vous pourrez scanner un nouveau QR code avec un autre numéro
+                </p>
               </div>
             )}
 
