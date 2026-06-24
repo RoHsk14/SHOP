@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Save, Smartphone, RefreshCw, CheckCircle, XCircle, Loader } from "lucide-react";
+import { Save, Smartphone, RefreshCw, RotateCw, CheckCircle, XCircle, Loader } from "lucide-react";
 import { toast } from "sonner";
 
 interface Settings {
@@ -118,8 +118,27 @@ const res = await fetch(`/api/whatsapp/pairing`, {
         toast.success("Code de couplage envoyé !");
         setTimeout(fetchBotStatus, 5000);
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Erreur");
+        try {
+          const err = await res.clone().json();
+          toast.error(err.error || "Erreur");
+        } catch {
+          const text = await res.text();
+          toast.error(text || "Erreur inconnue");
+        }
+      }
+    } catch {
+      toast.error("Erreur de connexion au bot");
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      const res = await fetch("/api/whatsapp/reset", { method: "POST" });
+      if (res.ok) {
+        toast.success("Bot redémarré, nouveau QR généré");
+        fetchBotStatus();
+      } else {
+        toast.error("Impossible de redémarrer le bot");
       }
     } catch {
       toast.error("Erreur de connexion au bot");
@@ -215,8 +234,11 @@ const res = await fetch(`/api/whatsapp/pairing`, {
               <span className={`text-sm font-medium ${statusLabel(botStatus.status).color}`}>
                 {statusLabel(botStatus.status).text}
               </span>
-              <button onClick={fetchBotStatus} className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={fetchBotStatus} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Rafraîchir">
                 <RefreshCw className="w-4 h-4" />
+              </button>
+              <button onClick={handleReset} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Réinitialiser le bot">
+                <RotateCw className="w-4 h-4" />
               </button>
             </div>
 
@@ -231,7 +253,7 @@ const res = await fetch(`/api/whatsapp/pairing`, {
             )}
 
             {/* Pairing code form */}
-            {botStatus.status !== "connected" && (
+            {botStatus.hasPairing && botStatus.status !== "connected" && (
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs font-medium text-gray-700 mb-2">Code de couplage (alternative)</p>
                 <div className="flex gap-2">

@@ -213,6 +213,18 @@ router.post('/pairing', async function (req, res) {
   res.json({ success: true, message: 'Code de couplage envoye' });
 });
 
+router.post('/reset', async function (req, res) {
+  try { await client.destroy(); } catch (_) { }
+  qrCodeData = null; pairingCodeData = null; clientStatus = 'initializing';
+  client = new Client({
+    authStrategy: new LocalAuth({ dataPath: authDataPath }),
+    puppeteer: { headless: true, protocolTimeout: 120000, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu', '--single-process'] },
+  });
+  attachClientEvents();
+  client.initialize();
+  res.json({ success: true, message: 'Bot réinitialise' });
+});
+
 router.get('/groups', async function (req, res) {
   if (clientStatus !== 'connected') return res.status(503).json({ error: 'WhatsApp non connecte' });
   try {
