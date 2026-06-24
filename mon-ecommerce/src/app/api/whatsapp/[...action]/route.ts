@@ -8,7 +8,7 @@ async function proxy(request: NextRequest) {
 
   const url = new URL(request.url);
   const action = url.pathname.replace(/^\/api\/whatsapp\//, "");
-  const apiActions = new Set(["groups", "pairing", "config", "webhook"]);
+  const apiActions = new Set(["groups", "pairing", "config", "webhook", "reset"]);
   const path = apiActions.has(action) ? `/api/${action}` : `/${action}`;
   const proxyUrl = `${botBase}${path}${url.search}`;
 
