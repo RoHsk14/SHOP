@@ -301,24 +301,39 @@ const res = await fetch(`/api/whatsapp/pairing`, {
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">
                   Groupe WhatsApp de notification
                 </label>
-                <select
-                  value={groupId}
-                  onChange={(e) => setGroupId(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Sélectionner un groupe...</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
+                {groups.length > 0 ? (
+                  <select
+                    value={groupId}
+                    onChange={(e) => setGroupId(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Sélectionner un groupe...</option>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={groupId}
+                    onChange={(e) => setGroupId(e.target.value)}
+                    placeholder="ID du groupe (ex: 229XXXXXXXX-@g.us)"
+                    className={inputClass}
+                  />
+                )}
                 <button
                   onClick={fetchGroups}
                   className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                 >
                   <RefreshCw className="w-3 h-3" /> Actualiser la liste des groupes
                 </button>
+                {groups.length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Les groupes ne peuvent pas être chargés. Saisissez l’ID manuellement.
+                  </p>
+                )}
               </div>
             )}
           </div>
