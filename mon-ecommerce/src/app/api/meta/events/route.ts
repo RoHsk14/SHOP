@@ -4,7 +4,7 @@ import { extractSubdomain } from "@/lib/host";
 
 export async function POST(request: NextRequest) {
   try {
-    const { event_name, event_data, shop_slug: bodySlug } = await request.json();
+    const { event_name, event_data, shop_slug: bodySlug, event_id } = await request.json();
 
     if (!event_name) {
       return NextResponse.json({ error: "event_name required" }, { status: 400 });
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    if (event_id) event.event_id = event_id;
     if (event_data) event.custom_data = event_data;
 
     const body = { data: [event], access_token: settings.capi_token };

@@ -2,23 +2,28 @@
 
 import Script from "next/script";
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { extractSubdomain } from "@/lib/host";
 
 export default function MetaPixel({ pixelId }: { pixelId?: string }) {
   const [dbPixelId, setDbPixelId] = useState<string | null>(null);
-  const params = useParams();
-  const subdomain = params?.subdomain as string | undefined;
 
   useEffect(() => {
     const fetchPixelId = async () => {
+      const host = window.location.host;
+      const subdomain = extractSubdomain(host);
       if (!subdomain) return;
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from("settings")
         .select("pixel_id")
         .eq("shop_slug", subdomain)
         .single();
-      
+
+      if (error) {
+        console.error("MetaPixel: Supabase error", error);
+      }
+
       if (data?.pixel_id) {
         setDbPixelId(data.pixel_id);
       }
@@ -27,9 +32,31 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
     if (!pixelId) {
       fetchPixelId();
     }
-  }, [pixelId, subdomain]);
+  }, [pixelId]);
 
   const id = pixelId || dbPixelId;
+
+  useEffect(() => {
+    if (!id) return;
+
+    const shopSlug = extractSubdomain(window.location.host);
+    if (!shopSlug) return;
+
+    const eventId = `pv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    fetch("/api/meta/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "PageView",
+        event_id: eventId,
+        shop_slug: shopSlug,
+      }),
+      keepalive: true,
+    }).catch((err) => {
+      console.error("MetaPixel CAPI PageView error:", err);
+    });
+  }, [id]);
 
   if (!id) return null;
 
