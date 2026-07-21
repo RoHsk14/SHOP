@@ -127,11 +127,15 @@ async function proxy(request: NextRequest) {
   const botSecret = process.env.WHATSAPP_BOT_SECRET || process.env.BOT_INTERNAL_SECRET;
   if (botSecret) headers.set("X-Bot-Secret", botSecret);
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+
   const init: RequestInit = {
     method: request.method,
     headers,
     redirect: "manual",
     cache: "no-store",
+    signal: controller.signal,
   };
 
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -139,7 +143,16 @@ async function proxy(request: NextRequest) {
     (init as any).duplex = "half";
   }
 
-  const botRes = await fetch(proxyUrl, init);
+  let botRes;
+  try {
+    botRes = await fetch(proxyUrl, init);
+  } catch (e: unknown) {
+    clearTimeout(timeout);
+    const msg = e instanceof Error ? e.message : "Erreur connexion bot";
+    return NextResponse.json({ error: `Bot WhatsApp injoignable: ${msg}` }, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const resHeaders = new Headers();
   const skipHeaders = new Set([
