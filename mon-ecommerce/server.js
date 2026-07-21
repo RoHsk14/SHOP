@@ -1,4 +1,6 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env.local') });
 const express = require('express');
 const next = require('next');
 
@@ -7,6 +9,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 // Import the WhatsApp bot router (which exports an Express router)
+// Bot also loads .env.local for Nhost — must run after parent dotenv
 const whatsappRouter = require('./services/whatsapp-bot/server');
 
 app.prepare().then(() => {

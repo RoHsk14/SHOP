@@ -11,19 +11,21 @@ export default function CookieBanner({ settings }: { settings?: CookieSettings }
 
   useEffect(() => {
     if (!settings?.enabled) return;
-    const consented = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!consented) setVisible(true);
+    try {
+      const consented = localStorage.getItem(COOKIE_CONSENT_KEY);
+      if (!consented) setVisible(true);
+    } catch { /* localStorage unavailable (private browsing, quota exceeded, etc.) */ }
   }, [settings?.enabled]);
 
   if (!settings?.enabled || !visible) return null;
 
   const accept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+    try { localStorage.setItem(COOKIE_CONSENT_KEY, "accepted"); } catch {}
     setVisible(false);
   };
 
   const decline = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
+    try { localStorage.setItem(COOKIE_CONSENT_KEY, "declined"); } catch {}
     setVisible(false);
   };
 

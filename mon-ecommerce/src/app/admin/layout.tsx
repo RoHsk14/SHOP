@@ -32,8 +32,6 @@ export default function SuperAdminLayout({
       setUserEmail(session.user.email?.split("@")[0] || "Admin");
       setFullUserEmail(session.user.email || "");
 
-      console.log("[SuperAdmin] Checking for user:", session.user.id);
-
       const { data: settings, error } = await supabase
         .from("settings")
         .select("is_super_admin")
@@ -41,14 +39,11 @@ export default function SuperAdminLayout({
         .eq("is_super_admin", true)
         .maybeSingle();
 
-      console.log("[SuperAdmin] Query result:", settings, error);
-
       if (error) {
         console.error("[SuperAdmin] RLS error:", error);
       }
 
       if (!settings) {
-        console.log("[SuperAdmin] No super admin row found, redirecting to login");
         window.location.replace(`${window.location.origin}/login`);
         return;
       }
@@ -65,7 +60,6 @@ export default function SuperAdminLayout({
         setFirstShopSlug(allSettings[0].shop_slug);
       }
 
-      console.log("[SuperAdmin] Access granted");
       setIsSuperAdmin(true);
       setChecking(false);
     }).catch((err) => {

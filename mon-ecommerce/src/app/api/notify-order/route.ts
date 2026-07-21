@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
+import { createSupabaseClient } from "@/lib/supabase-adapter";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 export async function POST(req: Request) {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createSupabaseClient(process.env.NHOST_ADMIN_SECRET);
 
     const { customer_name, total_price, currency, shop_slug } = await req.json();
 
@@ -24,7 +21,7 @@ export async function POST(req: Request) {
     const messages = devices.map((d: { push_token: string }) => ({
       to: d.push_token,
       sound: "default",
-      title: "🛍️ Nouvelle commande !",
+      title: "Nouvelle commande !",
       body: `${customer_name} · ${total_price} ${currency || "EUR"}`,
       data: { screen: "orders" },
     }));

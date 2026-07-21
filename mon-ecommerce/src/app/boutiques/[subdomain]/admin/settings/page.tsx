@@ -27,6 +27,8 @@ export default function SettingsAdmin() {
   const [sheetColumns, setSheetColumns] = useState<string[]>([]);
   const [testingSheet, setTestingSheet] = useState(false);
   const [saEmail, setSaEmail] = useState("");
+  const [saEmailError, setSaEmailError] = useState("");
+  const [saEmailLoading, setSaEmailLoading] = useState(true);
   const [emailCopied, setEmailCopied] = useState(false);
   const [formFields, setFormFields] = useState<FormField[]>([
     { name: "customer_name", label: "Nom complet", required: true },
@@ -36,18 +38,29 @@ export default function SettingsAdmin() {
 
   useEffect(() => {
     fetchSettings();
-    // Récupérer l'email du service account
+    setSaEmailLoading(true);
     fetch("/api/google-service-email")
-      .then(r => r.json())
-      .then(d => { if (d.email) setSaEmail(d.email); })
-      .catch(() => {});
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (d.email) {
+          setSaEmail(d.email);
+          setSaEmailError("");
+        } else {
+          setSaEmail("");
+          setSaEmailError(d.hint || d.error || "Service account non configuré");
+        }
+      })
+      .catch(() => {
+        setSaEmailError("Impossible de charger l'email du service account");
+      })
+      .finally(() => setSaEmailLoading(false));
   }, []);
 
   const fetchSettings = async () => {
     try {
       const { data, error } = await supabase
         .from("settings")
-        .select("*")
+        .select("id, owner_name, shop_name, shop_description, shop_country, pixel_id, capi_token, default_currency, google_sheet_url, google_sheet_columns, custom_form_fields, updated_at")
         .eq("shop_slug", subdomain)
         .single();
       
@@ -59,7 +72,7 @@ export default function SettingsAdmin() {
       }
       
       if (data) {
-        console.log("✅ Settings chargés:", data);
+
         setSettings(data); 
         setOwnerName(data.owner_name || "");
         setShopName(data.shop_name || "");
@@ -71,7 +84,7 @@ export default function SettingsAdmin() {
         
         // Restaurer l'URL Google Sheets et le statut de connexion
         if (data.google_sheet_url) {
-          console.log("✅ URL trouvée:", data.google_sheet_url);
+
           setGoogleSheetUrl(data.google_sheet_url);
           setGoogleConnected(true);
           // Récupérer les colonnes si elles existent
@@ -82,12 +95,12 @@ export default function SettingsAdmin() {
             fetchSheetColumns();
           }
         } else {
-          console.log("❌ Pas d'URL Google Sheets en base");
+
         }
         
         if (data.custom_form_fields) setFormFields(data.custom_form_fields);
       } else {
-        console.log("❌ Aucun paramètre en base");
+
       }
     } catch (error) {
       console.error("Erreur chargement paramètres:", error);
@@ -282,17 +295,51 @@ export default function SettingsAdmin() {
 
   const handleSave = async () => {
     setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    const settingsData = {
-      owner_name: ownerName, shop_name: shopName, shop_description: shopDescription, shop_country: shopCountry,
-      pixel_id: pixelId, capi_token: capiToken, default_currency: defaultCurrency,
-      google_sheet_url: googleSheetUrl,
-      custom_form_fields: formFields,
-      updated_at: new Date().toISOString(),
-    };
-    if (settings?.id) { await supabase.from("settings").update(settingsData).eq("id", settings.id); }
-    else { await supabase.from("settings").insert([{ ...settingsData, shop_slug: subdomain, user_id: session?.user?.id }]); }
-    setSaving(false); toast.success("Paramètres enregistrés !"); fetchSettings();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const settingsData = {
+        owner_name: ownerName, shop_name: shopName, shop_description: shopDescription, shop_country: shopCountry,
+        pixel_id: pixelId, capi_token: capiToken, default_currency: defaultCurrency,
+        google_sheet_url: googleSheetUrl,
+        custom_form_fields: formFields,
+        updated_at: new Date().toISOString(),
+      };
+
+      let settingsId = settings?.id;
+      if (!settingsId) {
+        const { data: existing } = await supabase
+          .from("settings")
+          .select("id")
+          .eq("shop_slug", subdomain)
+          .maybeSingle();
+        settingsId = existing?.id;
+      }
+
+      let error;
+      if (settingsId) {
+        ({ error } = await supabase.from("settings").update(settingsData).eq("id", settingsId));
+      } else {
+        ({ error } = await supabase.from("settings").insert([{
+          ...settingsData,
+          shop_slug: subdomain,
+          user_id: session?.user?.id,
+        }]));
+      }
+
+      if (error) {
+        console.error("Erreur sauvegarde settings:", error);
+        toast.error(error.message || "Erreur lors de la sauvegarde");
+        return;
+      }
+
+      toast.success("Paramètres enregistrés !");
+      await fetchSettings();
+    } catch (err: any) {
+      console.error("Erreur sauvegarde settings:", err);
+      toast.error(err?.message || "Erreur lors de la sauvegarde");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleFieldRequired = (index: number) => {
@@ -407,8 +454,18 @@ export default function SettingsAdmin() {
                 Ouvrez votre Google Sheet, cliquez sur <strong>Partager</strong> en haut à droite, et ajoutez l'email ci-dessous en tant qu'<strong>Éditeur</strong> :
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <code className="flex-1 text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 font-mono truncate">
-                  {saEmail || "Chargement..."}
+                <code
+                  className={`flex-1 text-xs bg-white border rounded-lg px-3 py-2 font-mono truncate ${
+                    saEmail
+                      ? "border-gray-200 text-gray-700"
+                      : saEmailError
+                        ? "border-red-200 text-red-600"
+                        : "border-gray-200 text-gray-400"
+                  }`}
+                >
+                  {saEmailLoading
+                    ? "Chargement..."
+                    : saEmail || "Service account non configuré"}
                 </code>
                 <button
                   onClick={copyEmail}
@@ -418,6 +475,17 @@ export default function SettingsAdmin() {
                   {emailCopied ? "Copié ✓" : "Copier"}
                 </button>
               </div>
+              {saEmailError && !saEmail && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-2 mt-2">
+                  {saEmailError}
+                  <br />
+                  Placez le fichier{" "}
+                  <code className="font-mono">service-account-key.json</code> à la
+                  racine de <code className="font-mono">mon-ecommerce/</code> (ou
+                  définissez{" "}
+                  <code className="font-mono">GOOGLE_SERVICE_ACCOUNT_KEY</code>).
+                </p>
+              )}
             </div>
           </div>
 

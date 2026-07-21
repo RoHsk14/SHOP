@@ -33,6 +33,8 @@ export interface FontSettings {
   headingTransform?: "none" | "uppercase" | "capitalize" | "lowercase";
   headingSize: "small" | "normal" | "large";
   baseSize: number;
+  mobileBaseSize?: number;
+  mobileHeadingSize?: "small" | "normal" | "large";
 }
 
 export interface RadiiSettings {
@@ -41,10 +43,27 @@ export interface RadiiSettings {
   input: string;
 }
 
+export interface ButtonStyleSettings {
+  variant: "solid" | "outline" | "ghost";
+  size: "sm" | "md" | "lg";
+}
+
+export interface BadgeStyleSettings {
+  saleBg: string;
+  saleText: string;
+  newBg: string;
+  newText: string;
+  soldOutBg: string;
+  soldOutText: string;
+  shape: "pill" | "rounded" | "square";
+}
+
 export interface GlobalSettings {
   colors: ColorSettings;
   fonts: FontSettings;
   radii: RadiiSettings;
+  buttonStyle?: ButtonStyleSettings;
+  badgeStyle?: BadgeStyleSettings;
 }
 
 export interface BackgroundSettings {
@@ -111,12 +130,17 @@ export interface LayoutSettings {
   containerWidth?: number;
   sectionSpacing?: "compact" | "normal" | "spacious";
   productsPerRow?: 2 | 3 | 4;
+  mobileProductsPerRow?: 1 | 2;
   showSearch?: boolean;
   showCart?: boolean;
   showBreadcrumbs?: boolean;
   showFilters?: boolean;
   showWishlist?: boolean;
   showBadges?: boolean;
+  headerStyle?: "standard" | "transparent" | "centered" | "minimal";
+  stickyHeader?: boolean;
+  footerColumns?: 1 | 2 | 3 | 4;
+  collectionLayout?: "grid" | "list";
 }
 
 export interface BackToTopSettings {
@@ -160,6 +184,16 @@ export interface SectionSetting {
   settings: Record<string, any>;
   blocks?: BlockSetting[];
   disabled?: boolean;
+  hideOnMobile?: boolean;
+  hideOnDesktop?: boolean;
+}
+
+export interface PageSeoSettings {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  canonical?: string;
 }
 
 export interface PageConfig {
@@ -167,6 +201,19 @@ export interface PageConfig {
   slug: string;
   name: string;
   sections: SectionSetting[];
+  seo?: PageSeoSettings;
+}
+
+export interface CustomScripts {
+  head?: string;
+  bodyStart?: string;
+  bodyEnd?: string;
+}
+
+export interface AnalyticsSettings {
+  googleAnalytics?: string;
+  googleTagManager?: string;
+  facebookPixel?: string;
 }
 
 export interface ThemeConfig {
@@ -182,6 +229,8 @@ export interface ThemeConfig {
   customCss?: CustomCss;
   backToTop?: BackToTopSettings;
   newsletterPopup?: NewsletterPopupSettings;
+  scripts?: CustomScripts;
+  analytics?: AnalyticsSettings;
 }
 
 export interface SavedTheme {
@@ -203,7 +252,7 @@ export type ConfigValue = string | number | boolean | string[] | Record<string, 
 export interface SettingDefinition {
   key: string;
   label: string;
-  type: "text" | "textarea" | "color" | "number" | "boolean" | "select" | "image" | "url";
+  type: "text" | "textarea" | "color" | "number" | "boolean" | "select" | "image" | "url" | "alignment";
   default: ConfigValue;
   options?: { label: string; value: string }[];
   placeholder?: string;
@@ -278,8 +327,44 @@ export function themeConfigToCSS(config: ThemeConfig): Record<string, string> {
     ...radiiToCSS(config.global.radii),
     ...fontsToCSS(config.global.fonts),
     ...backgroundToCSS(config.background),
+    ...buttonStyleToCSS(config.global.buttonStyle),
+    ...badgeStyleToCSS(config.global.badgeStyle),
     "--theme-container-width": config.layout?.containerWidth ? `${config.layout.containerWidth}px` : "1200px",
     "--theme-section-spacing": config.layout?.sectionSpacing === "compact" ? "2rem" : config.layout?.sectionSpacing === "spacious" ? "6rem" : "4rem",
+    "--theme-mobile-base-size": config.global.fonts.mobileBaseSize ? `${config.global.fonts.mobileBaseSize}px` : `${config.global.fonts.baseSize}px`,
+  };
+}
+
+export function buttonStyleToCSS(buttonStyle?: ButtonStyleSettings): Record<string, string> {
+  if (!buttonStyle) return {};
+  const sizeMap: Record<string, { py: string; px: string; fontSize: string }> = {
+    sm: { py: "0.375rem", px: "0.875rem", fontSize: "0.75rem" },
+    md: { py: "0.5rem", px: "1.25rem", fontSize: "0.875rem" },
+    lg: { py: "0.75rem", px: "2rem", fontSize: "1rem" },
+  };
+  const s = sizeMap[buttonStyle.size] || sizeMap.md;
+  return {
+    "--theme-button-py": s.py,
+    "--theme-button-px": s.px,
+    "--theme-button-font-size": s.fontSize,
+    "--theme-button-variant": buttonStyle.variant,
+    "--theme-button-bg": buttonStyle.variant === "solid" ? "var(--theme-primary)" : "transparent",
+    "--theme-button-border": buttonStyle.variant === "outline" ? "1px solid var(--theme-primary)" : "none",
+    "--theme-button-color": buttonStyle.variant === "solid" ? "var(--theme-button-text)" : "var(--theme-primary)",
+  };
+}
+
+export function badgeStyleToCSS(badgeStyle?: BadgeStyleSettings): Record<string, string> {
+  if (!badgeStyle) return {};
+  const radius = badgeStyle.shape === "pill" ? "9999px" : badgeStyle.shape === "rounded" ? "8px" : "4px";
+  return {
+    "--theme-badge-sale-bg": badgeStyle.saleBg,
+    "--theme-badge-sale-text": badgeStyle.saleText,
+    "--theme-badge-new-bg": badgeStyle.newBg,
+    "--theme-badge-new-text": badgeStyle.newText,
+    "--theme-badge-soldout-bg": badgeStyle.soldOutBg,
+    "--theme-badge-soldout-text": badgeStyle.soldOutText,
+    "--theme-badge-radius": radius,
   };
 }
 
@@ -336,6 +421,17 @@ export function getSystemPageDefaultContentSections(slug: string): SectionSettin
   return [];
 }
 
+export function getSystemPageId(slug: string): string {
+  const mapping: Record<string, string> = {
+    "/": "home",
+    "/products": "products",
+    "/products/[slug]": "product",
+    "/thank-you": "thank-you",
+    "/wishlist": "wishlist",
+  };
+  return `sys-${mapping[slug] || slug.replace(/[^a-z0-9]/g, "-")}`;
+}
+
 export function ensureSystemPageInConfig(config: ThemeConfig, slug: string): ThemeConfig {
   const isSystem = SYSTEM_PAGES.some(p => p.slug === slug);
   if (!isSystem) return config;
@@ -344,7 +440,7 @@ export function ensureSystemPageInConfig(config: ThemeConfig, slug: string): The
   if (existingIndex >= 0) return config;
 
   const newPage: PageConfig = {
-    id: `sys-${slug.replace(/[^a-z0-9]/g, "-")}`,
+    id: getSystemPageId(slug),
     slug,
     name: SYSTEM_PAGES.find(p => p.slug === slug)?.name || slug,
     sections: getSystemPageDefaultContentSections(slug),
@@ -359,8 +455,10 @@ export function getPageSections(config: ThemeConfig, slug: string): SectionSetti
 
   if (isSystemPage(slug)) {
     const globals = getGlobalSections(config.sections);
-    const content = (page?.sections || getSystemPageDefaultContentSections(slug))
-      .filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any));
+    let content = (page?.sections || []).filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any));
+    if (content.length === 0) {
+      content = getSystemPageDefaultContentSections(slug);
+    }
     const result = [...globals, ...content];
     return result;
   }
@@ -654,17 +752,13 @@ export function buildDefaultConfig(themeId?: string): ThemeConfig {
         id: "home",
         slug: "/",
         name: "Accueil",
-        sections: getDefaultSections(themeId),
+        sections: getDefaultSections(themeId).filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any)),
       },
       {
         id: "products",
         slug: "/products",
         name: "Produits",
-        sections: [
-          { id: "announcement", type: "announcement-bar", settings: { speed: 4000, background: "#059669", messages: [{ id: "a1", text: "🚚 Livraison gratuite !", url: "" }] } },
-          { id: "header", type: "header", settings: { sticky: true, logo_url: "", logo_max_width: 140, navigation_style: "inline", menu_items: [{ label: "Accueil", url: "/" }, { label: "Produits", url: "/products" }] } },
-          { id: "footer", type: "footer", settings: { show_payment_methods: true } },
-        ],
+        sections: getSystemPageDefaultContentSections("/products"),
       },
     ],
   };

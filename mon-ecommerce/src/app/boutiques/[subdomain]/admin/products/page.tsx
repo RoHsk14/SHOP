@@ -70,7 +70,8 @@ export default function ProductsPage() {
       .eq("shop_slug", subdomain)
       .order("created_at", { ascending: false });
     if (error) {
-      toast.error("Erreur de chargement des produits");
+      console.error("Erreur produits:", error);
+      toast.error("Erreur de chargement des produits: " + (error?.message || "Erreur inconnue"));
     } else {
       setProducts((data || []).map((p: any) => ({ ...p, sizes: [] })));
     }
@@ -93,13 +94,13 @@ export default function ProductsPage() {
       }
       for (const file of Array.from(files)) {
         const fileName = `${Date.now()}-${file.name}`;
-        const { error } = await supabase.storage
+        const { data, error } = await supabase.storage
           .from("products")
           .upload(fileName, file);
         if (error) throw error;
         const { data: { publicUrl } } = supabase.storage
           .from("products")
-          .getPublicUrl(fileName);
+          .getPublicUrl(data.path);
         newImages.push(publicUrl);
       }
       setForm(prev => ({ ...prev, images: newImages }));

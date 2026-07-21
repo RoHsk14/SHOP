@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { AnnouncementMessage } from "@/lib/theme-config";
+import EditableText, { hasTextValue } from "@/components/EditableText";
 
 interface Props {
   settings: {
-    text?: string;
+    text?: any;
     text_color?: string;
     messages?: AnnouncementMessage[];
     speed?: number;
@@ -16,7 +17,7 @@ interface Props {
 
 export default function AnnouncementBar({ settings }: Props) {
   const messages = settings.messages?.length ? settings.messages : [
-    { id: "a1", text: settings.text || "🚚 Livraison gratuite !", background: settings.background || "var(--theme-primary)" },
+    { id: "a1", text: (settings.text as any) || "🚚 Livraison gratuite !", background: settings.background || "var(--theme-primary)" },
   ];
   const [current, setCurrent] = useState(0);
 
@@ -30,8 +31,12 @@ export default function AnnouncementBar({ settings }: Props) {
     return () => clearInterval(t);
   }, [messages.length, settings.speed, next]);
 
-  const msg = messages[current];
+  const msg = messages[current] as any;
   if (!msg) return null;
+
+  // Prefer live settings.text when no multi-messages configured
+  const displayText = settings.messages?.length ? msg.text : (settings.text ?? msg.text);
+  const textColor = msg?.text_color || settings.text_color || "#ffffff";
 
   return (
     <div className="text-center text-xs sm:text-sm font-medium py-2.5 px-4 relative overflow-hidden" style={{
@@ -46,12 +51,18 @@ export default function AnnouncementBar({ settings }: Props) {
         <Link
           href={msg.url}
           className="transition-opacity hover:opacity-80"
-          style={{ color: msg?.text_color || "#ffffff" }}
+          style={{ color: textColor }}
+          onClick={(e) => {
+            if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+          }}
         >
-          {msg.text}
+          <EditableText as="span" value={displayText} />
         </Link>
       ) : (
-        <span style={{ color: msg?.text_color || "#ffffff" }}>{msg?.text}</span>
+        <EditableText as="span" value={displayText} style={{ color: textColor }} />
+      )}
+      {!hasTextValue(displayText) && (
+        <span style={{ color: textColor, opacity: 0.5 }}>Texte d&apos;annonce</span>
       )}
     </div>
   );

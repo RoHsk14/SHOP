@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Save, Smartphone, RefreshCw, RotateCw, CheckCircle, XCircle, Loader } from "lucide-react";
@@ -24,7 +24,54 @@ interface BotStatus {
   status: string;
   hasQr: boolean;
   hasPairing: boolean;
+  phoneNumber?: string | null;
+  shopSlug?: string;
   sheetConfigured?: boolean;
+  error?: string;
+}
+
+/** Lire exp du JWT (secondes unix) — source fiable côté Nhost */
+function jwtExp(accessToken: string): number | null {
+  try {
+    const part = accessToken.split(".")[1];
+    if (!part) return null;
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+function tokenExpiresSoon(accessToken: string, skewSec = 120): boolean {
+  const exp = jwtExp(accessToken);
+  if (exp == null) return false; // ne pas forcer un refresh si on ne sait pas
+  return exp - Math.floor(Date.now() / 1000) < skewSec;
+}
+
+function tokenIsExpired(accessToken: string): boolean {
+  const exp = jwtExp(accessToken);
+  if (exp == null) return false;
+  return exp <= Math.floor(Date.now() / 1000);
+}
+
+async function getAccessToken(forceRefresh = false): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+
+  const current = session.access_token;
+  const shouldRefresh = forceRefresh || tokenExpiresSoon(current);
+
+  if (shouldRefresh && typeof (supabase.auth as any).refreshSession === "function") {
+    const { data, error } = await (supabase.auth as any).refreshSession();
+    if (!error && data?.session?.access_token) {
+      return data.session.access_token;
+    }
+    // Refresh mort : garder l'access token s'il est encore valide
+    if (forceRefresh && tokenIsExpired(current)) return null;
+  }
+
+  if (tokenIsExpired(current)) return null;
+  return current;
 }
 
 export default function WhatsAppAdmin() {
@@ -35,28 +82,42 @@ export default function WhatsAppAdmin() {
   const [enabled, setEnabled] = useState(false);
   const [groupId, setGroupId] = useState("");
   const [googleSheetUrl, setGoogleSheetUrl] = useState("");
-  const [isAuthorized, setIsAuthorized] = useState(false);
-
-  const AUTHORIZED_USER_ID = "e53f760e-dc04-4ea0-9611-0f44bc6fcd6d";
-
   const [botStatus, setBotStatus] = useState<BotStatus | null>(null);
   const [botError, setBotError] = useState(false);
+  const [botErrorMsg, setBotErrorMsg] = useState("");
   const [qrImage, setQrImage] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [phone, setPhone] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [groupsError, setGroupsError] = useState("");
 
-  useEffect(() => {
-    fetchSettings();
-    fetchBotStatus();
-    checkAuth();
+  const apiBase = `/api/whatsapp/${subdomain}`;
+
+  const authFetch = useCallback(async (path: string, init: RequestInit = {}) => {
+    const doFetch = async (token: string) => {
+      const headers = new Headers(init.headers || {});
+      headers.set("Authorization", `Bearer ${token}`);
+      if (init.body && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+      }
+      return fetch(path, { ...init, headers });
+    };
+
+    let token = await getAccessToken();
+    if (!token) throw new Error("Non authentifié — reconnectez-vous");
+
+    let res = await doFetch(token);
+    if (res.status === 401) {
+      token = await getAccessToken(true);
+      if (!token) throw new Error("Session expirée — reconnectez-vous");
+      res = await doFetch(token);
+    }
+    return res;
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthorized(session?.user?.id === AUTHORIZED_USER_ID);
-  };
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const { data } = await supabase
         .from("settings")
@@ -75,52 +136,132 @@ export default function WhatsAppAdmin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [subdomain]);
 
-  const fetchBotStatus = async () => {
+  const fetchGroups = useCallback(async (opts?: { refresh?: boolean; silentRetry?: boolean }) => {
+    setGroupsLoading(true);
+    setGroupsError("");
     try {
-      console.log("[WhatsApp] fetching status from:", `/api/whatsapp/status`);
-const res = await fetch(`/api/whatsapp/status`);
-      if (!res.ok) throw new Error("Bot indisponible");
+      const q = opts?.refresh ? "?refresh=1" : "";
+      const res = await authFetch(`${apiBase}/groups${q}`);
+      if (!res.ok) {
+        let msg = "Impossible de charger les groupes";
+        try {
+          const err = await res.json();
+          msg = err.error || msg;
+        } catch {}
+        setGroupsError(msg);
+        return;
+      }
+      const data = await res.json();
+      const list: Group[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.groups)
+          ? data.groups
+          : [];
+      setGroups(list);
+      if (list.length === 0) {
+        // 2e essai auto (sync WhatsApp souvent lente)
+        if (!opts?.silentRetry) {
+          setGroupsError("Synchronisation des groupes… nouvel essai dans 5 s");
+          setTimeout(() => {
+            fetchGroups({ refresh: true, silentRetry: true });
+          }, 5000);
+        } else {
+          setGroupsError(
+            "Aucun groupe trouvé pour l’instant. Attendez ~30 s après la connexion, ouvrez un groupe sur le téléphone, puis actualisez."
+          );
+        }
+      } else {
+        setGroupsError("");
+      }
+    } catch (e: any) {
+      setGroupsError(e?.message || "Erreur réseau lors du chargement des groupes");
+    } finally {
+      setGroupsLoading(false);
+    }
+  }, [apiBase, authFetch]);
+
+  const fetchBotStatus = useCallback(async () => {
+    try {
+      const res = await authFetch(`${apiBase}/status`);
+      if (!res.ok) {
+        let msg = "Bot indisponible";
+        try {
+          const err = await res.json();
+          msg = err.error || msg;
+        } catch {}
+        throw new Error(msg);
+      }
       const data: BotStatus = await res.json();
       setBotStatus(data);
       setBotError(false);
+      setBotErrorMsg("");
 
       if (data.hasQr) {
-        setQrImage(`/api/whatsapp/qr-image?${Date.now()}`);
+        const token = await getAccessToken();
+        if (token) {
+          const qrRes = await fetch(`${apiBase}/qr-image?t=${Date.now()}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          });
+          if (qrRes.ok) {
+            const blob = await qrRes.blob();
+            setQrImage((prev) => {
+              if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+              return URL.createObjectURL(blob);
+            });
+          }
+        }
       } else {
-        setQrImage("");
+        setQrImage((prev) => {
+          if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return "";
+        });
       }
 
       if (data.status === "connected") {
-        fetchGroups();
+        // Délai: le cache groupes est rempli ~2.5s après ready
+        setTimeout(() => fetchGroups(), 800);
       }
-    } catch {
+    } catch (e: any) {
       setBotStatus(null);
       setBotError(true);
+      const msg = e?.message || "Service WhatsApp indisponible";
+      setBotErrorMsg(
+        /session|authentif|token|401/i.test(msg)
+          ? "Session expirée — déconnectez-vous puis reconnectez-vous, puis réessayez."
+          : msg
+      );
     }
-  };
+  }, [apiBase, authFetch, fetchGroups]);
 
-  const fetchGroups = async () => {
+  const handleConnect = async () => {
+    setConnecting(true);
     try {
-      console.log("[WhatsApp] fetching groups from:", `/api/whatsapp/groups`);
-const res = await fetch(`/api/whatsapp/groups`);
+      const res = await authFetch(`${apiBase}/connect`, { method: "POST" });
       if (res.ok) {
-        const data: Group[] = await res.json();
-        setGroups(data);
+        toast.success("Connexion démarrée — scannez le QR");
+        setTimeout(fetchBotStatus, 1500);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Impossible de démarrer la session");
       }
     } catch {
-      // Silently fail, groups not critical
+      toast.error("Erreur de connexion au bot");
+    } finally {
+      setConnecting(false);
     }
   };
 
   const handlePairing = async () => {
-    if (!phone) { toast.error("Entrez un numéro"); return; }
+    if (!phone) {
+      toast.error("Entrez un numéro");
+      return;
+    }
     try {
-      console.log("[WhatsApp] sending pairing request to:", `/api/whatsapp/pairing`);
-const res = await fetch(`/api/whatsapp/pairing`, {
+      const res = await authFetch(`${apiBase}/pairing`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
       if (res.ok) {
@@ -140,19 +281,24 @@ const res = await fetch(`/api/whatsapp/pairing`, {
     }
   };
 
-  const [resetting, setResetting] = useState(false);
-
   const handleReset = async () => {
-    if (!confirm("Voulez-vous vraiment réinitialiser la connexion WhatsApp ? Vous devrez scanner le QR code à nouveau avec votre nouveau numéro.")) return;
+    if (
+      !confirm(
+        "Voulez-vous vraiment réinitialiser la connexion WhatsApp de CETTE boutique ? Vous devrez scanner un nouveau QR code."
+      )
+    )
+      return;
     setResetting(true);
     try {
-      const res = await fetch("/api/whatsapp/reset", { method: "POST" });
+      const res = await authFetch(`${apiBase}/reset`, { method: "POST" });
       if (res.ok) {
         toast.success("Connexion réinitialisée, scannez le nouveau QR");
         setPhone("");
+        setGroups([]);
         fetchBotStatus();
       } else {
-        toast.error("Impossible de réinitialiser le bot");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Impossible de réinitialiser");
       }
     } catch {
       toast.error("Erreur de connexion au bot");
@@ -161,87 +307,99 @@ const res = await fetch(`/api/whatsapp/pairing`, {
     }
   };
 
-  useEffect(() => {
-    if (!botStatus || botStatus.status === "connected") return;
-    const interval = setInterval(fetchBotStatus, 4000);
-    return () => clearInterval(interval);
-  }, [botStatus]);
-
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (settings?.id) {
-        await supabase.from("settings").update({
-          whatsapp_group_id: groupId || null,
-          whatsapp_enabled: enabled,
-          updated_at: new Date().toISOString(),
-        }).eq("id", settings.id);
+        await supabase
+          .from("settings")
+          .update({
+            whatsapp_group_id: groupId || null,
+            whatsapp_enabled: enabled,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", settings.id);
       } else {
-        await supabase.from("settings").insert([{
-          shop_slug: subdomain,
-          whatsapp_group_id: groupId || null,
-          whatsapp_enabled: enabled,
-          updated_at: new Date().toISOString(),
-          user_id: session?.user?.id,
-        }]);
+        await supabase.from("settings").insert([
+          {
+            shop_slug: subdomain,
+            whatsapp_group_id: groupId || null,
+            whatsapp_enabled: enabled,
+            updated_at: new Date().toISOString(),
+            user_id: session?.user?.id,
+          },
+        ]);
       }
 
-      await fetch(`/api/whatsapp/config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sheetId: googleSheetUrl, groupId }),
-      });
       toast.success("Configuration WhatsApp enregistrée !");
-    } catch (err) {
+      fetchSettings();
+    } catch {
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
-    </div>
-  );
+  useEffect(() => {
+    fetchSettings();
+    fetchBotStatus();
+  }, [fetchSettings, fetchBotStatus]);
+
+  useEffect(() => {
+    if (!botStatus || botStatus.status === "connected") return;
+    const interval = setInterval(fetchBotStatus, 4000);
+    return () => clearInterval(interval);
+  }, [botStatus, fetchBotStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (qrImage.startsWith("blob:")) URL.revokeObjectURL(qrImage);
+    };
+  }, [qrImage]);
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
+      </div>
+    );
 
   const statusLabel = (s: string) => {
     switch (s) {
-      case "connected": return { text: "Connecté", color: "text-green-600", dot: "bg-green-500" };
-      case "awaiting_scan": return { text: "En attente de scan", color: "text-yellow-600", dot: "bg-yellow-500" };
-      case "disconnected": return { text: "Déconnecté", color: "text-red-600", dot: "bg-red-500" };
-      default: return { text: "Initialisation...", color: "text-gray-500", dot: "bg-gray-400" };
+      case "connected":
+        return { text: "Connecté", color: "text-green-600", dot: "bg-green-500" };
+      case "awaiting_scan":
+        return { text: "En attente de scan", color: "text-yellow-600", dot: "bg-yellow-500" };
+      case "disconnected":
+        return { text: "Déconnecté", color: "text-red-600", dot: "bg-red-500" };
+      case "error":
+        return { text: "Erreur", color: "text-red-600", dot: "bg-red-500" };
+      case "initializing":
+        return { text: "Initialisation...", color: "text-gray-500", dot: "bg-gray-400" };
+      default:
+        return { text: s || "Inconnu", color: "text-gray-500", dot: "bg-gray-400" };
     }
   };
 
-  const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors";
+  const inputClass =
+    "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors";
+
+  const isConnected = botStatus?.status === "connected";
+  const isIdle = !botStatus || botStatus.status === "disconnected" || botStatus.status === "error";
 
   return (
     <div className="relative space-y-4 sm:space-y-5 max-w-3xl animate-fade-in">
-      {!isAuthorized && (
-        <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-[2px] rounded-xl flex items-center justify-center min-h-[300px]">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center max-w-md mx-4 shadow-sm">
-            <p className="text-sm font-semibold text-amber-800">
-              Fonctionnalité en développement
-            </p>
-            <p className="text-xs text-amber-600 mt-2">
-              La notification WhatsApp n&apos;est pas encore disponible pour votre boutique.
-              Elle sera activée prochainement.
-            </p>
-          </div>
-        </div>
-      )}
-
       <div>
         <h1 className="text-lg sm:text-xl font-bold text-gray-900">WhatsApp</h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-          Notifications automatiques des commandes par WhatsApp
+          Espace privé de <span className="font-medium text-gray-700">{subdomain}</span> — votre propre QR et numéro
         </p>
       </div>
 
-      {/* Statut connexion WhatsApp */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
@@ -249,7 +407,7 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900">Connexion WhatsApp</h2>
-            <p className="text-xs text-gray-500">Statut de la connexion WhatsApp</p>
+            <p className="text-xs text-gray-500">Session isolée pour cette boutique uniquement</p>
           </div>
         </div>
 
@@ -257,25 +415,54 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
             <XCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
             <p className="text-sm font-medium text-red-800">Service WhatsApp indisponible</p>
-            <p className="text-xs text-red-600 mt-1">
-              Vérifiez que le service WhatsApp Bot est démarré
-            </p>
+            <p className="text-xs text-red-600 mt-1">{botErrorMsg || "Vérifiez que le bot est démarré"}</p>
+            <button
+              onClick={fetchBotStatus}
+              className="mt-3 text-xs text-red-700 underline hover:no-underline"
+            >
+              Réessayer
+            </button>
           </div>
         ) : botStatus ? (
           <div>
-            {/* Status badge */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <div className={`w-2.5 h-2.5 rounded-full ${statusLabel(botStatus.status).dot}`}></div>
               <span className={`text-sm font-medium ${statusLabel(botStatus.status).color}`}>
                 {statusLabel(botStatus.status).text}
               </span>
-              <button onClick={fetchBotStatus} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Rafraîchir">
+              {botStatus.phoneNumber && (
+                <span className="text-xs text-gray-500 font-mono">+{botStatus.phoneNumber}</span>
+              )}
+              <button
+                onClick={fetchBotStatus}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Rafraîchir"
+              >
                 <RefreshCw className="w-4 h-4" />
               </button>
             </div>
 
-            {/* QR Code */}
-            {botStatus.status === "awaiting_scan" && botStatus.hasQr && (
+            {isIdle && (
+              <div className="mb-4">
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {connecting ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Smartphone className="w-4 h-4" />
+                  )}
+                  {connecting ? "Démarrage..." : "Connecter mon WhatsApp"}
+                </button>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Un QR code unique sera généré pour votre boutique
+                </p>
+              </div>
+            )}
+
+            {botStatus.status === "awaiting_scan" && botStatus.hasQr && qrImage && (
               <div className="text-center mb-4">
                 <img src={qrImage} alt="QR Code" className="w-48 h-48 mx-auto rounded-lg border p-2" />
                 <p className="text-xs text-gray-500 mt-2">
@@ -284,10 +471,16 @@ const res = await fetch(`/api/whatsapp/pairing`, {
               </div>
             )}
 
-            {/* Pairing code form */}
-            {botStatus.hasPairing && botStatus.status !== "connected" && (
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs font-medium text-gray-700 mb-2">Code de couplage (alternative)</p>
+            {botStatus.status === "initializing" && (
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 py-6">
+                <Loader className="w-4 h-4 animate-spin" />
+                Préparation de votre session...
+              </div>
+            )}
+
+            {(botStatus.status === "awaiting_scan" || botStatus.status === "initializing") && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="text-xs font-medium text-gray-700 mb-2">Code de couplage (alternative au QR)</p>
                 <div className="flex gap-2">
                   <input
                     type="tel"
@@ -306,63 +499,85 @@ const res = await fetch(`/api/whatsapp/pairing`, {
               </div>
             )}
 
-            {/* Reset connection button */}
-            {botStatus.status === "connected" && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={handleReset}
-                  disabled={resetting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  <RotateCw className={`w-4 h-4 ${resetting ? "animate-spin" : ""}`} />
-                  {resetting ? "Réinitialisation..." : "Changer de numéro WhatsApp — Réinitialiser la connexion"}
-                </button>
-                <p className="text-xs text-gray-400 text-center mt-2">
-                  Vous pourrez scanner un nouveau QR code avec un autre numéro
-                </p>
-              </div>
-            )}
+            {isConnected && (
+              <>
+                <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  WhatsApp connecté pour cette boutique uniquement
+                </div>
 
-            {/* Group selector (only when connected) */}
-            {botStatus.status === "connected" && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Groupe WhatsApp de notification
-                </label>
-                {groups.length > 0 ? (
-                  <select
-                    value={groupId}
-                    onChange={(e) => setGroupId(e.target.value)}
-                    className={inputClass}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Groupe WhatsApp de notification
+                  </label>
+
+                  {groupsLoading && groups.length === 0 ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 py-3 px-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Chargement des groupes WhatsApp...
+                    </div>
+                  ) : groups.length > 0 ? (
+                    <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={inputClass}>
+                      <option value="">Sélectionner un groupe...</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={groupId}
+                      onChange={(e) => setGroupId(e.target.value)}
+                      placeholder="ID du groupe (ex: 120363...@g.us)"
+                      className={inputClass}
+                    />
+                  )}
+
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fetchGroups({ refresh: true })}
+                      disabled={groupsLoading}
+                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${groupsLoading ? "animate-spin" : ""}`} />
+                      {groupsLoading ? "Chargement..." : "Actualiser la liste des groupes"}
+                    </button>
+                    {groups.length > 0 && (
+                      <span className="text-xs text-gray-400">{groups.length} groupe(s)</span>
+                    )}
+                  </div>
+
+                  {groupsError && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-2 mt-2">
+                      {groupsError}
+                    </p>
+                  )}
+                  {!groupsLoading && groups.length === 0 && !groupsError && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Aucun groupe pour l&apos;instant — actualisez ou saisissez l&apos;ID manuellement.
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={handleReset}
+                    disabled={resetting}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                   >
-                    <option value="">Sélectionner un groupe...</option>
-                    {groups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={groupId}
-                    onChange={(e) => setGroupId(e.target.value)}
-                    placeholder="ID du groupe (ex: 229XXXXXXXX-@g.us)"
-                    className={inputClass}
-                  />
-                )}
-                <button
-                  onClick={fetchGroups}
-                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  <RefreshCw className="w-3 h-3" /> Actualiser la liste des groupes
-                </button>
-                {groups.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Les groupes ne peuvent pas être chargés. Saisissez l’ID manuellement.
+                    <RotateCw className={`w-4 h-4 ${resetting ? "animate-spin" : ""}`} />
+                    {resetting
+                      ? "Réinitialisation..."
+                      : "Changer de numéro — Réinitialiser ma session"}
+                  </button>
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    N&apos;affecte que votre boutique, pas les autres marchands
                   </p>
-                )}
-              </div>
+                </div>
+              </>
             )}
           </div>
         ) : (
@@ -373,7 +588,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
         )}
       </div>
 
-      {/* Configuration du flux */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center">
@@ -385,7 +599,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           </div>
         </div>
 
-        {/* Google Sheet URL / read-only */}
         <div className="mb-4">
           <label className="block text-xs font-medium text-gray-700 mb-1">Google Sheet connecté</label>
           {googleSheetUrl ? (
@@ -421,7 +634,6 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           </p>
         </div>
 
-        {/* Activation toggle */}
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
           <div>
             <p className="text-sm font-medium text-gray-900">Notifications WhatsApp</p>
@@ -433,37 +645,37 @@ const res = await fetch(`/api/whatsapp/pairing`, {
           </div>
           <button
             onClick={() => setEnabled(!enabled)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${enabled ? "bg-green-500" : "bg-gray-300"
-              }`}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              enabled ? "bg-green-500" : "bg-gray-300"
+            }`}
           >
             <div
-              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5.5" : "translate-x-0.5"
-                }`}
+              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                enabled ? "translate-x-5.5" : "translate-x-0.5"
+              }`}
             />
           </button>
         </div>
 
-        {/* Info flux */}
         <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 space-y-1">
           <p className="font-medium">Comment ça marche :</p>
-          <p>1. Les commandes sont enregistrées dans votre Google Sheet</p>
-          <p>2. Le bot vérifie les nouvelles lignes toutes les 30 secondes</p>
-          <p>3. Les nouvelles commandes sont envoyées dans le groupe WhatsApp</p>
-          <p>4. La colonne "Statut" est marquée "Envoyé" automatiquement</p>
+          <p>1. Connectez votre propre WhatsApp (QR unique à votre boutique)</p>
+          <p>2. Choisissez le groupe de notification</p>
+          <p>3. Les commandes du Google Sheet sont envoyées toutes les 30 s</p>
+          <p>4. La colonne &quot;Statut&quot; est marquée &quot;Envoyé&quot; automatiquement</p>
         </div>
       </div>
 
-      {/* Save */}
       <button
         onClick={handleSave}
-        disabled={saving || botStatus?.status !== "connected"}
+        disabled={saving || !isConnected}
         className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 text-sm"
       >
         <Save size={16} />
         {saving ? "Enregistrement..." : "Enregistrer"}
       </button>
 
-      {botStatus?.status !== "connected" && (
+      {!isConnected && (
         <p className="text-xs text-center text-gray-400">
           Connectez WhatsApp d&apos;abord pour pouvoir enregistrer
         </p>

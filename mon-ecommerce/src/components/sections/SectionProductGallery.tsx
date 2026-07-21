@@ -38,7 +38,7 @@ export default function SectionProductGallery({ settings }: Props) {
       <div className="flex gap-2 overflow-x-auto pb-1">
         {images.map((url, i) => (
           <button
-            key={i}
+            key={`${url}-${i}`}
             onClick={() => setActiveImage(i)}
             className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all"
             style={{
@@ -102,7 +102,7 @@ export default function SectionProductGallery({ settings }: Props) {
         <div className="grid grid-cols-2 gap-3 mb-4">
           {images.slice(0, 4).map((url, i) => (
             <div
-              key={i}
+              key={`${url}-${i}`}
               className="relative aspect-square rounded-xl overflow-hidden cursor-pointer"
               style={{ background: "var(--theme-surface, #ffffff)", border: "1px solid var(--theme-border, #e5e7eb)" }}
               onClick={() => { setActiveImage(i); settings?.lightbox !== false && setLightboxOpen(true); }}
@@ -131,7 +131,7 @@ export default function SectionProductGallery({ settings }: Props) {
         <div className="space-y-4 mb-4">
           {images.map((url, i) => (
             <div
-              key={i}
+              key={`${url}-${i}`}
               className="relative aspect-square rounded-xl overflow-hidden cursor-pointer"
               style={{ background: "var(--theme-surface, #ffffff)", border: "1px solid var(--theme-border, #e5e7eb)" }}
               onClick={() => { setActiveImage(i); settings?.lightbox !== false && setLightboxOpen(true); }}
@@ -175,7 +175,7 @@ export default function SectionProductGallery({ settings }: Props) {
                 <div className="flex flex-col gap-2 shrink-0">
                   {images.map((url, i) => (
                     <button
-                      key={i}
+                      key={`${url}-${i}`}
                       onClick={() => setActiveImage(i)}
                       className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all"
                       style={{

@@ -14,7 +14,7 @@ export default function SuperAdminShops() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        console.log("[Shops] Fetching all data...");
+
 
         const { data: allOrders } = await supabase
           .from("orders")
@@ -26,14 +26,14 @@ export default function SuperAdminShops() {
 
         // Compute top product from raw orders
         const productOrders = new Map<string, { count: number; name: string; shop_slug: string }>();
-        (allOrders || []).forEach(o => {
+        (allOrders || []).forEach((o: any) => {
           if (o.product_id) {
             const p = productOrders.get(o.product_id) || { count: 0, name: "", shop_slug: "" };
             p.count++;
             productOrders.set(o.product_id, p);
           }
         });
-        (allProducts || []).forEach(p => {
+        (allProducts || []).forEach((p: any) => {
           const existing = productOrders.get(p.id);
           if (existing) {
             existing.name = p.name;
@@ -53,7 +53,6 @@ export default function SuperAdminShops() {
         }
 
         if (data) {
-          console.log("[Shops] RPC returned", data.length, "shops");
           // Compute topShop from RPC result
           let top = { shop_slug: "", revenue: 0 };
           (data as any[]).forEach((s: any) => {
@@ -69,14 +68,13 @@ export default function SuperAdminShops() {
           .from("settings")
           .select("*");
 
-        console.log("[Shops] Settings:", settingsData?.length, "rows", settingsError);
         if (settingsError) console.error("[Shops] Settings error:", settingsError);
 
         if (!settingsData || settingsData.length === 0) { setLoading(false); return; }
 
         const ordersByShop = new Map<string, { count: number; revenue: number }>();
 
-        (allOrders || []).forEach(o => {
+        (allOrders || []).forEach((o: any) => {
           const s = ordersByShop.get(o.shop_slug) || { count: 0, revenue: 0 };
           s.count++;
           s.revenue += o.total_price || 0;
@@ -90,11 +88,11 @@ export default function SuperAdminShops() {
         setTopShop(topShopData.shop_slug ? topShopData : null);
 
         const productsByShop = new Map<string, number>();
-        (allProducts || []).forEach(p => {
+        (allProducts || []).forEach((p: any) => {
           productsByShop.set(p.shop_slug, (productsByShop.get(p.shop_slug) || 0) + 1);
         });
 
-        setShops(settingsData.map(shop => ({
+        setShops(settingsData.map((shop: any) => ({
           ...shop,
           orders_count: ordersByShop.get(shop.shop_slug)?.count || 0,
           revenue: ordersByShop.get(shop.shop_slug)?.revenue || 0,

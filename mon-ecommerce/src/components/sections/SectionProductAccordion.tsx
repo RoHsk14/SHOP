@@ -27,10 +27,13 @@ const iconMap: Record<string, ReactNode> = {
 
 export default function SectionProductAccordion({ blocks }: Props) {
   const { product, loading } = useProduct();
-  const [openPanels, setOpenPanels] = useState<Record<number, boolean>>(() => {
-    const initial: Record<number, boolean> = {};
+  const [openPanels, setOpenPanels] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
     (blocks || []).forEach((b, i) => {
-      if (b.settings?.open_by_default) initial[i] = true;
+      if (b.settings?.open_by_default) {
+        const key = String((b as any).id ?? i);
+        initial[key] = true;
+      }
     });
     return initial;
   });
@@ -38,8 +41,8 @@ export default function SectionProductAccordion({ blocks }: Props) {
   if (loading || !product) return null;
   if (!blocks?.length) return null;
 
-  const togglePanel = (index: number) => {
-    setOpenPanels((prev) => ({ ...prev, [index]: !prev[index] }));
+  const togglePanel = (key: string) => {
+    setOpenPanels((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
@@ -54,15 +57,16 @@ export default function SectionProductAccordion({ blocks }: Props) {
         }}
       >
         {blocks.map((block, i) => {
+          const key = String((block as any).id ?? i);
           const title = block.settings?.title || "";
           const content = block.settings?.content || "";
           const icon = block.settings?.icon || "none";
-          const isOpen = openPanels[i];
+          const isOpen = openPanels[key];
 
           return (
-            <div key={i}>
+            <div key={key}>
               <button
-                onClick={() => togglePanel(i)}
+                onClick={() => togglePanel(key)}
                 className="w-full flex items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:opacity-80"
                 style={{ color: "var(--theme-text, #111827)" }}
               >

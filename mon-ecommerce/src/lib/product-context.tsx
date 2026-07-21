@@ -61,7 +61,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
 
         if (cancelled) return;
 
-        const found = all?.find((p) => slugify(p.name) === slug);
+        const found = all?.find((p: any) => slugify(p.name) === slug);
         if (found) {
           setProduct(found);
         } else {

@@ -1,5 +1,6 @@
 "use client";
 
+import "@puckeditor/core/dist/index.css";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle } from "lucide-react";

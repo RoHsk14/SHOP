@@ -69,13 +69,13 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
         }
         for (const file of Array.from(files)) {
           const fileName = `${Date.now()}-${file.name}`;
-          const { error } = await supabase.storage
+          const { data, error } = await supabase.storage
             .from("products")
             .upload(fileName, file);
           if (error) throw error;
           const { data: { publicUrl } } = supabase.storage
             .from("products")
-            .getPublicUrl(fileName);
+            .getPublicUrl(data.path);
           editor.chain().focus().setImage({ src: publicUrl }).run();
         }
       } catch (error) {

@@ -228,6 +228,18 @@ async function createTables() {
   `);
 
   await runSql(`
+    CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+      shop_slug TEXT PRIMARY KEY,
+      status TEXT NOT NULL DEFAULT 'disconnected',
+      phone_number TEXT,
+      last_qr_at TIMESTAMPTZ,
+      connected_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  await runSql(`
     CREATE TABLE IF NOT EXISTS products (
       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
       shop_slug TEXT NOT NULL DEFAULT '',

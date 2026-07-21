@@ -1,6 +1,5 @@
 "use client";
 
-import { PaintBucket, ArrowUpFromLine } from "lucide-react";
 import type { BackToTopSettings } from "@/lib/theme-config";
 
 export default function TabBackToTop({

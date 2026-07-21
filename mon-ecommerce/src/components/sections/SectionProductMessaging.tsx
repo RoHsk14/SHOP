@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, CreditCard, RefreshCw, Shield, CheckCircle } from "lucide-react";
+import { Truck, CreditCard, RefreshCw, Shield } from "lucide-react";
 
 interface Props {
   settings?: {

@@ -5,6 +5,7 @@ import "./globals.css";
 import MetaPixel from "@/components/MetaPixel";
 import ToasterWrapper from "@/components/ToasterWrapper";
 import VisitorTracker from "@/components/VisitorTracker";
+import AuthInitializer from "@/components/AuthInitializer";
 
 const instrumentSans = Instrument_Sans({
   variable: "--font-heading",
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <MetaPixel />
           <VisitorTracker />
+          <AuthInitializer />
         </Suspense>
         {children}
         <ToasterWrapper />

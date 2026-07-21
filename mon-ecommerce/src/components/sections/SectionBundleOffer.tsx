@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useShop } from "@/lib/shop-context";
 import { Tag, ShoppingCart, Percent } from "lucide-react";
+import EditableText, { hasTextValue } from "@/components/EditableText";
 
 type OfferProduct = {
   product_id: string;
@@ -28,6 +29,9 @@ interface Props {
     title?: string;
     subtitle?: string;
     layout?: "list" | "grid";
+    text_align?: string;
+    text_size?: string;
+    font_family?: string;
   };
 }
 
@@ -36,22 +40,28 @@ export default function SectionBundleOffer({ settings }: Props) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const title = settings?.title || "Offres groupées";
-  const subtitle = settings?.subtitle || "Profitez de nos offres spéciales";
   const layout = settings?.layout || "list";
+  const textAlign = settings?.text_align || "left";
+  const fontFamily = settings?.font_family === "heading" ? "var(--theme-font-heading)" : "var(--theme-font-body)";
+  const titleSize = settings?.text_size === "small" ? "text-xl sm:text-2xl" : settings?.text_size === "large" ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl";
+  const descSize = settings?.text_size === "small" ? "text-xs sm:text-sm" : settings?.text_size === "large" ? "text-base sm:text-lg" : "text-sm sm:text-base";
 
   useEffect(() => {
     if (!subdomain) return;
+    let cancelled = false;
     supabase
       .from("offers")
       .select("id, name, description, type, discount_type, discount_value, min_quantity, products")
       .eq("shop_slug", subdomain)
       .eq("status", "active")
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { setLoading(false); return; }
         if (data) setOffers(data);
         setLoading(false);
       });
+    return () => { cancelled = true; };
   }, [subdomain]);
 
   if (loading || !offers.length) return null;
@@ -65,14 +75,21 @@ export default function SectionBundleOffer({ settings }: Props) {
 
   return (
     <div className="mx-auto px-4 sm:px-6 py-8 sm:py-12" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
-      <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: "var(--theme-text, #111827)", fontFamily: "var(--theme-font-heading)" }}>
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="text-sm mt-2" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
-            {subtitle}
-          </p>
+      <div className="text-center mb-8" style={{ textAlign: textAlign as any }}>
+        <EditableText
+          as="h2"
+          value={settings?.title}
+          fallback="Offres groupées"
+          className={`${titleSize} font-bold`}
+          style={{ color: "var(--theme-text, #111827)", fontFamily }}
+        />
+        {hasTextValue(settings?.subtitle) && (
+          <EditableText
+            as="p"
+            value={settings?.subtitle}
+            className={`${descSize} mt-2`}
+            style={{ color: "var(--theme-text-muted, #6b7280)" }}
+          />
         )}
       </div>
 

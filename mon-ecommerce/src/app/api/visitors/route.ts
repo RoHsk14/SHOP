@@ -11,11 +11,6 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get("host") || "";
     const shopSlug = extractSubdomain(host) || "default";
 
-    const headers = request.headers;
-    const ip = headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown";
-    const userAgent = headers.get("user-agent") || "";
-    const referrer = headers.get("referer") || "";
-
     if (!session_id) {
       return NextResponse.json({ error: "session_id required" }, { status: 400 });
     }
@@ -24,10 +19,6 @@ export async function POST(request: NextRequest) {
 
     const { error } = await serviceSupabase.from("visitors").insert({
       session_id,
-      ip_address: ip,
-      user_agent: userAgent,
-      referrer,
-      path: path || "/",
       is_online: true,
       last_seen: now,
       shop_slug: shopSlug,

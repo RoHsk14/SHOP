@@ -18,6 +18,9 @@ RUN apt-get update && \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 ENV PUPPETEER_SKIP_DOWNLOAD=1
 ENV NODE_ENV=production
+ENV WWEBJS_AUTH_PATH=/data/wwebjs_auth
+ENV MAX_WA_SESSIONS=20
+ENV PORT=3001
 
 # ---- Working directory ----
 WORKDIR /app
@@ -33,5 +36,11 @@ RUN npm ci && \
 # Copy the rest of the source code
 COPY . .
 
-# ---- Start the bot ----
+# Persist LocalAuth sessions across restarts (mount a volume on /data)
+RUN mkdir -p /data/wwebjs_auth
+VOLUME ["/data"]
+
+EXPOSE 3001
+
+# ---- Start the multi-tenant bot ----
 CMD ["node", "services/whatsapp-bot/server.js"]

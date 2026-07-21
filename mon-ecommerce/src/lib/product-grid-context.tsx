@@ -30,7 +30,21 @@ interface ProductGridContextValue {
   setPriceMax: (v: string) => void;
 }
 
-const ProductGridContext = createContext<ProductGridContextValue>({} as ProductGridContextValue);
+const defaultContext: ProductGridContextValue = {
+  products: [],
+  filtered: [],
+  loading: false,
+  query: "",
+  setQuery: () => {},
+  sortBy: "newest",
+  setSortBy: () => {},
+  priceMin: "",
+  setPriceMin: () => {},
+  priceMax: "",
+  setPriceMax: () => {},
+};
+
+const ProductGridContext = createContext<ProductGridContextValue>(defaultContext);
 
 export function ProductGridProvider({ children }: { children: ReactNode }) {
   const { subdomain } = useParams<{ subdomain: string }>();

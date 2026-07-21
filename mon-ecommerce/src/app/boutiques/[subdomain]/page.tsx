@@ -9,6 +9,9 @@ import { sectionComponents } from "@/components/sections";
 import { ShopProvider } from "@/lib/shop-context";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
 import CustomCssInjector from "@/components/CustomCssInjector";
+import ScriptInjector from "@/components/ScriptInjector";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
+import SectionWrapper from "@/components/SectionWrapper";
 import CookieBanner from "@/components/CookieBanner";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
@@ -101,6 +104,8 @@ export default function StorefrontPage() {
         body: config.global.fonts.body,
       }} />
       <CustomCssInjector customCss={config.customCss} />
+      <ScriptInjector scripts={config.scripts} />
+      <AnalyticsTracker analytics={config.analytics} />
       <CookieBanner settings={config.cookie} />
       <BackToTop settings={config.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
       <NewsletterPopup settings={config.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />
@@ -122,17 +127,25 @@ export default function StorefrontPage() {
           </div>
         )}
 
-        {activeSections.map((section) => {
+        {activeSections.map((section, idx) => {
           const Component = sectionComponents[section.type];
           if (!Component) return null;
+          const visClass = [
+            section.hideOnMobile ? "hidden sm:block" : "",
+            section.hideOnDesktop ? "sm:hidden" : "",
+          ].filter(Boolean).join(" ");
           return (
+            <div key={`${section.id}-${idx}`} className={visClass || undefined}>
+            <SectionWrapper settings={section.settings}>
             <Component
-              key={section.id}
+              key={`${section.id}-${idx}`}
               settings={section.settings}
               blocks={section.blocks}
               shopName={shopName}
               {...sectionSharedProps}
             />
+            </SectionWrapper>
+            </div>
           );
         })}
       </div>

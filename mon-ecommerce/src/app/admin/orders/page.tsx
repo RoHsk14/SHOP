@@ -19,13 +19,13 @@ export default function SuperAdminOrders() {
           .limit(100);
 
         if (data) {
-          const productIds = [...new Set(data.map(o => o.product_id).filter(Boolean))];
+          const productIds = [...new Set(data.map((o: any) => o.product_id).filter(Boolean))];
           const { data: products } = productIds.length > 0
             ? await supabase.from("products").select("id, name").in("id", productIds)
             : { data: [] };
-          const productMap = new Map((products || []).map(p => [p.id, p.name]));
+          const productMap = new Map((products || []).map((p: any) => [p.id, p.name]));
 
-          setOrders(data.map(o => ({ ...o, product_name: productMap.get(o.product_id) || "—" })));
+          setOrders(data.map((o: any) => ({ ...o, product_name: productMap.get(o.product_id) || "—" })));
         }
       } catch (e) {
         console.error("Error fetching orders:", e);

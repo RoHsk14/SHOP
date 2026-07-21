@@ -26,6 +26,9 @@ import Testimonials from "./Testimonials";
 import FeaturesGrid from "./FeaturesGrid";
 import FAQ from "./FAQ";
 import CTABanner from "./CTABanner";
+import FeaturedCollection from "./FeaturedCollection";
+import CountdownTimer from "./CountdownTimer";
+import ContactForm from "./ContactForm";
 
 export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "announcement-bar": AnnouncementBar,
@@ -56,4 +59,7 @@ export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "features-grid": FeaturesGrid,
   faq: FAQ,
   "cta-banner": CTABanner,
+  "featured-collection": FeaturedCollection,
+  "countdown-timer": CountdownTimer,
+  "contact-form": ContactForm,
 };

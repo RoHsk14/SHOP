@@ -3,13 +3,13 @@
 import { useState, useRef } from "react";
 import { Upload, FileJson, Check, AlertCircle, Archive, Code, ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
-import JSZip from "jszip";
 
 interface ShopifySettings {
   colors: Record<string, string>;
   fonts: { heading: string; body: string };
   social: Record<string, string>;
   layout: Record<string, any>;
+  analytics: Record<string, string>;
   themeName: string;
 }
 
@@ -112,15 +112,25 @@ export default function TabImport({
     toast.success(`Thème "${themeName}" importé !`);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (e.dataTransfer.files.length > 0) processFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files.length > 0) {
+      try {
+        await processFiles(e.dataTransfer.files);
+      } catch (e: any) {
+        toast.error(e.message || "Erreur lors du traitement des fichiers");
+      }
+    }
   };
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      await processFiles(e.target.files);
+      try {
+        await processFiles(e.target.files);
+      } catch (e: any) {
+        toast.error(e.message || "Erreur lors du traitement des fichiers");
+      }
       e.target.value = "";
     }
   };
@@ -217,11 +227,59 @@ function parseShopifyFonts(schema: any[], data: Record<string, any>): { heading:
     s.name?.toLowerCase().includes("typography") || s.name?.toLowerCase().includes("font")
   );
   if (!typoSection) return fonts;
+
+  const SHOPIFY_FONT_MAP: Record<string, string> = {
+    helvetica: "Helvetica, sans-serif",
+    "helvetica neue": "Helvetica Neue, sans-serif",
+    "helvetica_neue": "Helvetica Neue, sans-serif",
+    arial: "Arial, sans-serif",
+    garamond: "Garamond, serif",
+    georgia: "Georgia, serif",
+    times: "Times New Roman, serif",
+    "times new roman": "Times New Roman, serif",
+    inter: "Inter, sans-serif",
+    "open sans": "Open Sans, sans-serif",
+    open_sans: "Open Sans, sans-serif",
+    lato: "Lato, sans-serif",
+    montserrat: "Montserrat, sans-serif",
+    raleway: "Raleway, sans-serif",
+    roboto: "Roboto, sans-serif",
+    poppins: "Poppins, sans-serif",
+    nunito: "Nunito, sans-serif",
+    ubuntu: "Ubuntu, sans-serif",
+    oswald: "Oswald, sans-serif",
+    playfair: "Playfair Display, serif",
+    "playfair display": "Playfair Display, serif",
+    merriweather: "Merriweather, serif",
+    "source sans": "Source Sans 3, sans-serif",
+    "source sans pro": "Source Sans 3, sans-serif",
+    "pt sans": "PT Sans, sans-serif",
+    "pt serif": "PT Serif, serif",
+    lora: "Lora, serif",
+    "fira sans": "Fira Sans, sans-serif",
+    "josefin sans": "Josefin Sans, sans-serif",
+    quattrocento: "Quattrocento, serif",
+    "tenor sans": "Tenor Sans, sans-serif",
+    "tenor": "Tenor Sans, sans-serif",
+    "dm sans": "DM Sans, sans-serif",
+    assistant: "Assistant, sans-serif",
+  };
+
+  const normalize = (name: string) => name.toLowerCase().replace(/_/g, " ");
+
   const mapFont = (fontVal: string): string => {
     const parts = fontVal.split("_");
-    const name = parts[0] || "inter";
-    return name.charAt(0).toUpperCase() + name.slice(1) + ", sans-serif";
+    const familyPart = parts[0] || "inter";
+    const weightPart = parts[1];
+
+    const normalized = normalize(familyPart.replace(/-/g, " "));
+    const mapped = SHOPIFY_FONT_MAP[familyPart] || SHOPIFY_FONT_MAP[normalized];
+    if (mapped) return mapped;
+
+    const name = familyPart.charAt(0).toUpperCase() + familyPart.slice(1);
+    return `${name}, sans-serif`;
   };
+
   for (const setting of typoSection.settings) {
     if (setting.id === "heading_font" && data.heading_font) fonts.heading = mapFont(data.heading_font);
     if (setting.id === "text_font" && data.text_font) fonts.body = mapFont(data.text_font);
@@ -243,7 +301,20 @@ function parseShopifyLayout(schema: any[], data: Record<string, any>): Record<st
   if (data.product_image_size) layout.productImageSize = data.product_image_size;
   if (data.product_info_alignment) layout.productInfoAlignment = data.product_info_alignment;
   if (data.cart_type) layout.cartType = data.cart_type;
-  if (data.product_list_horizontal_spacing) layout.horizontalSpacing = data.product_list_horizontal_spacing;
+  if (data.product_list_horizontal_spacing) layout.sectionSpacing = data.product_list_horizontal_spacing;
+  if (data.page_width) layout.containerWidth = data.page_width;
+  if (data.products_per_row) layout.productsPerRow = typeof data.products_per_row === "number" ? data.products_per_row as 2 | 3 | 4 : 4;
+  if (data.products_per_row_mobile) layout.mobileProductsPerRow = typeof data.products_per_row_mobile === "number" ? data.products_per_row_mobile as 1 | 2 : 2;
+  if (data.collection_layout) layout.collectionLayout = data.collection_layout;
+  if (typeof data.show_search !== "undefined") layout.showSearch = data.show_search;
+  if (typeof data.show_cart !== "undefined") layout.showCart = data.show_cart;
+  if (typeof data.show_breadcrumbs !== "undefined") layout.showBreadcrumbs = data.show_breadcrumbs;
+  if (typeof data.show_filters !== "undefined") layout.showFilters = data.show_filters;
+  if (typeof data.show_wishlist !== "undefined") layout.showWishlist = data.show_wishlist;
+  if (typeof data.show_badges !== "undefined") layout.showBadges = data.show_badges;
+  if (data.header_style) layout.headerStyle = data.header_style;
+  if (typeof data.sticky_header !== "undefined") layout.stickyHeader = data.sticky_header;
+  if (data.footer_columns) layout.footerColumns = typeof data.footer_columns === "number" ? data.footer_columns as 1 | 2 | 3 | 4 : 3;
   return layout;
 }
 
@@ -253,8 +324,18 @@ function parseShopifyTheme(schema: any[], data: Record<string, any>, themeName: 
     fonts: parseShopifyFonts(schema, data),
     social: parseShopifySocial(data),
     layout: parseShopifyLayout(schema, data),
+    analytics: parseShopifyAnalytics(data),
     themeName,
   };
+}
+
+function parseShopifyAnalytics(data: Record<string, any>): Record<string, string> {
+  const analytics: Record<string, string> = {};
+  if (data.google_analytics) analytics.googleAnalytics = data.google_analytics;
+  if (data.google_tag_manager) analytics.googleTagManager = data.google_tag_manager;
+  if (data.facebook_pixel) analytics.facebookPixel = data.facebook_pixel;
+  if (data.custom_head_scripts) analytics.customHeadScripts = data.custom_head_scripts;
+  return analytics;
 }
 
 function JsonResult({ parsed, onImport }: { parsed: ShopifySettings; onImport: (s: ShopifySettings) => void }) {

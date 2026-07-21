@@ -24,6 +24,11 @@ export default function GoogleFontsLoader({ fonts }: { fonts: { heading?: string
     document.head.appendChild(link);
 
     families.forEach((f) => f && FONT_CACHE.add(f));
+
+    return () => {
+      if (link.parentNode) link.remove();
+      families.forEach((f) => f && FONT_CACHE.delete(f));
+    };
   }, [fonts.heading, fonts.body]);
 
   return null;

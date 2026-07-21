@@ -1,5 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 const CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 function randomSlug(length = 6): string {
@@ -9,7 +7,7 @@ function randomSlug(length = 6): string {
 }
 
 export async function generateUniqueShopSlug(
-  supabase: SupabaseClient,
+  supabase: { from: (table: string) => any },
   length = 6,
   maxAttempts = 20
 ): Promise<string> {
@@ -25,9 +23,9 @@ export async function generateUniqueShopSlug(
   return randomSlug(length + 4);
 }
 
-export function slugify(text: string): string {
+export function slugify(text?: string | null): string {
+  if (!text) return "";
   return text
-    .toString()
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "-")

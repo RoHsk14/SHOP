@@ -68,9 +68,61 @@ export default function TabLayout({
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Produits par ligne (mobile)</label>
+          <select
+            value={layout.mobileProductsPerRow || 2}
+            onChange={(e) => onChange({ ...layout, mobileProductsPerRow: Number(e.target.value) as 1 | 2 })}
+            className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
+          >
+            <option value={1}>1 produit</option>
+            <option value={2}>2 produits</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Style de collection</label>
+          <select
+            value={layout.collectionLayout || "grid"}
+            onChange={(e) => onChange({ ...layout, collectionLayout: e.target.value as "grid" | "list" })}
+            className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
+          >
+            <option value="grid">Grille</option>
+            <option value="list">Liste</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Style du header</label>
+          <select
+            value={layout.headerStyle || "standard"}
+            onChange={(e) => onChange({ ...layout, headerStyle: e.target.value as LayoutSettings["headerStyle"] })}
+            className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
+          >
+            <option value="standard">Standard</option>
+            <option value="transparent">Transparent</option>
+            <option value="centered">Centré</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Colonnes du footer</label>
+          <select
+            value={layout.footerColumns || 3}
+            onChange={(e) => onChange({ ...layout, footerColumns: Number(e.target.value) as 1 | 2 | 3 | 4 })}
+            className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
+          >
+            <option value={1}>1 colonne</option>
+            <option value={2}>2 colonnes</option>
+            <option value={3}>3 colonnes</option>
+            <option value={4}>4 colonnes</option>
+          </select>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Alignement des infos produits</label>
           <select
-            value={layout.productInfoAlignment}
+            value={layout.productInfoAlignment || "left"}
             onChange={(e) => onChange({ ...layout, productInfoAlignment: e.target.value as "left" | "center" })}
             className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
           >
@@ -82,7 +134,7 @@ export default function TabLayout({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Type de panier</label>
           <select
-            value={layout.cartType}
+            value={layout.cartType || "drawer"}
             onChange={(e) => onChange({ ...layout, cartType: e.target.value as "drawer" | "page" })}
             className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900"
           >
@@ -150,6 +202,15 @@ export default function TabLayout({
               className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
             />
             <span className="text-sm text-gray-700">Badges (Nouveau, Promo)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={layout.stickyHeader !== false}
+              onChange={(e) => onChange({ ...layout, stickyHeader: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-gray-700">Header sticky</span>
           </label>
         </div>
       </div>

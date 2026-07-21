@@ -1,19 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import EditableText, { hasTextValue } from "@/components/EditableText";
 
 interface Props {
   settings: {
-    title?: string;
-    content?: string;
+    title?: any;
+    content?: any;
     background?: string;
-    button_text?: string;
+    button_text?: any;
+    text_align?: string;
+    text_size?: string;
+    font_family?: string;
   };
 }
 
 export default function NewsletterSection({ settings }: Props) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+
+  const textAlign = settings.text_align || "center";
+  const fontFamily = settings.font_family === "heading" ? "var(--theme-font-heading)" : "var(--theme-font-body)";
+
+  const titleSize = settings.text_size === "small" ? "text-xl sm:text-2xl" : settings.text_size === "large" ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl";
+  const bodySize = settings.text_size === "small" ? "text-xs sm:text-sm" : settings.text_size === "large" ? "text-base sm:text-lg" : "text-sm sm:text-base";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,22 +35,22 @@ export default function NewsletterSection({ settings }: Props) {
 
   return (
     <section className="py-10 sm:py-16" style={{ background: settings.background || "var(--theme-secondary)" }}>
-      <div className="max-w-xl mx-auto px-4 sm:px-6 text-center">
-        {settings.title && (
-          <h2
-            className="text-2xl sm:text-3xl font-bold mb-3"
-            style={{
-              color: "var(--theme-text)",
-              fontFamily: "var(--theme-font-heading)",
-            }}
-          >
-            {settings.title}
-          </h2>
+      <div className="max-w-xl mx-auto px-4 sm:px-6" style={{ textAlign: textAlign as any }}>
+        {hasTextValue(settings.title) && (
+          <EditableText
+            as="h2"
+            value={settings.title}
+            className={`${titleSize} font-bold mb-3`}
+            style={{ color: "var(--theme-text)", fontFamily }}
+          />
         )}
-        {settings.content && (
-          <p className="text-sm mb-6" style={{ color: "var(--theme-text-muted)" }}>
-            {settings.content}
-          </p>
+        {hasTextValue(settings.content) && (
+          <EditableText
+            as="p"
+            value={settings.content}
+            className={`${bodySize} mb-6`}
+            style={{ color: "var(--theme-text-muted)" }}
+          />
         )}
         {subscribed ? (
           <p className="text-sm font-medium" style={{ color: "var(--theme-primary)" }}>
@@ -70,7 +80,7 @@ export default function NewsletterSection({ settings }: Props) {
                 borderRadius: "var(--theme-radius-button)",
               }}
             >
-              {settings.button_text || "S'inscrire"}
+              <EditableText as="span" value={settings.button_text} fallback="S'inscrire" />
             </button>
           </form>
         )}

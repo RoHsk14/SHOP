@@ -5,14 +5,14 @@ import { extractSubdomain } from "@/lib/host";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { product_id, quantity, total_price, currency, customer_name, customer_phone, customer_address, offer_id } = body;
+    const { product_id, quantity, total_price, currency, customer_name, customer_phone, customer_address, offer_id, shop_slug: bodyShopSlug } = body;
 
     if (!product_id || !quantity || !customer_name || !customer_phone) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
 
     const host = request.headers.get("host") || "";
-    const shopSlug = extractSubdomain(host);
+    const shopSlug = bodyShopSlug || extractSubdomain(host);
     if (!shopSlug) {
       return NextResponse.json({ error: "Boutique non identifiée" }, { status: 400 });
     }
@@ -68,13 +68,12 @@ export async function POST(request: NextRequest) {
       shop_slug: shopSlug,
     };
 
-    const { data: order, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase
       .from("orders")
-      .insert([orderData])
-      .select()
-      .single();
+      .insert([orderData]);
 
-    if (insertError) throw insertError;
+    if (insertError || !inserted?.length) throw insertError || new Error("No rows found");
+    const order = inserted[0];
 
     // Send push notification to admin devices (non-bloquant)
     const protocol = host.includes("localhost") ? "http" : "https";

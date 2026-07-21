@@ -53,6 +53,12 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
+    const err = new URLSearchParams(window.location.search).get("error");
+    if (err === "auth_failed" || err === "session_not_found" || err === "callback_error") {
+      setMessage("La connexion a échoué. Réessayez ou utilisez email / mot de passe. Vérifiez aussi que Google est activé dans Nhost.");
+      window.history.replaceState({}, "", "/login");
+    }
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         await redirectToDashboard();

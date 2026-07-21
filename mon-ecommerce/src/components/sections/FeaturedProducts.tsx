@@ -2,20 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
 import { useShop } from "@/lib/shop-context";
+import EditableText, { hasTextValue } from "@/components/EditableText";
 
 interface Props {
   settings: {
-    title?: string;
-    description?: string;
+    title?: any;
+    description?: any;
   };
 }
 
 export default function FeaturedProducts({ settings }: Props) {
-  const { subdomain } = useParams<{ subdomain: string }>();
-  const { config } = useShop();
+  const { config, subdomain } = useShop();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,9 +25,12 @@ export default function FeaturedProducts({ settings }: Props) {
       .select("*")
       .eq("shop_slug", subdomain)
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (!cancelled && data) setProducts(data);
-        if (!cancelled) setLoading(false);
+      .then(({ data, error }) => {
+        if (!cancelled) {
+          if (error) { setLoading(false); return; }
+          if (data) setProducts(data);
+          setLoading(false);
+        }
       });
     return () => { cancelled = true; };
   }, [subdomain]);
@@ -36,21 +38,24 @@ export default function FeaturedProducts({ settings }: Props) {
   return (
     <section className="py-10 sm:py-16">
       <div className="mx-auto px-4 sm:px-6" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
-        {settings.title && (
-          <h2
+        {hasTextValue(settings.title) && (
+          <EditableText
+            as="h2"
+            value={settings.title}
             className="text-2xl sm:text-3xl font-bold text-center mb-2"
             style={{
               color: "var(--theme-text)",
               fontFamily: "var(--theme-font-heading)",
             }}
-          >
-            {settings.title}
-          </h2>
+          />
         )}
-        {settings.description && (
-          <p className="text-center text-sm mb-8" style={{ color: "var(--theme-text-muted)" }}>
-            {settings.description}
-          </p>
+        {hasTextValue(settings.description) && (
+          <EditableText
+            as="p"
+            value={settings.description}
+            className="text-center text-sm mb-8"
+            style={{ color: "var(--theme-text-muted)" }}
+          />
         )}
 
         {loading ? (

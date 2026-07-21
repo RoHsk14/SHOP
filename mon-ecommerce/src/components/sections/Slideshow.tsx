@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import EditableText, { hasTextValue, plainText } from "@/components/EditableText";
 
 interface SlideBlock {
   settings: {
@@ -48,6 +49,8 @@ export default function Slideshow({ settings, blocks }: Props) {
   const slides = blocks || [];
   const [current, setCurrent] = useState(0);
 
+  const safeCurrent = current < slides.length ? current : 0;
+
   const next = useCallback(() => {
     setCurrent((i) => (i + 1) % slides.length);
   }, [slides.length]);
@@ -57,6 +60,12 @@ export default function Slideshow({ settings, blocks }: Props) {
   }, [slides.length]);
 
   useEffect(() => {
+    if (current >= slides.length) {
+      setCurrent(Math.max(0, slides.length - 1));
+    }
+  }, [slides.length, current]);
+
+  useEffect(() => {
     if (!settings.autoplay || slides.length < 2) return;
     const id = setInterval(next, settings.speed || 5000);
     return () => clearInterval(id);
@@ -64,11 +73,11 @@ export default function Slideshow({ settings, blocks }: Props) {
 
   if (slides.length === 0) return null;
 
-  const slide = slides[current];
+  const slide = slides[safeCurrent];
   const textPosition = settings.text_position || "center";
-  const textAlign = slide.settings.text_align || "center";
-  const headingSize = slide.settings.heading_size || "large";
-  const buttonStyle = slide.settings.button_style || "solid";
+  const textAlign = slide?.settings?.text_align || "center";
+  const headingSize = slide?.settings?.heading_size || "large";
+  const buttonStyle = slide?.settings?.button_style || "solid";
   const arrowStyle = settings.arrow_style || "outline";
   const showDots = settings.show_dots !== false;
 
@@ -102,19 +111,19 @@ export default function Slideshow({ settings, blocks }: Props) {
       style={!settings.full_width ? { maxWidth: "var(--theme-container-width, 1200px)" } : undefined}
     >
       <div className={`relative ${heightClass} min-h-[300px]`}>
-        {slide.settings.image && (
+        {slide?.settings?.image && (
           <>
             <Image
-              src={slide.settings.image}
-              alt={slide.settings.heading || ""}
+              src={slide?.settings?.image}
+              alt={plainText(slide?.settings?.heading)}
               fill
               className="object-cover hidden sm:block"
               unoptimized
             />
-            {slide.settings.image_mobile && (
+            {slide?.settings?.image_mobile && (
               <Image
-                src={slide.settings.image_mobile}
-                alt={slide.settings.heading || ""}
+                src={slide?.settings?.image_mobile}
+                alt={plainText(slide?.settings?.heading)}
                 fill
                 className="object-cover sm:hidden"
                 unoptimized
@@ -127,8 +136,8 @@ export default function Slideshow({ settings, blocks }: Props) {
         <div
           className="absolute inset-0"
           style={{
-            background: slide.settings.overlay_color || "#000000",
-            opacity: slide.settings.overlay_opacity ?? 0.3,
+            background: slide?.settings?.overlay_color || "#000000",
+            opacity: slide?.settings?.overlay_opacity ?? 0.3,
           }}
         />
 
@@ -138,50 +147,53 @@ export default function Slideshow({ settings, blocks }: Props) {
             className={`${contentAlignClass}`}
             style={{ maxWidth: settings.text_max_width || 600, width: "100%" }}
           >
-            {slide.settings.heading && (
-              <h2
+            {hasTextValue(slide?.settings?.heading) && (
+              <EditableText
+                as="h2"
+                value={slide?.settings?.heading}
                 className={`${headingSizes[headingSize] || headingSizes.large} font-bold mb-4 leading-tight`}
                 style={{
-                  color: slide.settings.text_color || "#ffffff",
+                  color: slide?.settings?.text_color || "#ffffff",
                   fontFamily: "var(--theme-font-heading)",
                 }}
-              >
-                {slide.settings.heading}
-              </h2>
+              />
             )}
-            {slide.settings.subheading && (
-              <p
+            {hasTextValue(slide?.settings?.subheading) && (
+              <EditableText
+                as="p"
+                value={slide?.settings?.subheading}
                 className="text-base sm:text-lg mb-6 opacity-90 max-w-xl mx-auto"
                 style={{
-                  color: slide.settings.text_color || "#ffffff",
+                  color: slide?.settings?.text_color || "#ffffff",
                   marginLeft: textAlign === "left" ? "0" : textAlign === "right" ? "0" : "auto",
                   marginRight: textAlign === "right" ? "0" : textAlign === "left" ? "0" : "auto",
                 }}
-              >
-                {slide.settings.subheading}
-              </p>
+              />
             )}
-            {slide.settings.button_text && (
+            {hasTextValue(slide?.settings?.button_text) && (
               <Link
-                href={slide.settings.button_url || "#"}
+                href={slide?.settings?.button_url || "#"}
                 className={`inline-block px-8 py-3 text-sm font-semibold transition-all hover:opacity-90 ${btnClasses}`}
                 style={
                   buttonStyle === "outline"
                     ? {
-                        borderColor: slide.settings.button_color || "#ffffff",
-                        color: slide.settings.button_color || "#ffffff",
+                        borderColor: slide?.settings?.button_color || "#ffffff",
+                        color: slide?.settings?.button_color || "#ffffff",
                         borderRadius: "var(--theme-radius-button)",
                       }
                     : buttonStyle === "ghost"
-                      ? { color: slide.settings.button_color || "#ffffff" }
+                      ? { color: slide?.settings?.button_color || "#ffffff" }
                       : {
-                          background: slide.settings.button_color || "var(--theme-primary)",
+                          background: slide?.settings?.button_color || "var(--theme-primary)",
                           color: "#ffffff",
                           borderRadius: "var(--theme-radius-button)",
                         }
                 }
+                onClick={(e) => {
+                  if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+                }}
               >
-                {slide.settings.button_text}
+                <EditableText as="span" value={slide?.settings?.button_text} />
               </Link>
             )}
           </div>

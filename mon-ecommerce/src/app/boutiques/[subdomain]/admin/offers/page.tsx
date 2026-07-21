@@ -62,7 +62,8 @@ export default function OffersPage() {
       .eq("shop_slug", subdomain)
       .order("created_at", { ascending: false });
     if (error) {
-      toast.error("Erreur de chargement des offres");
+      console.error("Erreur offres:", error);
+      toast.error("Erreur de chargement des offres: " + (error?.message || "Erreur inconnue"));
     } else {
       setOffers(data || []);
     }

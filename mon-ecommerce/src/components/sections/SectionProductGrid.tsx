@@ -5,19 +5,27 @@ import { useProductGrid } from "@/lib/product-grid-context";
 import ProductCard from "@/components/ProductCard";
 
 const GRID_COLS: Record<number, string> = {
-  2: "sm:grid-cols-2 lg:grid-cols-2",
-  3: "sm:grid-cols-2 lg:grid-cols-3",
-  4: "sm:grid-cols-2 lg:grid-cols-4",
+  2: "grid-cols-2 lg:grid-cols-2",
+  3: "grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-2 lg:grid-cols-4",
+};
+
+const MOBILE_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
 };
 
 export default function SectionProductGrid() {
   const { config, subdomain } = useShop();
-  const { filtered, loading } = useProductGrid();
+  const { filtered = [], loading } = useProductGrid();
 
   const showBadges = config?.layout?.showBadges !== false;
   const showWishlist = config?.layout?.showWishlist !== false;
   const cols = config?.layout?.productsPerRow || 4;
+  const mobileCols = config?.layout?.mobileProductsPerRow || 2;
+  const isList = config?.layout?.collectionLayout === "list";
   const gridClass = GRID_COLS[cols] || GRID_COLS[4];
+  const mobileClass = MOBILE_COLS[mobileCols] || MOBILE_COLS[2];
 
   if (loading) {
     return (
@@ -35,8 +43,14 @@ export default function SectionProductGrid() {
             Aucun produit disponible pour le moment.
           </p>
         </div>
+      ) : isList ? (
+        <div className="flex flex-col gap-4">
+          {filtered.map((product) => (
+            <ProductCard key={product.id} product={product} subdomain={subdomain} showBadges={showBadges} showWishlist={showWishlist} />
+          ))}
+        </div>
       ) : (
-        <div className={`grid grid-cols-2 ${gridClass} gap-4 sm:gap-6`}>
+        <div className={`grid ${mobileClass} ${gridClass} gap-4 sm:gap-6`}>
           {filtered.map((product) => (
             <ProductCard key={product.id} product={product} subdomain={subdomain} showBadges={showBadges} showWishlist={showWishlist} />
           ))}

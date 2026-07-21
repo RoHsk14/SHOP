@@ -24,7 +24,7 @@ export default function SuperAdminDashboard() {
           supabase.from("products").select("id", { count: "exact", head: true }),
         ]);
 
-        const revenue = (ordersRes.data || []).reduce((sum, o) => sum + (o.total_price || 0), 0);
+        const revenue = (ordersRes.data || []).reduce((sum: number, o: any) => sum + (o.total_price || 0), 0);
 
         setStats({
           shops: settingsRes.count || 0,

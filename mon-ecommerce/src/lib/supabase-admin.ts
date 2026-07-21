@@ -1,12 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient } from "./supabase-adapter";
+import { getNhostAdminSecret } from "./nhost";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const secret = getNhostAdminSecret();
 
-if (!supabaseUrl || !serviceRoleKey) {
-  console.warn("Missing SUPABASE_SERVICE_ROLE_KEY — service client will fail");
+if (!secret) {
+  console.warn("Missing NHOST_ADMIN_SECRET — service client will fail");
 }
 
-export const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+export const serviceSupabase = createSupabaseClient(secret);

@@ -28,15 +28,16 @@ export async function POST(request: NextRequest) {
     // Upload ZIP to storage
     const buffer = Buffer.from(await file.arrayBuffer());
     const zipPath = `${shopSlug}/${Date.now()}-${file.name}`;
-    const { error: uploadError } = await serviceSupabase.storage
+    const blob = new Blob([buffer], { type: "application/zip" });
+    const { data: uploadData, error: uploadError } = await serviceSupabase.storage
       .from(bucketName)
-      .upload(zipPath, buffer, { upsert: true, contentType: "application/zip" });
+      .upload(zipPath, blob, { upsert: true, contentType: "application/zip" });
 
     if (uploadError) throw new Error(uploadError.message);
 
     const { data: { publicUrl } } = serviceSupabase.storage
       .from(bucketName)
-      .getPublicUrl(zipPath);
+      .getPublicUrl(uploadData.path);
 
     // Process the ZIP directly (no need to re-download, we already have the buffer)
     const zip = await JSZip.loadAsync(buffer);
@@ -129,14 +130,15 @@ export async function POST(request: NextRequest) {
       const fileName = path.split("/").pop() || path;
       const fileData = await zip.file(path)!.async("arraybuffer");
       const storagePath = `${shopSlug}/assets/${fileName}`;
-      const { error } = await serviceSupabase.storage
+      const assetBlob = new Blob([fileData], { type: getMimeType(fileName) });
+      const { data: uploadData, error } = await serviceSupabase.storage
         .from(bucketName)
-        .upload(storagePath, fileData, { upsert: true, contentType: getMimeType(fileName) });
+        .upload(storagePath, assetBlob, { upsert: true, contentType: getMimeType(fileName) });
 
       if (!error) {
         const { data: { publicUrl } } = serviceSupabase.storage
           .from(bucketName)
-          .getPublicUrl(storagePath);
+          .getPublicUrl(uploadData.path);
         uploadedAssets.push({ name: fileName, url: publicUrl });
       }
     }

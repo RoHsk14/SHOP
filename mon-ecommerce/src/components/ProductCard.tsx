@@ -56,7 +56,7 @@ const BADGE_STYLES: Record<string, { bg: string; text: string }> = {
 export default function ProductCard({ product, subdomain, showBadges = true, showWishlist = true }: ProductCardProps) {
   const imageUrl = product.images?.[0]
     || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop";
-  const slug = product.slug || product.name.toLowerCase().replace(/\s+/g, "-");
+  const slug = product.slug || (product.name || "").toLowerCase().replace(/\s+/g, "-");
   const badges = getBadges(product, showBadges);
   const hasDiscount = product.compareAtPrice && product.price && product.compareAtPrice > product.price;
 
@@ -91,7 +91,7 @@ export default function ProductCard({ product, subdomain, showBadges = true, sho
       <div className="relative aspect-square overflow-hidden" style={{ background: "var(--theme-secondary, #f3f4f6)" }}>
         <Image
           src={imageUrl}
-          alt={product.name}
+          alt={product.name || "Product image"}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           unoptimized

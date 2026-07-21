@@ -7,7 +7,10 @@ export default function CustomCssInjector({ customCss }: { customCss?: CustomCss
   const styleRef = useRef<HTMLStyleElement | null>(null);
 
   useEffect(() => {
-    if (!customCss?.desktop && !customCss?.mobile) {
+    const desktop = customCss?.desktop?.trim() || "";
+    const mobile = customCss?.mobile?.trim() || "";
+
+    if (!desktop && !mobile) {
       if (styleRef.current) {
         styleRef.current.remove();
         styleRef.current = null;
@@ -15,18 +18,11 @@ export default function CustomCssInjector({ customCss }: { customCss?: CustomCss
       return;
     }
 
-    const css = [
-      customCss.desktop || "",
-      customCss.mobile || "",
-    ].filter(Boolean).join("\n");
+    const parts: string[] = [];
+    if (desktop) parts.push(desktop);
+    if (mobile) parts.push(`@media (max-width: 640px) {\n${mobile}\n}`);
 
-    if (!css) {
-      if (styleRef.current) {
-        styleRef.current.remove();
-        styleRef.current = null;
-      }
-      return;
-    }
+    const css = parts.join("\n");
 
     if (!styleRef.current) {
       const style = document.createElement("style");

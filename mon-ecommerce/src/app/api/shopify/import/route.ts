@@ -112,14 +112,15 @@ export async function POST(request: NextRequest) {
       const fileName = path.split("/").pop() || path;
       const fileData = await zip.file(path)!.async("arraybuffer");
       const storagePath = `${shopSlug}/assets/${fileName}`;
-      const { error } = await serviceSupabase.storage
+      const assetBlob = new Blob([fileData], { type: getMimeType(fileName) });
+      const { data: uploadData, error } = await serviceSupabase.storage
         .from(bucketName)
-        .upload(storagePath, fileData, { upsert: true, contentType: getMimeType(fileName) });
+        .upload(storagePath, assetBlob, { upsert: true, contentType: getMimeType(fileName) });
 
       if (!error) {
         const { data: { publicUrl } } = serviceSupabase.storage
           .from(bucketName)
-          .getPublicUrl(storagePath);
+          .getPublicUrl(uploadData.path);
         uploadedAssets.push({ name: fileName, url: publicUrl });
       }
     }

@@ -94,7 +94,7 @@ export default function CheckoutForm({ product }: { product: any }) {
       value: totalPrice, currency: productCurrency, num_items: quantity, content_ids: [product.id],
     });
     const orderData: any = {
-      product_id: product.id, quantity, total_price: totalPrice, currency: productCurrency, product_name: productName,
+      product_id: product.id, quantity, total_price: totalPrice, currency: productCurrency, product_name: productName, shop_slug: subdomain,
     };
     if (offerInfo) {
       orderData.offer_id = offerInfo.id;
@@ -153,7 +153,7 @@ export default function CheckoutForm({ product }: { product: any }) {
         });
         
         if (res.ok) {
-          console.log("✅ Données envoyées au Google Sheets");
+
           if (!settings.google_sheet_columns && settings?.id) {
             await supabase.from("settings").update({
               google_sheet_columns: columns,

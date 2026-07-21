@@ -17,7 +17,60 @@ export interface SectionDefinition {
   defaultBlocks?: Record<string, any>[];
 }
 
-export const sectionRegistry: SectionDefinition[] = [
+export function universalSectionSettings(): SettingDefinition[] {
+  return [
+    { key: "padding_top", label: "Padding haut", type: "number", default: "" },
+    { key: "padding_bottom", label: "Padding bas", type: "number", default: "" },
+    { key: "padding_left", label: "Padding gauche", type: "number", default: "" },
+    { key: "padding_right", label: "Padding droite", type: "number", default: "" },
+    { key: "margin_top", label: "Marge haut", type: "number", default: "" },
+    { key: "margin_bottom", label: "Marge bas", type: "number", default: "" },
+    { key: "section_bg", label: "Couleur de fond", type: "color", default: "" },
+    { key: "section_bg_image", label: "Image de fond", type: "image", default: "" },
+    { key: "section_bg_size", label: "Taille image fond", type: "select", default: "cover", options: [
+      { label: "Couvrir", value: "cover" },
+      { label: "Contenir", value: "contain" },
+      { label: "Taille réelle", value: "auto" },
+      { label: "Répéter", value: "repeat" },
+    ]},
+    { key: "section_border_color", label: "Couleur bordure", type: "color", default: "" },
+    { key: "section_border_width", label: "Épaisseur bordure (px)", type: "number", default: "" },
+    { key: "section_border_radius", label: "Arrondi (px)", type: "number", default: "" },
+    { key: "section_max_width", label: "Largeur max (px)", type: "number", default: "" },
+    { key: "heading_size", label: "Taille des titres", type: "select", default: "inherit", options: [
+      { label: "Hériter", value: "inherit" },
+      { label: "Petit", value: "small" },
+      { label: "Moyen", value: "medium" },
+      { label: "Grand", value: "large" },
+    ]},
+    { key: "heading_color", label: "Couleur des titres", type: "color", default: "" },
+    { key: "text_color", label: "Couleur du texte", type: "color", default: "" },
+  ];
+}
+
+export function universalSectionDefaults(): Record<string, any> {
+  return {
+    padding_top: "", padding_bottom: "", padding_left: "", padding_right: "",
+    margin_top: "", margin_bottom: "",
+    section_bg: "", section_bg_image: "", section_bg_size: "cover",
+    section_border_color: "", section_border_width: "", section_border_radius: "",
+    section_max_width: "", heading_size: "inherit", heading_color: "", text_color: "",
+  };
+}
+
+function withUniversalSettings(def: SectionDefinition): SectionDefinition {
+  return {
+    ...def,
+    settings: [...def.settings, ...universalSectionSettings()],
+    defaultSettings: { ...universalSectionDefaults(), ...def.defaultSettings },
+  };
+}
+
+function enhanceRegistry(registry: SectionDefinition[]): SectionDefinition[] {
+  return registry.map(withUniversalSettings);
+}
+
+export const sectionRegistry: SectionDefinition[] = enhanceRegistry([
   {
     type: "announcement-bar",
     name: "Barre d'annonce",
@@ -183,6 +236,7 @@ export const sectionRegistry: SectionDefinition[] = [
         { label: "Gauche", value: "left" },
         { label: "Droite", value: "right" },
       ]},
+      ...textStyleSettings(),
     ],
     defaultSettings: {
       image: "",
@@ -191,6 +245,7 @@ export const sectionRegistry: SectionDefinition[] = [
       button_text: "En savoir plus",
       button_url: "#",
       image_position: "left",
+      ...textStyleDefaults(),
     },
   },
   {
@@ -218,12 +273,15 @@ export const sectionRegistry: SectionDefinition[] = [
       { key: "content", label: "Description", type: "textarea", default: "Recevez nos offres exclusives en avant-première" },
       { key: "background", label: "Couleur de fond", type: "color", default: "#f3f4f6" },
       { key: "button_text", label: "Texte du bouton", type: "text", default: "S'inscrire" },
+      ...textStyleSettings(),
     ],
     defaultSettings: {
       title: "Restons connectés",
       content: "Recevez nos offres exclusives en avant-première",
       background: "#f3f4f6",
       button_text: "S'inscrire",
+      ...textStyleDefaults(),
+      text_align: "center",
     },
   },
   {
@@ -483,11 +541,13 @@ export const sectionRegistry: SectionDefinition[] = [
         { label: "Liste", value: "list" },
         { label: "Grille", value: "grid" },
       ]},
+      ...textStyleSettings(),
     ],
     defaultSettings: {
       title: "Offres groupées",
       subtitle: "Profitez de nos offres spéciales",
       layout: "list",
+      ...textStyleDefaults(),
     },
   },
   {
@@ -518,8 +578,9 @@ export const sectionRegistry: SectionDefinition[] = [
     settings: [
       { key: "background", label: "Couleur de fond", type: "color", default: "" },
       { key: "text_color", label: "Couleur du texte", type: "color", default: "#ffffff" },
+      ...textStyleSettings(),
     ],
-    defaultSettings: { background: "", text_color: "#ffffff" },
+    defaultSettings: { background: "", text_color: "#ffffff", ...textStyleDefaults() },
     blocks: [
       {
         type: "stat",
@@ -548,8 +609,9 @@ export const sectionRegistry: SectionDefinition[] = [
     settings: [
       { key: "title", label: "Titre", type: "text", default: "Ce que disent nos clients" },
       { key: "description", label: "Description", type: "textarea", default: "" },
+      ...textStyleSettings(),
     ],
-    defaultSettings: { title: "Ce que disent nos clients", description: "" },
+    defaultSettings: { title: "Ce que disent nos clients", description: "", ...textStyleDefaults() },
     blocks: [
       {
         type: "testimonial",
@@ -580,8 +642,9 @@ export const sectionRegistry: SectionDefinition[] = [
       { key: "title", label: "Titre", type: "text", default: "Pourquoi nous choisir ?" },
       { key: "description", label: "Description", type: "textarea", default: "" },
       { key: "columns", label: "Colonnes", type: "number", default: 3 },
+      ...textStyleSettings(),
     ],
-    defaultSettings: { title: "Pourquoi nous choisir ?", description: "", columns: 3 },
+    defaultSettings: { title: "Pourquoi nous choisir ?", description: "", columns: 3, ...textStyleDefaults() },
     blocks: [
       {
         type: "feature",
@@ -616,8 +679,9 @@ export const sectionRegistry: SectionDefinition[] = [
     settings: [
       { key: "title", label: "Titre", type: "text", default: "Questions fréquentes" },
       { key: "description", label: "Description", type: "textarea", default: "" },
+      ...textStyleSettings(),
     ],
-    defaultSettings: { title: "Questions fréquentes", description: "" },
+    defaultSettings: { title: "Questions fréquentes", description: "", ...textStyleDefaults() },
     blocks: [
       {
         type: "qa",
@@ -634,33 +698,103 @@ export const sectionRegistry: SectionDefinition[] = [
       { settings: { question: "Quels moyens de paiement acceptez-vous ?", answer: "Nous acceptons les cartes bancaires, Orange Money, MTN Mobile Money et Wave." } },
     ],
   },
-  /* — Bannette CTA — */
+  /* — Collection en vedette — */
   {
-    type: "cta-banner",
-    name: "Bannière CTA",
-    description: "Bannière d'appel à l'action avec bouton",
-    icon: "Megaphone",
+    type: "featured-collection",
+    name: "Collection en vedette",
+    description: "Affiche les produits d'une collection spécifique",
+    icon: "FolderHeart",
     category: "content",
     settings: [
-      { key: "title", label: "Titre", type: "text", default: "Prêt à passer commande ?" },
-      { key: "description", label: "Description", type: "textarea", default: "Découvrez notre sélection de produits uniques." },
-      { key: "button_text", label: "Texte du bouton", type: "text", default: "Voir les produits" },
-      { key: "button_url", label: "Lien du bouton", type: "url", default: "/products" },
-      { key: "background", label: "Couleur de fond", type: "color", default: "" },
-      { key: "text_color", label: "Couleur du texte", type: "color", default: "#ffffff" },
-      { key: "button_color", label: "Couleur du bouton", type: "color", default: "#ffffff" },
+      { key: "title", label: "Titre", type: "text", default: "Notre collection" },
+      { key: "description", label: "Description", type: "textarea", default: "" },
+      { key: "collection_slug", label: "Slug de la collection", type: "text", default: "" },
+      ...textStyleSettings(),
     ],
     defaultSettings: {
-      title: "Prêt à passer commande ?",
-      description: "Découvrez notre sélection de produits uniques.",
-      button_text: "Voir les produits",
-      button_url: "/products",
-      background: "",
-      text_color: "#ffffff",
-      button_color: "#ffffff",
+      title: "Notre collection",
+      description: "",
+      collection_slug: "",
+      ...textStyleDefaults(),
     },
   },
-];
+  /* — Compte à rebours — */
+  {
+    type: "countdown-timer",
+    name: "Compte à rebours",
+    description: "Minuteur pour promotions et offres limitées",
+    icon: "Timer",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Offre limitée !" },
+      { key: "description", label: "Description", type: "textarea", default: "Cette offre expire bientôt." },
+      { key: "end_date", label: "Date de fin (AAAA-MM-JJ HH:MM)", type: "text", default: "" },
+      { key: "background", label: "Couleur de fond", type: "color", default: "" },
+      ...textStyleSettings(),
+    ],
+    defaultSettings: {
+      title: "Offre limitée !",
+      description: "Cette offre expire bientôt.",
+      end_date: "",
+      background: "",
+      ...textStyleDefaults(),
+      text_align: "center",
+    },
+  },
+  /* — Formulaire de contact — */
+  {
+    type: "contact-form",
+    name: "Formulaire de contact",
+    description: "Formulaire de contact pour les clients",
+    icon: "MessageSquare",
+    category: "content",
+    settings: [
+      { key: "title", label: "Titre", type: "text", default: "Contactez-nous" },
+      { key: "description", label: "Description", type: "textarea", default: "Nous vous répondrons dans les plus brefs délais." },
+      { key: "email", label: "Email de réception", type: "text", default: "" },
+      { key: "show_name", label: "Afficher le champ Nom", type: "boolean", default: true },
+      { key: "show_phone", label: "Afficher le champ Téléphone", type: "boolean", default: false },
+      { key: "show_subject", label: "Afficher le champ Sujet", type: "boolean", default: true },
+      { key: "button_text", label: "Texte du bouton", type: "text", default: "Envoyer" },
+      { key: "success_message", label: "Message de succès", type: "textarea", default: "Message envoyé avec succès !" },
+      ...textStyleSettings(),
+    ],
+    defaultSettings: {
+      title: "Contactez-nous",
+      description: "Nous vous répondrons dans les plus brefs délais.",
+      email: "",
+      show_name: true,
+      show_phone: false,
+      show_subject: true,
+      button_text: "Envoyer",
+      success_message: "Message envoyé avec succès !",
+      ...textStyleDefaults(),
+    },
+  },
+]);
+
+export function textStyleSettings(): SettingDefinition[] {
+  return [
+    { key: "text_align", label: "Alignement du texte", type: "select", default: "left", options: [
+      { label: "Gauche", value: "left" },
+      { label: "Centré", value: "center" },
+      { label: "Droite", value: "right" },
+    ]},
+    { key: "text_size", label: "Taille du texte", type: "select", default: "medium", options: [
+      { label: "Petite", value: "small" },
+      { label: "Moyenne", value: "medium" },
+      { label: "Grande", value: "large" },
+    ]},
+    { key: "font_family", label: "Police", type: "select", default: "body", options: [
+      { label: "Corps de texte", value: "body" },
+      { label: "Titres", value: "heading" },
+    ]},
+  ];
+}
+
+export function textStyleDefaults(): Record<string, any> {
+  return { text_align: "left", text_size: "medium", font_family: "body" };
+}
 
 export function getSectionDefinition(type: string): SectionDefinition | undefined {
   return sectionRegistry.find((s) => s.type === type);

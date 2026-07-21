@@ -69,7 +69,8 @@ export default function OrdersPage() {
       .eq("shop_slug", subdomain)
       .order("created_at", { ascending: false });
     if (error) {
-      toast.error("Erreur de chargement des commandes");
+      console.error("Erreur commandes:", error);
+      toast.error("Erreur de chargement des commandes: " + (error?.message || "Erreur inconnue"));
     } else {
       setOrders(data || []);
     }

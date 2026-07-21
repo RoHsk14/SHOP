@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
           price: { currency, value: parseFloat(String(price)) },
           url: process.env.NEXT_PUBLIC_SITE_URL
             ? `${process.env.NEXT_PUBLIC_SITE_URL}/?product=${product.id}`
-            : `https://lwivyouaiizweukrnrtz.supabase.co`,
+            : `https://${process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN || "zkbpzymsaxwshpqiktlc"}.${process.env.NEXT_PUBLIC_NHOST_REGION || "eu-central-1"}.nhost.app`,
           image_url: imageUrl,
           access_token,
         };

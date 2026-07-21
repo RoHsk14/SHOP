@@ -30,19 +30,23 @@ export default function SectionProductInfo({ settings }: Props) {
 
   useEffect(() => {
     if (!subdomain || !product?.id) return;
+    let cancelled = false;
     supabase
       .from("offers")
       .select("id, name, description, discount_type, discount_value, min_quantity, type, products")
       .eq("shop_slug", subdomain)
       .eq("status", "active")
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) return;
         if (!data) return;
         const relevant = data.filter((o: any) =>
           o.products?.some((p: any) => p.product_id === product.id)
         );
         setBundleOffers(relevant);
       });
+    return () => { cancelled = true; };
   }, [subdomain, product?.id]);
 
   if (loading || !product) return null;
