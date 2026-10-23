@@ -212,7 +212,7 @@ export default function FacebookChannelPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-5xl">
+    <div className="space-y-5 sm:space-y-6 max-w-4xl mx-auto w-full animate-fade-in pb-12">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-2xl flex items-center justify-center flex-shrink-0">

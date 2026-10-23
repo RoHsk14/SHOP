@@ -392,11 +392,11 @@ export default function WhatsAppAdmin() {
   const isIdle = !botStatus || botStatus.status === "disconnected" || botStatus.status === "error";
 
   return (
-    <div className="relative space-y-4 sm:space-y-5 max-w-3xl animate-fade-in">
+    <div className="relative space-y-5 sm:space-y-6 max-w-4xl mx-auto w-full animate-fade-in pb-12">
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-gray-900">WhatsApp</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-          Espace privé de <span className="font-medium text-gray-700">{subdomain}</span> — votre propre QR et numéro
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">WhatsApp</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          Espace privé de <span className="font-semibold text-gray-700">{subdomain}</span> — votre propre QR et numéro
         </p>
       </div>
 

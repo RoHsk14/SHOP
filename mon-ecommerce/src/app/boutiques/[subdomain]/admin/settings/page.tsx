@@ -363,10 +363,10 @@ export default function SettingsAdmin() {
   const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors";
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-3xl animate-fade-in">
+    <div className="space-y-5 sm:space-y-6 max-w-4xl mx-auto w-full animate-fade-in pb-12">
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-gray-900">Paramètres</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Configurez votre boutique</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Paramètres</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">Configurez votre boutique</p>
       </div>
 
       {/* Informations boutique */}
