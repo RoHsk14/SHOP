@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Upload,
   Image as ImageIcon,
@@ -299,13 +300,18 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
   const [selectedThemeId, setSelectedThemeId] = useState<string>("fashion");
   const [searchQuery, setSearchQuery] = useState("");
   const [inputUrl, setInputUrl] = useState("");
+  const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2.5 * 1024 * 1024) {
-      alert("L'image est trop lourde (max 2.5 Mo). Choisissez une image plus légère ou utilisez la bibliothèque gratuite.");
+    if (file.size > 3 * 1024 * 1024) {
+      alert("L'image est trop lourde (max 3 Mo). Choisissez une image plus légère ou utilisez la bibliothèque gratuite.");
       return;
     }
     const reader = new FileReader();
@@ -350,9 +356,13 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
       {/*  Inline Preview & Action Buttons           */}
       {/* ────────────────────────────────────────── */}
       {value ? (
-        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 bg-gray-50 group">
+        <div className="relative w-full rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group shadow-xs">
           <div className="h-32 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
-            <img src={value} alt="Aperçu" className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+            <img
+              src={value}
+              alt="Aperçu"
+              className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+            />
           </div>
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
@@ -376,13 +386,13 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="w-full h-24 border-2 border-dashed border-gray-200 hover:border-emerald-500 rounded-xl bg-gray-50/70 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-1.5 text-gray-500 hover:text-emerald-700 transition-all cursor-pointer group"
+          className="w-full h-24 border-2 border-dashed border-gray-200 hover:border-emerald-500 rounded-2xl bg-gray-50/70 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-1.5 text-gray-500 hover:text-emerald-700 transition-all cursor-pointer group shadow-2xs"
         >
           <div className="w-8 h-8 rounded-full bg-white border border-gray-200 group-hover:border-emerald-300 flex items-center justify-center text-gray-400 group-hover:text-emerald-600 transition-colors shadow-2xs">
             <Sparkles className="w-4 h-4" />
           </div>
           <span className="text-xs font-bold">Sélectionner une image</span>
-          <span className="text-[10px] text-gray-400">Bibliothèque par thèmes ou importation</span>
+          <span className="text-[10px] text-gray-400">Bibliothèque thématique ou importation</span>
         </button>
       )}
 
@@ -396,259 +406,282 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
       />
 
       {/* ────────────────────────────────────────── */}
-      {/*  SHOPIFY-STYLE IMAGE LIBRARY MODAL         */}
+      {/*  SHOPIFY-STYLE PORTAL MODAL (FULL SCREEN)  */}
       {/* ────────────────────────────────────────── */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-gray-200">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <ImageIcon className="w-4 h-4" />
+      {modalOpen &&
+        mounted &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-fade-in"
+            onClick={() => setModalOpen(false)}
+          >
+            <div
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[88vh] max-h-[820px] flex flex-col overflow-hidden border border-gray-200 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                      Bibliothèque d&apos;images gratuites
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Photos professionnelles haute qualité classées par thèmes (comme sur Shopify Burst)
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">
-                    Sélectionner une image
-                  </h3>
-                  <p className="text-[11px] text-gray-400">
-                    Images gratuites haute qualité classées par thèmes (comme sur Shopify)
-                  </p>
-                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+              {/* Mode Switcher Tabs */}
+              <div className="flex items-center border-b border-gray-100 px-6 gap-2 bg-gray-50/70 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setModalTab("library")}
+                  className={`py-3 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
+                    modalTab === "library"
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  Bibliothèque par thèmes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("upload")}
+                  className={`py-3 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
+                    modalTab === "upload"
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  Importer depuis mon appareil
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("url")}
+                  className={`py-3 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
+                    modalTab === "url"
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Lien URL direct
+                </button>
+              </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="flex items-center border-b border-gray-100 px-6 gap-2 bg-gray-50/60 shrink-0">
-              <button
-                type="button"
-                onClick={() => setModalTab("library")}
-                className={`py-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-all ${
-                  modalTab === "library"
-                    ? "border-emerald-600 text-emerald-700"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                Bibliothèque par thèmes
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalTab("upload")}
-                className={`py-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-all ${
-                  modalTab === "upload"
-                    ? "border-emerald-600 text-emerald-700"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Importer depuis mon appareil
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalTab("url")}
-                className={`py-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-all ${
-                  modalTab === "url"
-                    ? "border-emerald-600 text-emerald-700"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-                Lien URL
-              </button>
-            </div>
-
-            {/* TAB 1: THEMATIC STOCK LIBRARY */}
-            {modalTab === "library" && (
-              <div className="flex-1 flex min-h-0 overflow-hidden">
-                {/* Left Theme Categories */}
-                <div className="w-56 border-r border-gray-100 bg-gray-50/40 p-3 space-y-1 overflow-y-auto shrink-0">
-                  <span className="block px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    Thématiques
-                  </span>
-                  {THEMES_IMAGE_LIBRARY.map((theme) => {
-                    const isSelected = selectedThemeId === theme.id && !searchQuery;
-                    return (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedThemeId(theme.id);
-                          setSearchQuery("");
-                        }}
-                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium transition-all text-left ${
-                          isSelected
-                            ? "bg-white text-emerald-800 font-bold shadow-xs border border-emerald-100"
-                            : "text-gray-600 hover:bg-gray-100/70"
-                        }`}
-                      >
-                        <span className="text-sm shrink-0">{theme.icon}</span>
-                        <span className="truncate">{theme.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Right Image Grid */}
-                <div className="flex-1 flex flex-col min-w-0 bg-white">
-                  {/* Search Bar */}
-                  <div className="p-3 border-b border-gray-100 bg-white">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Rechercher une image (ex: robe, crème, montre, parfum, wax...)"
-                        className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setSearchQuery("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Images Grid */}
-                  <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {displayedImages.map((img) => {
-                      const isCurrent = value === img.url;
+              {/* TAB 1: THEMATIC STOCK LIBRARY */}
+              {modalTab === "library" && (
+                <div className="flex-1 flex min-h-0 overflow-hidden">
+                  {/* Left Theme Categories Sidebar */}
+                  <div className="w-56 sm:w-64 border-r border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-1 overflow-y-auto shrink-0">
+                    <span className="block px-2.5 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Thématiques ({THEMES_IMAGE_LIBRARY.length})
+                    </span>
+                    {THEMES_IMAGE_LIBRARY.map((theme) => {
+                      const isSelected = selectedThemeId === theme.id && !searchQuery;
                       return (
                         <button
-                          key={img.id}
+                          key={theme.id}
                           type="button"
                           onClick={() => {
-                            onChange(img.url);
-                            setModalOpen(false);
+                            setSelectedThemeId(theme.id);
+                            setSearchQuery("");
                           }}
-                          className={`group relative aspect-[4/3] rounded-xl overflow-hidden border-2 text-left transition-all ${
-                            isCurrent
-                              ? "border-emerald-600 ring-2 ring-emerald-500 shadow-md"
-                              : "border-gray-100 hover:border-emerald-400 hover:shadow-md"
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all text-left ${
+                            isSelected
+                              ? "bg-white text-emerald-800 font-bold shadow-xs border border-emerald-200"
+                              : "text-gray-600 hover:bg-gray-100/80"
                           }`}
                         >
-                          <img
-                            src={img.url}
-                            alt={img.label}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5">
-                            <span className="text-[11px] font-semibold text-white leading-tight line-clamp-2">
-                              {img.label}
-                            </span>
-                            <span className="text-[9px] text-emerald-300 mt-0.5">
-                              Cliquer pour appliquer
-                            </span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">{theme.icon}</span>
+                            <span className="truncate">{theme.label}</span>
                           </div>
-
-                          {isCurrent && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                              <Check className="w-3.5 h-3.5" />
-                            </div>
-                          )}
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            {theme.images.length}
+                          </span>
                         </button>
                       );
                     })}
+                  </div>
 
-                    {displayedImages.length === 0 && (
-                      <div className="col-span-full py-16 text-center text-gray-400">
-                        <FolderOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-xs font-semibold">Aucune image trouvée</p>
-                        <button
-                          type="button"
-                          onClick={() => setSearchQuery("")}
-                          className="mt-2 text-xs text-emerald-600 hover:underline font-semibold"
-                        >
-                          Effacer la recherche
-                        </button>
+                  {/* Right Image Grid Area */}
+                  <div className="flex-1 flex flex-col min-w-0 bg-white">
+                    {/* Search Bar */}
+                    <div className="p-3 sm:p-4 border-b border-gray-100 bg-white">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Rechercher une photo (ex: parfum, montre, wax, crème, café, robe...)"
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all shadow-2xs"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Images Grid */}
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {displayedImages.map((img) => {
+                        const isCurrent = value === img.url;
+                        return (
+                          <button
+                            key={img.id}
+                            type="button"
+                            onClick={() => {
+                              onChange(img.url);
+                              setModalOpen(false);
+                            }}
+                            className={`group relative h-40 sm:h-48 w-full rounded-2xl overflow-hidden border-2 text-left transition-all duration-200 bg-gray-100 ${
+                              isCurrent
+                                ? "border-emerald-600 ring-4 ring-emerald-500/20 shadow-lg scale-[1.01]"
+                                : "border-gray-200 hover:border-emerald-500 hover:shadow-xl hover:scale-[1.02]"
+                            }`}
+                          >
+                            <img
+                              src={img.url}
+                              alt={img.label}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              loading="lazy"
+                            />
+
+                            {/* Gradient Title Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-3 sm:p-4">
+                              <span className="text-xs sm:text-sm font-bold text-white leading-tight drop-shadow-sm">
+                                {img.label}
+                              </span>
+                              <span className="text-[10px] sm:text-xs text-emerald-300 font-semibold mt-1 opacity-90 group-hover:opacity-100">
+                                Cliquer pour choisir ↗
+                              </span>
+                            </div>
+
+                            {/* Active Checkmark */}
+                            {isCurrent && (
+                              <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg border-2 border-white">
+                                <Check className="w-4 h-4" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {displayedImages.length === 0 && (
+                        <div className="col-span-full py-20 text-center text-gray-400">
+                          <FolderOpen className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm font-bold text-gray-700">Aucune photo trouvée</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Essayez avec un autre mot-clé ou parcourez les thématiques.</p>
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="mt-3 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors"
+                          >
+                            Effacer la recherche
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TAB 2: LOCAL UPLOAD */}
-            {modalTab === "upload" && (
-              <div className="flex-1 p-8 flex flex-col items-center justify-center bg-gray-50/50">
-                <div
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full max-w-md h-52 border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-2xl bg-white hover:bg-emerald-50/20 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
-                >
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1">
-                    <Upload className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm font-bold text-gray-800">
-                    Cliquez pour choisir un fichier
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    PNG, JPG, WEBP jusqu'à 2.5 Mo
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: URL LINK */}
-            {modalTab === "url" && (
-              <div className="flex-1 p-8 flex flex-col items-center justify-center bg-gray-50/50">
-                <div className="w-full max-w-md bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Collez le lien direct vers votre image
-                    </label>
-                    <input
-                      type="url"
-                      value={inputUrl}
-                      onChange={(e) => setInputUrl(e.target.value)}
-                      placeholder="https://example.com/mon-image.jpg"
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (inputUrl.trim()) {
-                        onChange(inputUrl.trim());
-                        setModalOpen(false);
-                      }
-                    }}
-                    disabled={!inputUrl.trim()}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              {/* TAB 2: LOCAL UPLOAD */}
+              {modalTab === "upload" && (
+                <div className="flex-1 p-8 sm:p-12 flex flex-col items-center justify-center bg-gray-50/50">
+                  <div
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full max-w-lg h-64 border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-3xl bg-white hover:bg-emerald-50/20 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all shadow-sm group p-6 text-center"
                   >
-                    Appliquer cette image
-                  </button>
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 flex items-center justify-center transition-transform">
+                      <Upload className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <span className="text-sm sm:text-base font-bold text-gray-900 block">
+                        Cliquez pour importer un fichier
+                      </span>
+                      <span className="text-xs text-gray-400 mt-1 block">
+                        PNG, JPG, WEBP jusqu&apos;à 3 Mo
+                      </span>
+                    </div>
+                    <span className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
+                      Parcourir les fichiers
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Modal Footer */}
-            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between text-xs text-gray-500 shrink-0">
-              <span>{allImages.length} images disponibles libres de droits</span>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900"
-              >
-                Fermer
-              </button>
+              {/* TAB 3: URL LINK */}
+              {modalTab === "url" && (
+                <div className="flex-1 p-8 sm:p-12 flex flex-col items-center justify-center bg-gray-50/50">
+                  <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 shadow-md space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                        Collez l&apos;adresse web (URL) de l&apos;image
+                      </label>
+                      <input
+                        type="url"
+                        value={inputUrl}
+                        onChange={(e) => setInputUrl(e.target.value)}
+                        placeholder="https://example.com/mon-image.jpg"
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (inputUrl.trim()) {
+                          onChange(inputUrl.trim());
+                          setModalOpen(false);
+                        }
+                      }}
+                      disabled={!inputUrl.trim()}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm"
+                    >
+                      Appliquer cette image
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50/80 flex items-center justify-between text-xs text-gray-500 shrink-0">
+                <span className="font-medium">{allImages.length} photos professionnelles disponibles</span>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

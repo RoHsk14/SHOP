@@ -285,7 +285,7 @@ export default function SectionInspector({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white animate-fade-in">
+    <div className="flex flex-col h-full bg-white">
       {/* Top Header */}
       <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
         <button

@@ -599,7 +599,7 @@ export default function CustomizePage() {
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* LEFT PANEL (SHOPIFY INSPECTOR) */}
         {viewport !== "fullscreen" && (
-          <aside className="w-80 sm:w-96 bg-white border-r border-gray-200 flex flex-col shrink-0 z-20 shadow-sm animate-fade-in">
+          <aside className="w-80 sm:w-96 bg-white border-r border-gray-200 flex flex-col shrink-0 z-20 shadow-sm">
             {/* If a section is selected, show its SectionInspector */}
             {selectedSection ? (
               <SectionInspector
