@@ -225,6 +225,8 @@ export default function AdminLayout({
  );
  }
 
+ if (barePath === "/admin/customize") return <>{children}</>;
+
 const menuItems = [
   { href: `${base}/admin`, label: "Vue d'ensemble", icon: LayoutDashboard },
   { href: `${base}/admin/orders`, label: "Commandes", icon: ShoppingCart },
