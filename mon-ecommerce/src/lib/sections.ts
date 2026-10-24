@@ -524,6 +524,7 @@ export const sectionRegistry: SectionDefinition[] = enhanceRegistry([
       ]},
       { key: "show_rating", label: "Afficher les avis & étoiles", type: "boolean", default: true },
       { key: "show_badges", label: "Afficher les badges (stock, promo)", type: "boolean", default: true },
+      { key: "stock_badge_text", label: "Texte du badge de stock", type: "text", default: "En stock — Livraison gratuite" },
       { key: "show_reassurance", label: "Bandeau de réassurance animé", type: "boolean", default: true },
       { key: "reassurance_speed", label: "Vitesse de défilement", type: "select", default: "normal", options: [
         { label: "Lente", value: "slow" },
@@ -560,6 +561,7 @@ export const sectionRegistry: SectionDefinition[] = enhanceRegistry([
       price_size: "large",
       show_rating: true,
       show_badges: true,
+      stock_badge_text: "En stock — Livraison gratuite",
       show_reassurance: true,
       reassurance_speed: "normal",
       show_description: true,

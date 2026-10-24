@@ -42,6 +42,7 @@ interface Props {
     button_text?: string;
     button_text_color?: string;
     popular_badge_text?: string;
+    stock_badge_text?: string;
   };
 }
 
@@ -184,10 +185,12 @@ export default function SectionProductInfo({ settings }: Props) {
 
       {/* ─── Top Badge & In-Stock Status ─── */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          En stock — Expédition sous 24h
-        </span>
+        {showBadges && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            {settings?.stock_badge_text || "En stock — Livraison gratuite"}
+          </span>
+        )}
 
         {hasDiscount && (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-600 border border-red-200/80">
