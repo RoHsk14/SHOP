@@ -296,6 +296,10 @@ export default function SettingsAdmin() {
     
     setTestingSheet(true);
     try {
+      const activeCurrency = defaultCurrency || settings?.default_currency || "XOF";
+      const activeCountry = shopCountry || settings?.shop_country || "";
+      const testPhone = activeCurrency === "NGN" ? "+2348000000000" : activeCurrency === "XAF" ? "+237600000000" : "+22990000000";
+
       const testData = {
         sheet_url: googleSheetUrl,
         shop_slug: subdomain,
@@ -303,15 +307,15 @@ export default function SettingsAdmin() {
         row_data: {
           "Date": new Date().toLocaleString("fr-FR"),
           "Nom du client": "Test Client",
-          "Téléphone": "+237600000000",
+          "Téléphone": testPhone,
           "Adresse": "123 Test Street",
           "Quartier": "Test Area",
           "Produit": "Test Product",
           "Quantité": 1,
           "Total": 10000,
-          "Devise": "XAF",
+          "Devise": activeCurrency,
           "Statut": "À traiter",
-          "Pays": ""
+          "Pays": activeCountry || "Localhost"
         }
       };
       
@@ -818,7 +822,39 @@ export default function SettingsAdmin() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
           <p className="text-xs text-gray-400 mb-3">Sélectionnez une seule devise par défaut (Afrique prioritaire)</p>
-          <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} className={inputClass}>
+          <select
+            value={defaultCurrency}
+            onChange={async (e) => {
+              const newCurr = e.target.value;
+              setDefaultCurrency(newCurr);
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                let settingsId = settings?.id;
+                if (!settingsId) {
+                  const { data: existing } = await supabase
+                    .from("settings")
+                    .select("id")
+                    .eq("shop_slug", subdomain)
+                    .maybeSingle();
+                  settingsId = existing?.id;
+                }
+                if (settingsId) {
+                  await supabase
+                    .from("settings")
+                    .update({ default_currency: newCurr, updated_at: new Date().toISOString() })
+                    .eq("id", settingsId);
+                } else {
+                  await supabase
+                    .from("settings")
+                    .insert([{ shop_slug: subdomain, default_currency: newCurr, user_id: session?.user?.id }]);
+                }
+                toast.success(`Devise mise à jour : ${newCurr}`);
+              } catch (err) {
+                console.error("Auto-save currency error:", err);
+              }
+            }}
+            className={inputClass}
+          >
             <optgroup label="Devises Africaines">
               {worldCurrencies.filter(c => c.region === "africa").map((curr) => (
                 <option key={curr.code} value={curr.code}>

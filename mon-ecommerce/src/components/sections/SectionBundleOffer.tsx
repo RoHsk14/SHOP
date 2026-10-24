@@ -39,6 +39,7 @@ export default function SectionBundleOffer({ settings }: Props) {
   const { subdomain } = useShop();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState("XOF");
 
   const layout = settings?.layout || "list";
   const textAlign = settings?.text_align || "left";
@@ -49,6 +50,16 @@ export default function SectionBundleOffer({ settings }: Props) {
   useEffect(() => {
     if (!subdomain) return;
     let cancelled = false;
+
+    supabase
+      .from("settings")
+      .select("default_currency")
+      .eq("shop_slug", subdomain)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data?.default_currency) setCurrency(data.default_currency);
+      });
+
     supabase
       .from("offers")
       .select("id, name, description, type, discount_type, discount_value, min_quantity, products")
@@ -66,7 +77,8 @@ export default function SectionBundleOffer({ settings }: Props) {
 
   if (loading || !offers.length) return null;
 
-  const formatPrice = (val: number) => `${val.toLocaleString()} XOF`;
+  const currencySymbol = ["XOF", "XAF"].includes(currency) ? "CFA" : currency;
+  const formatPrice = (val: number) => `${Math.round(val).toLocaleString("fr-FR")} ${currencySymbol}`;
 
   const formatDiscount = (offer: Offer) => {
     if (offer.discount_type === "percentage") return `${offer.discount_value}%`;
