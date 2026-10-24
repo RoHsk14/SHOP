@@ -87,7 +87,6 @@ export default function WhatsAppAdmin() {
   const [botErrorMsg, setBotErrorMsg] = useState("");
   const [qrImage, setQrImage] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
-  const [phone, setPhone] = useState("");
   const [resetting, setResetting] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false);
@@ -254,33 +253,6 @@ export default function WhatsAppAdmin() {
     }
   };
 
-  const handlePairing = async () => {
-    if (!phone) {
-      toast.error("Entrez un numéro");
-      return;
-    }
-    try {
-      const res = await authFetch(`${apiBase}/pairing`, {
-        method: "POST",
-        body: JSON.stringify({ phone }),
-      });
-      if (res.ok) {
-        toast.success("Code de couplage envoyé !");
-        setTimeout(fetchBotStatus, 5000);
-      } else {
-        try {
-          const err = await res.clone().json();
-          toast.error(err.error || "Erreur");
-        } catch {
-          const text = await res.text();
-          toast.error(text || "Erreur inconnue");
-        }
-      }
-    } catch {
-      toast.error("Erreur de connexion au bot");
-    }
-  };
-
   const handleReset = async () => {
     if (
       !confirm(
@@ -293,7 +265,6 @@ export default function WhatsAppAdmin() {
       const res = await authFetch(`${apiBase}/reset`, { method: "POST" });
       if (res.ok) {
         toast.success("Connexion réinitialisée, scannez le nouveau QR");
-        setPhone("");
         setGroups([]);
         fetchBotStatus();
       } else {
@@ -463,10 +434,13 @@ export default function WhatsAppAdmin() {
             )}
 
             {botStatus.status === "awaiting_scan" && botStatus.hasQr && qrImage && (
-              <div className="text-center mb-4">
-                <img src={qrImage} alt="QR Code" className="w-48 h-48 mx-auto rounded-lg border p-2" />
-                <p className="text-xs text-gray-500 mt-2">
-                  Scannez ce QR avec WhatsApp &gt; Appareils connectés
+              <div className="text-center mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <img src={qrImage} alt="QR Code WhatsApp" className="w-52 h-52 mx-auto rounded-lg border border-gray-200 bg-white p-2 shadow-sm" />
+                <p className="text-sm font-medium text-gray-800 mt-3">
+                  Scannez ce QR Code avec votre téléphone
+                </p>
+                <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                  Ouvrez WhatsApp &gt; Réglages ou Plus d'options (⋮) &gt; Appareils connectés &gt; Connecter un appareil
                 </p>
               </div>
             )}
@@ -475,27 +449,6 @@ export default function WhatsAppAdmin() {
               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 py-6">
                 <Loader className="w-4 h-4 animate-spin" />
                 Préparation de votre session...
-              </div>
-            )}
-
-            {(botStatus.status === "awaiting_scan" || botStatus.status === "initializing") && (
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                <p className="text-xs font-medium text-gray-700 mb-2">Code de couplage (alternative au QR)</p>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="229XXXXXXXX"
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                  <button
-                    onClick={handlePairing}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Envoyer
-                  </button>
-                </div>
               </div>
             )}
 
