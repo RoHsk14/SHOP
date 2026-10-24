@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { worldCurrencies } from "@/lib/currencies";
+import { slugify } from "@/lib/slug";
 
 export default function OnboardingPage() {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -13,9 +14,12 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [ownerName, setOwnerName] = useState("");
   const [shopName, setShopName] = useState("");
+  const [shopSlug, setShopSlug] = useState(subdomain || "");
+  const [userChangedSlug, setUserChangedSlug] = useState(false);
+  const [slugError, setSlugError] = useState("");
   const [shopDescription, setShopDescription] = useState("");
   const [shopCountry, setShopCountry] = useState("");
-  const [defaultCurrency, setDefaultCurrency] = useState("EUR");
+  const [defaultCurrency, setDefaultCurrency] = useState("XOF");
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -33,7 +37,32 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     if (!ownerName.trim() || !shopName.trim()) return;
+    const finalSlug = slugify(shopSlug) || subdomain;
+    if (!finalSlug) {
+      setSlugError("Veuillez renseigner un identifiant pour votre boutique");
+      setStep(2);
+      return;
+    }
+
     setSaving(true);
+    setSlugError("");
+
+    // Vérifier si le slug est déjà pris
+    if (finalSlug !== subdomain) {
+      const { data: existingSlug } = await supabase
+        .from("settings")
+        .select("id")
+        .eq("shop_slug", finalSlug)
+        .maybeSingle();
+
+      if (existingSlug?.id) {
+        setSlugError("Ce slug est déjà utilisé par une autre boutique. Choisissez-en un autre.");
+        setSaving(false);
+        setStep(2);
+        return;
+      }
+    }
+
     const { data: existing } = await supabase
       .from("settings")
       .select("id")
@@ -43,6 +72,7 @@ export default function OnboardingPage() {
     const payload = {
       owner_name: ownerName.trim(),
       shop_name: shopName.trim(),
+      shop_slug: finalSlug,
       shop_description: shopDescription.trim(),
       shop_country: shopCountry,
       default_currency: defaultCurrency,
@@ -53,7 +83,7 @@ export default function OnboardingPage() {
       await supabase.from("settings").update(payload).eq("id", existing.id);
     }
     setSaving(false);
-    router.push(`/boutiques/${subdomain}/admin`);
+    window.location.replace(`/boutiques/${finalSlug}/admin`);
   };
 
   const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors bg-white";
@@ -135,9 +165,44 @@ export default function OnboardingPage() {
             <div className="space-y-4 animate-fade-in">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom de votre boutique</label>
-                <input type="text" value={shopName} onChange={(e) => setShopName(e.target.value)}
-                  className={inputClass} placeholder="Ex: Ma Boutique Africaine" />
+                <input
+                  type="text"
+                  value={shopName}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setShopName(name);
+                    if (!userChangedSlug) {
+                      setShopSlug(slugify(name));
+                    }
+                  }}
+                  className={inputClass}
+                  placeholder="Ex: Vaplenou"
+                />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Identifiant unique de votre boutique (Slug URL)</label>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500">
+                  <span className="bg-gray-50 text-gray-500 text-xs px-3 py-3 border-r border-gray-200 select-none flex items-center">
+                    /boutiques/
+                  </span>
+                  <input
+                    type="text"
+                    value={shopSlug}
+                    onChange={(e) => {
+                      setUserChangedSlug(true);
+                      setShopSlug(slugify(e.target.value));
+                    }}
+                    className="flex-1 px-3 py-2.5 text-sm text-gray-900 font-mono focus:outline-none bg-white"
+                    placeholder="vaplenou"
+                  />
+                </div>
+                {slugError && <p className="text-xs text-red-500 mt-1">{slugError}</p>}
+                <p className="text-xs text-gray-400 mt-1">
+                  Adresse de votre vitrine : <strong>/boutiques/{shopSlug || "nom-de-boutique"}</strong>
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description (optionnelle)</label>
                 <textarea value={shopDescription} onChange={(e) => setShopDescription(e.target.value)}
@@ -172,6 +237,9 @@ export default function OnboardingPage() {
               <h2 className="text-lg font-bold text-gray-900">Tout est prêt !</h2>
               <p className="text-sm text-gray-500 mt-2">
                 Votre boutique <strong className="text-gray-800">{shopName || "..."}</strong> est configurée.
+              </p>
+              <p className="text-xs text-emerald-600 font-mono mt-1">
+                Adresse : /boutiques/{shopSlug || subdomain}
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Vous pourrez modifier ces informations dans les paramètres plus tard.

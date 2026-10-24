@@ -37,7 +37,7 @@ export default function AdminLayout({
 
  // Vercel (*.vercel.app) : les sous-domaines wildcard n'existent pas sur vercel.app
  if (host.endsWith(".vercel.app")) {
- return `${protocol}//${host}/boutiques/${slug}`;
+ return `/boutiques/${slug}`;
  }
 
  if (host.includes("localhost") || host.includes("lvh.me")) {
@@ -52,7 +52,7 @@ export default function AdminLayout({
  }
 
  // Fallback chemin sécurisé
- return `${protocol}//${host}/boutiques/${slug}`;
+ return `/boutiques/${slug}`;
  };
 
  // Normaliser le pathname : /boutiques/{slug}/admin → /admin
