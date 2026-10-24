@@ -1,6 +1,16 @@
 export function extractSubdomain(host: string): string | null {
   const cleanHost = host.replace(/:\d+$/, "");
 
+  // Vercel : *.vercel.app n'est pas un sous-domaine de boutique sauf si 4 parties
+  if (cleanHost.endsWith(".vercel.app")) {
+    const parts = cleanHost.split(".");
+    if (parts.length > 3) {
+      const sub = parts[0];
+      return sub === "www" ? null : sub;
+    }
+    return null;
+  }
+
   // Dev/local : sous.localhost ou sous.lvh.me
   for (const suffix of ["localhost", "lvh.me"]) {
     if (cleanHost.endsWith(suffix) && cleanHost !== suffix) {

@@ -31,16 +31,28 @@ export default function AdminLayout({
  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
  const getShopUrl = (slug: string) => {
- if (typeof window === "undefined") return "";
+ if (typeof window === "undefined") return `/boutiques/${slug}`;
  const host = window.location.host;
  const protocol = window.location.protocol;
+
+ // Vercel (*.vercel.app) : les sous-domaines wildcard n'existent pas sur vercel.app
+ if (host.endsWith(".vercel.app")) {
+ return `${protocol}//${host}/boutiques/${slug}`;
+ }
+
  if (host.includes("localhost") || host.includes("lvh.me")) {
  const port = host.split(":")[1] ? `:${host.split(":")[1]}` : "";
  return `${protocol}//${slug}.localhost${port}`;
  }
+
  const parts = host.split(".");
- const apex = parts.length > 2 ? parts.slice(-2).join(".") : host;
- return `${protocol}//${slug}.${apex}`;
+ // Domaine personnalisé à 2 parties (ex: shopeazy.com)
+ if (parts.length === 2) {
+ return `${protocol}//${slug}.${host}`;
+ }
+
+ // Fallback chemin sécurisé
+ return `${protocol}//${host}/boutiques/${slug}`;
  };
 
  // Normaliser le pathname : /boutiques/{slug}/admin → /admin

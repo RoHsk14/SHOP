@@ -437,14 +437,18 @@ export default function CustomizePage() {
     const host = window.location.host;
     const protocol = window.location.protocol;
     let previewUrl = "";
-    if (host.includes("localhost") || host.includes("lvh.me")) {
+
+    if (host.endsWith(".vercel.app")) {
+      previewUrl = `${protocol}//${host}/boutiques/${subdomain}?preview=1`;
+    } else if (host.includes("localhost") || host.includes("lvh.me")) {
       const port = host.split(":")[1] ? `:${host.split(":")[1]}` : "";
       previewUrl = `${protocol}//${subdomain}.localhost${port}?preview=1`;
+    } else if (host.split(".").length === 2) {
+      previewUrl = `${protocol}//${subdomain}.${host}?preview=1`;
     } else {
-      const parts = host.split(".");
-      const apex = parts.length > 2 ? parts.slice(-2).join(".") : host;
-      previewUrl = `${protocol}//${subdomain}.${apex}?preview=1`;
+      previewUrl = `${protocol}//${host}/boutiques/${subdomain}?preview=1`;
     }
+
     window.open(previewUrl, "_blank");
   };
 
