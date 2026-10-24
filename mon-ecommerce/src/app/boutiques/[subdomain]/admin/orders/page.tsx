@@ -376,7 +376,7 @@ export default function OrdersPage() {
           <div className="relative w-full max-w-4xl bg-gray-50 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[90vh] animate-slide-up">
             
             {/* Header */}
-            <div className="flex items-start justify-between px-4 py-3 sm:px-6 sm:py-5 bg-white border-b border-gray-100 sticky top-0 z-10 gap-2">
+            <div className="shrink-0 flex items-start justify-between px-4 py-3 sm:px-6 sm:py-5 bg-white border-b border-gray-100 z-20 gap-2">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 min-w-0">
                 <h2 className="text-base sm:text-xl font-bold text-gray-900 font-mono shrink-0">#{selectedOrder.id.slice(0, 8)}</h2>
                 <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 shrink-0"></div>

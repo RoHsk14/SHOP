@@ -638,121 +638,124 @@ export default function ProductsPage() {
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-            <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+            <div className="shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between z-20 rounded-t-2xl">
               <h2 className="text-lg font-bold text-white">
                 {editingProduct ? "Modifier le produit" : "Ajouter un produit"}
               </h2>
               <button
+                type="button"
                 onClick={() => { setModalOpen(false); setEditingProduct(null); }}
                 className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors text-white"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du produit *</label>
-                <input
-                  type="text" required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Nom du produit"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <RichTextEditor
-                  content={form.description}
-                  onChange={(html) => setForm({ ...form, description: html })}
-                  placeholder="Description détaillée du produit (texte, images, listes...)"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prix du produit</label>
-                <input
-                  type="number"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tailles disponibles</label>
-                <input
-                  type="text"
-                  value={form.sizes.join(", ")}
-                  onChange={(e) => setForm({ ...form, sizes: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="XS, S, M, L, XL (séparées par des virgules)"
-                />
-                {form.sizes.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {form.sizes.map((s, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
-                        {s}
-                        <button type="button" onClick={() => setForm({ ...form, sizes: form.sizes.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-500">✕</button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.track_stock}
-                  onChange={(e) => setForm({ ...form, track_stock: e.target.checked })}
-                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                />
-                <label className="text-sm text-gray-700">Suivre le stock</label>
-              </div>
-
-              {form.track_stock && (
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantité en stock</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom du produit *</label>
+                  <input
+                    type="text" required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Nom du produit"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <RichTextEditor
+                    content={form.description}
+                    onChange={(html) => setForm({ ...form, description: html })}
+                    placeholder="Description détaillée du produit (texte, images, listes...)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prix du produit</label>
                   <input
                     type="number"
-                    value={form.stock_quantity}
-                    onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="0"
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
-                <input
-                  type="file" multiple
-                  onChange={handleImageUpload}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-                />
-                {uploading && <p className="text-sm text-emerald-600 mt-1 flex items-center gap-1"><span className="w-3 h-3 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span> Téléchargement...</p>}
-                {form.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {form.images.map((url, index) => (
-                      <div key={index} className="relative w-20 h-20">
-                        <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover rounded-lg border border-gray-100" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tailles disponibles</label>
+                  <input
+                    type="text"
+                    value={form.sizes.join(", ")}
+                    onChange={(e) => setForm({ ...form, sizes: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="XS, S, M, L, XL (séparées par des virgules)"
+                  />
+                  {form.sizes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {form.sizes.map((s, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                          {s}
+                          <button type="button" onClick={() => setForm({ ...form, sizes: form.sizes.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-500">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.track_stock}
+                    onChange={(e) => setForm({ ...form, track_stock: e.target.checked })}
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                  />
+                  <label className="text-sm text-gray-700">Suivre le stock</label>
+                </div>
+
+                {form.track_stock && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantité en stock</label>
+                    <input
+                      type="number"
+                      value={form.stock_quantity}
+                      onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="0"
+                    />
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                  <input
+                    type="file" multiple
+                    onChange={handleImageUpload}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  />
+                  {uploading && <p className="text-sm text-emerald-600 mt-1 flex items-center gap-1"><span className="w-3 h-3 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span> Téléchargement...</p>}
+                  {form.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {form.images.map((url, index) => (
+                        <div key={index} className="relative w-20 h-20">
+                          <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover rounded-lg border border-gray-100" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="shrink-0 flex justify-end gap-3 p-4 border-t border-gray-100 bg-gray-50/80 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => { setModalOpen(false); setEditingProduct(null); }}
@@ -776,17 +779,18 @@ export default function ProductsPage() {
       {/* Import URL Modal */}
       {importModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-slide-up">
-            <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+            <div className="shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between z-20 rounded-t-2xl">
               <h2 className="text-lg font-bold text-white">Importer depuis une URL</h2>
               <button
+                type="button"
                 onClick={() => { setImportModalOpen(false); setImportResult(null); }}
                 className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors text-white"
               >
                 ✕
               </button>
             </div>
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL du produit</label>
                 <div className="flex gap-2">
@@ -850,7 +854,21 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleaned = importResult.description
+                            .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+                            .trim();
+                          setImportResult({ ...importResult, description: cleaned });
+                        }}
+                        className="text-[11px] text-emerald-600 font-semibold hover:underline"
+                      >
+                        Nettoyer le texte
+                      </button>
+                    </div>
                     <textarea
                       value={importResult.description}
                       onChange={(e) => setImportResult({ ...importResult, description: e.target.value })}
@@ -911,7 +929,7 @@ export default function ProductsPage() {
                     <button
                       onClick={() => {
                         setForm({
-                          name: importResult.name,
+                          name: importResult.name.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "").trim(),
                           description: importResult.description,
                           price: importResult.price,
                           sku: "",

@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Inter";
+        src: url("assets/Inter.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Instrument Sans";
+        src: url("assets/InstrumentSans.woff2") format("woff2");
+        font-weight: 400 700;
+        font-style: normal;
+        font-display: block;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #04100c;
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      img, svg { display: block; }
+      .clip { position: absolute; inset: 0; }
+      .scene { position: absolute; inset: 0; overflow: hidden; }
+      .scene-dark {
+        background:
+          radial-gradient(1100px 800px at 8% -10%, rgba(16,185,129,.28), transparent 62%),
+          radial-gradient(1000px 800px at 96% 108%, rgba(13,148,136,.28), transparent 64%),
+          #04100c;
+        color: #f8fafc;
+      }
+      .scene-light { background: #f5f9f7; color: #0f172a; }
+      .stage { position: absolute; inset: 0; }
+      .grid-bg {
+        position: absolute; inset: 0;
+        background-image:
+          linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+        background-size: 78px 78px;
+        mask-image: radial-gradient(ellipse at center, #000 20%, transparent 78%);
+        -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 78%);
+      }
+      .scene-light .grid-bg {
+        background-image:
+          linear-gradient(rgba(15,23,42,.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15,23,42,.05) 1px, transparent 1px);
+        mask-image: radial-gradient(ellipse at 60% 45%, #000 10%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at 60% 45%, #000 10%, transparent 80%);
+      }
+      .glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(2px); }
+      .glow-green { background: radial-gradient(circle, rgba(16,185,129,.5) 0%, rgba(16,185,129,.16) 42%, transparent 70%); }
+      .glow-teal  { background: radial-gradient(circle, rgba(45,212,191,.34) 0%, rgba(45,212,191,.1) 45%, transparent 72%); }
+      .glow-light { background: radial-gradient(circle, rgba(16,185,129,.18) 0%, rgba(16,185,129,.06) 45%, transparent 72%); }
+
+      .brand { display: flex; align-items: center; gap: 18px; }
+      .mark {
+        width: 66px; height: 66px; border-radius: 19px;
+        background: linear-gradient(145deg, #34d399 0%, #059669 55%, #047857 100%);
+        display: grid; place-items: center;
+        box-shadow: 0 18px 40px rgba(5,150,105,.4), inset 0 1px 0 rgba(255,255,255,.35);
+      }
+      .mark svg { width: 32px; height: 32px; }
+      .wordmark {
+        font-family: "Instrument Sans", sans-serif;
+        font-size: 32px; font-weight: 700; letter-spacing: -.035em; color: #0f172a;
+      }
+      .scene-dark .wordmark { color: #f8fafc; }
+      .wordmark span { color: #059669; }
+      .scene-dark .wordmark span { color: #34d399; }
+
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 12px;
+        font-size: 16px; font-weight: 700; letter-spacing: .18em;
+        text-transform: uppercase; color: #5b6b82;
+      }
+      .eyebrow .idx {
+        display: inline-grid; place-items: center;
+        min-width: 38px; height: 30px; padding: 0 9px;
+        border-radius: 8px; background: #d1fae5; color: #047857;
+        font-size: 15px; letter-spacing: .02em;
+      }
+      .scene-dark .eyebrow { color: #94a3b8; }
+      .scene-dark .eyebrow .idx { background: rgba(16,185,129,.16); color: #6ee7b7; border: 1px solid rgba(52,211,153,.28); }
+      .h1 {
+        font-family: "Instrument Sans", sans-serif;
+        font-size: 96px; line-height: 1.02; font-weight: 700;
+        letter-spacing: -.05em; color: #f8fafc;
+      }
+      .h2 {
+        font-family: "Instrument Sans", sans-serif;
+        font-size: 68px; line-height: 1.03; font-weight: 700;
+        letter-spacing: -.045em; color: #0f172a;
+      }
+      .h2 .line, .h1 .line { display: block; }
+      .grad-light {
+        background: linear-gradient(100deg, #34d399 0%, #2dd4bf 52%, #a7f3d0 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .grad-dark {
+        background: linear-gradient(100deg, #059669 0%, #0d9488 55%, #10b981 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .sub { font-size: 22px; line-height: 1.5; color: #5b6b82; font-weight: 450; }
+      .scene-dark .sub { color: #94a3b8; }
+      .sub strong { color: #0f172a; font-weight: 650; }
+      .scene-dark .sub strong { color: #e2e8f0; }
+
+      .pill {
+        display: inline-flex; align-items: center; gap: 10px;
+        padding: 13px 22px; border-radius: 999px;
+        border: 1px solid #dbe4e0; background: #fff; color: #334155;
+        font-size: 16px; font-weight: 650; box-shadow: 0 8px 20px rgba(15,23,42,.05);
+      }
+      .scene-dark .pill {
+        border-color: rgba(148,163,184,.22); background: rgba(255,255,255,.045);
+        color: #d1fae5; box-shadow: none;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.14); }
+      .pill svg { width: 16px; height: 16px; stroke: #059669; }
+      .scene-dark .pill svg { stroke: #34d399; }
+
+      .panel {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 24px;
+        box-shadow: 0 34px 90px rgba(15,23,42,.13), 0 2px 6px rgba(15,23,42,.04);
+      }
+      .panel-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 22px 28px; border-bottom: 1px solid #eef2f6;
+      }
+      .panel-title { font-family: "Instrument Sans", sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+      .panel-x { width: 28px; height: 28px; border-radius: 8px; background: #f1f5f9; display: grid; place-items: center; color: #475569; font-size: 18px; }
+
+      .browser {
+        background: #fff; border: 1px solid rgba(15,23,42,.09); border-radius: 22px;
+        overflow: hidden; box-shadow: 0 34px 80px rgba(15,23,42,.14);
+      }
+      .browser-bar {
+        height: 52px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
+        display: flex; align-items: center; gap: 9px; padding: 0 18px;
+      }
+      .bdot { width: 12px; height: 12px; border-radius: 50%; }
+      .urlbar {
+        margin-left: 12px; height: 30px; flex: 1; max-width: 430px;
+        display: flex; align-items: center; gap: 8px; padding: 0 13px;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+        font-size: 13px; color: #64748b; font-weight: 500;
+      }
+      .urlbar svg { width: 12px; height: 12px; stroke: #10b981; }
+      .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.13); }
+
+      .field { margin-top: 20px; }
+      .field label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; letter-spacing: .01em; }
+      .input {
+        height: 58px; display: flex; align-items: center; padding: 0 18px;
+        border: 1.5px solid #e2e8f0; border-radius: 13px; background: #f8fafc;
+        font-size: 17px; font-weight: 600; color: #0f172a;
+      }
+      .input .protocol { color: #64748b; font-weight: 500; font-size: 15px; margin-right: 2px; }
+      .input .check { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; background: #d1fae5; display: grid; place-items: center; }
+      .input .check svg { width: 13px; height: 13px; stroke: #059669; stroke-width: 3; }
+      .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .select {
+        height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 16px;
+        border: 1.5px solid #e2e8f0; border-radius: 13px; background: #f8fafc;
+        font-size: 16px; font-weight: 600; color: #0f172a;
+      }
+      .select .chev { margin-left: auto; width: 14px; height: 14px; stroke: #94a3b8; }
+      .flag { font-size: 19px; line-height: 1; }
+
+      .btn {
+        height: 62px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 12px;
+        background: linear-gradient(100deg, #047857, #0f766e); color: #fff;
+        font-size: 18px; font-weight: 700; letter-spacing: -.01em;
+        box-shadow: 0 16px 36px rgba(5,150,105,.3);
+      }
+      .btn svg { width: 19px; height: 19px; stroke: #fff; }
+      .safe { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px; font-size: 13px; color: #5b6b82; font-weight: 500; }
+      .safe svg { width: 14px; height: 14px; stroke: #94a3b8; }
+
+      .float-card {
+        position: absolute; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+        padding: 16px 20px; box-shadow: 0 18px 44px rgba(15,23,42,.12);
+        display: flex; align-items: center; gap: 13px;
+      }
+      .fc-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; }
+      .fc-ico svg { width: 19px; height: 19px; }
+      .fc-title { font-size: 14px; font-weight: 750; color: #0f172a; }
+      .fc-sub { font-size: 12px; color: #5b6b82; margin-top: 2px; font-weight: 550; }
+
+      .s2-head { position: absolute; left: 120px; top: 92px; width: 720px; }
+      .s2-head .h2 { margin-top: 20px; }
+      .s2-head .sub { margin-top: 20px; max-width: 600px; }
+      .steps { position: absolute; left: 122px; top: 460px; width: 500px; }
+      .step { display: flex; align-items: center; gap: 16px; position: relative; z-index: 2; padding: 14px 0; }
+      .step .bullet {
+        width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+        font-size: 15px; font-weight: 800; background: #fff; border: 2px solid #cbd5e1; color: #5b6b82;
+        position: relative; z-index: 2;
+      }
+      .step.active .bullet { background: #047857; border-color: #047857; color: #fff; box-shadow: 0 0 0 7px rgba(16,185,129,.12); }
+      .step .step-title { font-size: 18px; font-weight: 700; color: #5b6b82; }
+      .step.active .step-title { color: #0f172a; }
+      .step .step-desc { font-size: 13px; color: #5b6b82; margin-top: 2px; font-weight: 500; }
+      .step.active .step-desc { color: #5b6b82; }
+      .step-rail { position: absolute; left: 21px; top: 54px; width: 2px; height: 128px; background: #e2e8f0; z-index: 0; }
+      .step-rail-fill { position: absolute; left: 21px; top: 54px; width: 2px; height: 42px; background: linear-gradient(#10b981, #0d9488); z-index: 0; transform-origin: top center; }
+
+      .create-panel { position: absolute; left: 960px; top: 138px; width: 800px; padding-bottom: 26px; }
+      .create-body { padding: 24px 40px 4px; }
+      .create-panel .field:first-child { margin-top: 2px; }
+      .typed { display: inline-block; white-space: nowrap; }
+      .caret { display: inline-block; width: 2px; height: 21px; background: #059669; margin-left: 3px; vertical-align: -4px; opacity: 0; }
+      .fc-online { left: 700px; top: 758px; }
+      .fc-time { left: 770px; top: 330px; }
+
+      .s3-head { position: absolute; left: 120px; top: 92px; width: 720px; }
+      .s3-head .h2 { margin-top: 20px; }
+      .s3-head .sub { margin-top: 20px; max-width: 640px; }
+      .editor { position: absolute; left: 120px; top: 390px; width: 600px; padding: 28px 32px; }
+      .editor-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+      .editor-title { font-family: "Instrument Sans", sans-serif; font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+      .editor-badge { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #047857; background: #d1fae5; padding: 6px 11px; border-radius: 7px; }
+      .section-label { font-size: 12px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: #5b6b82; }
+      .swatches { display: flex; gap: 18px; margin-top: 14px; position: relative; }
+      .swatch-wrap { position: relative; width: 46px; height: 46px; }
+      .swatch { width: 46px; height: 46px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(15,23,42,.08); }
+      .swatch.s1 { background: #059669; }
+      .swatch.s2 { background: #f97316; }
+      .swatch.s3 { background: #0f172a; }
+      .swatch.s4 { background: #e11d48; }
+      .swatch.s5 { background: #2563eb; }
+      .sel-ring {
+        position: absolute; left: -5px; top: -5px; width: 56px; height: 56px;
+        border: 2px solid #0f172a; border-radius: 17px; opacity: 0;
+      }
+      .hex { margin-top: 10px; font-size: 12px; font-weight: 700; color: #64748b; letter-spacing: .04em; }
+      .font-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+      .font-row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #eef2f6; border-radius: 10px; background: #fbfdfc; }
+      .font-row.on { border-color: #a7f3d0; background: #f0fdf4; }
+      .font-glyph { width: 30px; height: 30px; border-radius: 8px; background: #e2e8f0; display: grid; place-items: center; font-size: 14px; font-weight: 800; color: #475569; }
+      .font-row.on .font-glyph { background: #d1fae5; color: #047857; }
+      .font-name { font-size: 14px; font-weight: 650; color: #334155; }
+      .font-row .check { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; background: #059669; display: grid; place-items: center; opacity: 0; }
+      .font-row .check svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3.4; }
+      .font-row.on .check { opacity: 1; }
+      .toggles { margin-top: 18px; display: flex; flex-direction: column; }
+      .toggle-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600; color: #475569; }
+      .toggle-row:last-child { border-bottom: 0; }
+      .switch { margin-left: auto; width: 38px; height: 22px; border-radius: 999px; background: #e2e8f0; position: relative; }
+      .switch::after { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 3px; left: 3px; box-shadow: 0 1px 3px rgba(15,23,42,.2); }
+      .switch.on { background: #059669; }
+      .switch.on::after { left: 19px; }
+
+      .preview { position: absolute; left: 860px; top: 144px; width: 940px; height: 790px; }
+      .preview .browser-bar { height: 54px; }
+      .pv { position: relative; height: 736px; background: #fff; overflow: hidden; }
+      .pv-nav { height: 60px; display: flex; align-items: center; padding: 0 32px; border-bottom: 1px solid #f1f5f9; }
+      .pv-logo { font-family: "Instrument Sans", sans-serif; font-size: 18px; font-weight: 800; letter-spacing: .11em; color: #0f172a; }
+      .pv-links { margin-left: auto; display: flex; gap: 22px; font-size: 11px; font-weight: 600; color: #5b6b82; }
+      .pv-cart { margin-left: 26px; font-size: 11px; font-weight: 700; color: #0f172a; }
+      .pv-hero { position: relative; height: 296px; background: #ecfdf5; padding: 36px 42px; overflow: hidden; }
+      .pv-hero::after {
+        content: ""; position: absolute; width: 360px; height: 360px; right: -90px; top: -120px;
+        border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.55), transparent 65%);
+      }
+      .pv-kicker { font-size: 10px; font-weight: 800; letter-spacing: .22em; color: #047857; position: relative; z-index: 2; }
+      .pv-title { font-family: "Instrument Sans", sans-serif; font-size: 54px; line-height: .98; font-weight: 700; letter-spacing: -.05em; color: #0f172a; margin-top: 12px; position: relative; z-index: 2; }
+      .pv-sub { font-size: 13px; color: #5b6b82; margin-top: 12px; position: relative; z-index: 2; }
+      .pv-btn { display: inline-flex; align-items: center; gap: 8px; background: #047857; color: #fff; padding: 11px 20px; border-radius: 9px; font-size: 12px; font-weight: 700; margin-top: 20px; position: relative; z-index: 2; }
+      .pv-price { position: absolute; right: 42px; bottom: 30px; font-size: 13px; font-weight: 800; color: #047857; z-index: 2; }
+      .pv-deco { position: absolute; right: 52px; bottom: 68px; width: 190px; height: 190px; border-radius: 50%; border: 1px solid rgba(5,150,105,.18); z-index: 1; }
+      .pv-deco::before { content: ""; position: absolute; inset: 22px; border-radius: 50%; border: 1px solid rgba(5,150,105,.13); }
+      .pv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px 32px; }
+      .pv-card { border: 1px solid #eef2f6; border-radius: 12px; padding: 8px; background: #fff; }
+      .pv-thumb { height: 138px; border-radius: 8px; position: relative; display: grid; place-items: center; overflow: hidden; }
+      .pv-thumb svg { width: 52px; height: 52px; stroke: rgba(15,23,42,.42); }
+      .pv-thumb.t1 { background: linear-gradient(145deg, #d1fae5, #a7f3d0); }
+      .pv-thumb.t2 { background: linear-gradient(145deg, #fef3c7, #fde68a); }
+      .pv-thumb.t3 { background: linear-gradient(145deg, #ffe4e6, #fecdd3); }
+      .pv-thumb.t4 { background: linear-gradient(145deg, #e0f2fe, #bae6fd); }
+      .pv-name { font-size: 11px; font-weight: 700; color: #0f172a; margin: 8px 2px 0; }
+      .pv-cost { font-size: 10px; color: #047857; font-weight: 750; margin: 3px 2px 4px; }
+
+      .cursor { position: absolute; z-index: 30; width: 26px; height: 30px; pointer-events: none; filter: drop-shadow(0 3px 5px rgba(15,23,42,.35)); }
+      .click-ring { position: absolute; z-index: 29; width: 44px; height: 44px; border: 2px solid #059669; border-radius: 50%; opacity: 0; }
+
+      .s4-head { position: absolute; left: 120px; top: 92px; width: 620px; }
+      .s4-head .h2 { margin-top: 20px; }
+      .s4-head .sub { margin-top: 20px; max-width: 560px; }
+      .import-panel { position: absolute; left: 120px; top: 410px; width: 590px; padding: 28px 32px; }
+      .import-title { display: flex; align-items: center; gap: 12px; font-family: "Instrument Sans", sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+      .import-ico { width: 38px; height: 38px; border-radius: 11px; background: #d1fae5; display: grid; place-items: center; }
+      .import-ico svg { width: 19px; height: 19px; stroke: #059669; }
+      .url-input { margin-top: 18px; height: 56px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc; display: flex; align-items: center; padding: 0 15px; font-size: 13px; font-weight: 600; color: #0f172a; overflow: hidden; }
+      .url-input .proto { color: #94a3b8; font-weight: 500; }
+      .url-clip { display: inline-block; white-space: nowrap; }
+      .progress { height: 8px; border-radius: 999px; background: #eef2f6; margin-top: 20px; overflow: hidden; }
+      .progress-bar { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #10b981, #0d9488); }
+      .progress-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12px; color: #94a3b8; font-weight: 600; }
+      .progress-meta b { color: #059669; font-weight: 800; }
+      .import-chips { display: flex; gap: 8px; margin-top: 18px; }
+      .ichip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 8px; background: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 700; }
+      .ichip svg { width: 11px; height: 11px; stroke: #94a3b8; stroke-width: 3; }
+      .ichip.done { background: #d1fae5; color: #047857; }
+      .ichip.done svg { stroke: #059669; }
+      .import-result { margin-top: 20px; padding: 14px; border: 1px solid #bbf7d0; border-radius: 13px; background: #f0fdf4; display: flex; align-items: center; gap: 12px; }
+      .import-thumb { width: 42px; height: 42px; border-radius: 9px; background: linear-gradient(145deg, #d1fae5, #6ee7b7); display: grid; place-items: center; }
+      .import-thumb svg { width: 21px; height: 21px; stroke: rgba(6,78,59,.55); }
+      .import-name { font-size: 13px; font-weight: 750; color: #065f46; }
+      .import-sub { font-size: 11px; color: #047857; font-weight: 600; margin-top: 2px; }
+      .import-result .check { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; background: #059669; display: grid; place-items: center; }
+      .import-result .check svg { width: 13px; height: 13px; stroke: #fff; stroke-width: 3.2; }
+
+      .catalog-panel { position: absolute; left: 840px; top: 150px; width: 960px; height: 800px; }
+      .catalog-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px; border-bottom: 1px solid #eef2f6; }
+      .catalog-count { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; color: #64748b; }
+      .catalog-count b { color: #059669; }
+      .catalog-add { display: inline-flex; align-items: center; gap: 6px; background: #059669; color: #fff; border-radius: 8px; padding: 8px 13px; font-size: 11px; font-weight: 750; }
+      .catalog-add svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 3; }
+      .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 26px; }
+      .product-card { border: 1px solid #eef2f6; border-radius: 14px; padding: 10px; background: #fff; }
+      .product-img { height: 176px; border-radius: 10px; position: relative; overflow: hidden; display: grid; place-items: center; }
+      .product-img svg { width: 64px; height: 64px; stroke: rgba(15,23,42,.38); }
+      .product-img.p1 { background: linear-gradient(145deg, #d1fae5, #6ee7b7); }
+      .product-img.p2 { background: linear-gradient(145deg, #fef3c7, #fcd34d); }
+      .product-img.p3 { background: linear-gradient(145deg, #ffe4e6, #fda4af); }
+      .product-img.p4 { background: linear-gradient(145deg, #e0f2fe, #7dd3fc); }
+      .product-img::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 78% 18%, rgba(255,255,255,.5), transparent 55%); }
+      .product-meta { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 4px 2px; }
+      .product-name { font-size: 13px; font-weight: 750; color: #0f172a; }
+      .product-price { font-size: 12px; font-weight: 700; color: #047857; margin-top: 3px; }
+      .status { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 800; letter-spacing: .06em; color: #047857; background: #d1fae5; padding: 4px 7px; border-radius: 5px; text-transform: uppercase; }
+      .status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #10b981; }
+      .s4-callouts { position: absolute; left: 122px; bottom: 74px; display: flex; gap: 10px; }
+
+      .s5-head { position: absolute; left: 120px; top: 88px; width: 720px; }
+      .s5-head .h2 { margin-top: 18px; font-size: 60px; }
+      .s5-head .sub { margin-top: 16px; max-width: 660px; font-size: 20px; line-height: 1.45; }
+      .shop-browser { position: absolute; left: 120px; top: 455px; width: 990px; height: 590px; }
+      .shop-browser .browser-bar { height: 50px; }
+      .shop { height: 540px; background: #fff; position: relative; }
+      .shop-nav { height: 56px; display: flex; align-items: center; padding: 0 28px; border-bottom: 1px solid #f1f5f9; }
+      .shop-brand { font-family: "Instrument Sans", sans-serif; font-size: 16px; font-weight: 800; letter-spacing: .08em; }
+      .shop-links { margin-left: auto; display: flex; gap: 18px; font-size: 10px; color: #64748b; font-weight: 600; }
+      .shop-hero { display: grid; grid-template-columns: 1.15fr .85fr; height: 274px; background: #f0fdf4; }
+      .shop-copy { padding: 34px 0 0 34px; }
+      .shop-kicker { font-size: 9px; letter-spacing: .2em; font-weight: 800; color: #059669; }
+      .shop-title { font-family: "Instrument Sans", sans-serif; font-size: 42px; line-height: 1; font-weight: 700; letter-spacing: -.05em; color: #0f172a; margin-top: 10px; }
+      .shop-sub { font-size: 12px; color: #64748b; margin-top: 10px; }
+      .shop-cta { display: inline-flex; align-items: center; gap: 7px; background: #0f172a; color: #fff; font-size: 11px; font-weight: 700; padding: 10px 16px; border-radius: 8px; margin-top: 16px; }
+      .shop-visual { position: relative; overflow: hidden; }
+      .shop-visual .visual-block { position: absolute; right: 28px; top: 27px; width: 220px; height: 220px; border-radius: 50%; background: linear-gradient(160deg, #6ee7b7, #059669); box-shadow: 0 26px 50px rgba(5,150,105,.28); }
+      .shop-visual .visual-block svg { position: absolute; width: 76px; height: 76px; left: 72px; top: 72px; stroke: rgba(255,255,255,.9); }
+      .shop-visual .halo { position: absolute; width: 262px; height: 262px; border: 1px solid rgba(5,150,105,.16); border-radius: 50%; right: 8px; top: 6px; }
+      .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 18px 28px; }
+      .shop-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 6px; }
+      .shop-item-img { height: 96px; border-radius: 7px; display: grid; place-items: center; }
+      .shop-item-img svg { width: 34px; height: 34px; stroke: rgba(15,23,42,.35); }
+      .shop-item-img.a { background: #ecfdf5; }
+      .shop-item-img.b { background: #fef3c7; }
+      .shop-item-img.c { background: #ffe4e6; }
+      .shop-item-img.d { background: #e0f2fe; }
+      .shop-item-name { font-size: 9px; font-weight: 700; color: #0f172a; padding: 6px 3px 1px; }
+      .shop-item-price { font-size: 8px; font-weight: 700; color: #047857; padding: 0 3px 3px; }
+      .shop-live { position: absolute; left: 18px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; background: #0f172a; color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 10px; font-weight: 700; }
+      .shop-live .dot { width: 6px; height: 6px; box-shadow: none; }
+
+      .phone { position: absolute; left: 1300px; top: 170px; width: 376px; height: 790px; padding: 11px; border-radius: 52px; background: #0b1220; box-shadow: 0 40px 90px rgba(15,23,42,.34), inset 0 0 0 1.5px rgba(255,255,255,.14); z-index: 10; }
+      .phone-screen { width: 100%; height: 100%; border-radius: 42px; background: #fff; overflow: hidden; position: relative; }
+      .phone-notch { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); width: 112px; height: 26px; border-radius: 999px; background: #0b1220; z-index: 8; }
+      .ph-status { height: 46px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 24px 8px; font-size: 10px; font-weight: 700; color: #0f172a; }
+      .ph-status .signal { display: flex; gap: 3px; align-items: flex-end; }
+      .ph-status .signal i { display: block; width: 3px; background: #0f172a; border-radius: 1px; }
+      .ph-nav { height: 44px; display: flex; align-items: center; padding: 0 22px; border-bottom: 1px solid #f1f5f9; }
+      .ph-nav .back { font-size: 17px; color: #0f172a; }
+      .ph-nav .ph-brand { margin-left: auto; font-family: "Instrument Sans", sans-serif; font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #0f172a; }
+      .ph-img { height: 252px; margin: 10px 16px 0; border-radius: 16px; background: linear-gradient(150deg, #a7f3d0, #059669); position: relative; display: grid; place-items: center; overflow: hidden; }
+      .ph-img::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,.45), transparent 55%); }
+      .ph-img svg { width: 94px; height: 94px; stroke: rgba(255,255,255,.9); position: relative; z-index: 2; }
+      .ph-info { padding: 14px 22px 0; }
+      .ph-name { font-family: "Instrument Sans", sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.03em; color: #0f172a; }
+      .ph-price { font-size: 14px; font-weight: 800; color: #047857; margin-top: 5px; }
+      .ph-sizes { display: flex; gap: 7px; margin-top: 12px; }
+      .ph-size { width: 38px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #475569; background: #fff; }
+      .ph-size.on { background: #0f172a; border-color: #0f172a; color: #fff; }
+      .ph-cta { position: absolute; left: 18px; right: 18px; bottom: 20px; height: 48px; border-radius: 12px; background: linear-gradient(100deg, #059669, #0d9488); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 750; z-index: 5; box-shadow: 0 10px 24px rgba(5,150,105,.28); }
+      .ph-cta svg { width: 15px; height: 15px; stroke: #fff; }
+
+      .checkout-sheet {
+        position: absolute; left: 0; right: 0; bottom: 0; height: 560px;
+        background: #fff; border-radius: 26px 26px 0 0; padding: 14px 22px;
+        box-shadow: 0 -24px 60px rgba(15,23,42,.2); z-index: 12;
+      }
+      .sheet-grab { width: 38px; height: 4px; border-radius: 999px; background: #e2e8f0; margin: 0 auto 14px; }
+      .sheet-title { font-family: "Instrument Sans", sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em; color: #0f172a; }
+      .sheet-sub { font-size: 10px; color: #94a3b8; margin-top: 3px; font-weight: 550; }
+      .sheet-field { margin-top: 11px; height: 44px; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; display: flex; align-items: center; padding: 0 12px; font-size: 11px; font-weight: 600; color: #0f172a; overflow: hidden; }
+      .sheet-field .fclip { display: inline-block; white-space: nowrap; }
+      .sheet-field .fplaceholder { color: #94a3b8; font-weight: 500; }
+      .sheet-btn { margin-top: 14px; height: 46px; border-radius: 10px; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 750; }
+      .sheet-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 9px; font-size: 9px; color: #94a3b8; font-weight: 600; }
+      .sheet-note svg { width: 11px; height: 11px; stroke: #94a3b8; }
+      .success-overlay {
+        position: absolute; inset: 0; background: rgba(255,255,255,.96); z-index: 20;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0;
+      }
+      .success-check { width: 76px; height: 76px; border-radius: 50%; background: #d1fae5; display: grid; place-items: center; box-shadow: 0 0 0 12px rgba(16,185,129,.1); }
+      .success-check svg { width: 38px; height: 38px; stroke: #059669; stroke-width: 3; }
+      .success-title { font-family: "Instrument Sans", sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.03em; color: #065f46; margin-top: 20px; }
+      .success-sub { font-size: 11px; color: #64748b; margin-top: 5px; font-weight: 550; }
+      .success-order { margin-top: 14px; font-size: 10px; letter-spacing: .09em; font-weight: 800; color: #059669; background: #ecfdf5; padding: 7px 11px; border-radius: 7px; }
+
+      .notif {
+        position: absolute; left: 1256px; top: 58px; width: 464px; z-index: 18;
+        background: rgba(15,23,42,.93); border: 1px solid rgba(52,211,153,.32);
+        border-radius: 16px; padding: 15px 18px; display: flex; gap: 13px;
+        box-shadow: 0 22px 50px rgba(2,6,23,.35); color: #fff;
+      }
+      .notif-ico { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(145deg, #34d399, #059669); display: grid; place-items: center; flex: none; }
+      .notif-ico svg { width: 19px; height: 19px; stroke: #fff; }
+      .notif-title { font-size: 12px; font-weight: 800; letter-spacing: .01em; }
+      .notif-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; font-weight: 550; }
+      .notif-amount { margin-left: auto; font-size: 13px; font-weight: 800; color: #6ee7b7; white-space: nowrap; }
+      .s5-callouts { position: absolute; left: 122px; top: 390px; display: flex; gap: 10px; }
+
+      .outro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .outro .brand { margin-bottom: 34px; }
+      .outro .h1 { font-size: 88px; }
+      .outro .sub { margin-top: 22px; font-size: 22px; max-width: 760px; }
+      .outro-cta {
+        margin-top: 38px; display: inline-flex; align-items: center; gap: 14px;
+        padding: 19px 34px; border-radius: 15px;
+        background: linear-gradient(100deg, #047857, #0f766e);
+        color: #fff; font-size: 22px; font-weight: 750; letter-spacing: -.01em;
+        box-shadow: 0 24px 54px rgba(5,150,105,.36);
+      }
+      .outro-cta svg { width: 20px; height: 20px; stroke: #fff; }
+      .outro-foot { margin-top: 26px; font-size: 14px; color: #94a3b8; font-weight: 600; letter-spacing: .02em; }
+      .outro-foot span { color: #94a3b8; }
+      .outro-badge {
+        margin-top: 20px; display: inline-flex; align-items: center; gap: 9px;
+        padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(52,211,153,.25);
+        background: rgba(16,185,129,.08); color: #a7f3d0; font-size: 13px; font-weight: 700;
+      }
+      .outro-badge b { color: #fff; font-size: 15px; }
+
+      #progress { position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: rgba(255,255,255,.08); z-index: 60; }
+      #progress-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #10b981, #2dd4bf); transform-origin: left center; }
+
+      .confetti { position: absolute; width: 8px; height: 8px; border-radius: 2px; opacity: 0; z-index: 20; }
+
+      .s1-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .s1 .brand { margin-bottom: 34px; }
+      .s1 .mark { width: 76px; height: 76px; border-radius: 22px; }
+      .s1 .mark svg { width: 37px; height: 37px; }
+      .s1 .wordmark { font-size: 38px; }
+      .s1 .h1 { font-size: 104px; max-width: 1240px; }
+      .s1 .sub { margin-top: 26px; font-size: 24px; max-width: 780px; }
+      .s1-pills { display: flex; gap: 12px; margin-top: 36px; }
+      .s1-foot {
+        position: absolute; left: 80px; right: 80px; bottom: 50px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 13px; color: #94a3b8; font-weight: 600; letter-spacing: .04em;
+      }
+      .s1-foot .left { display: flex; align-items: center; gap: 10px; }
+      .s1-foot .right { display: flex; align-items: center; gap: 9px; color: #a7f3d0; }
+      .s1-foot svg { width: 15px; height: 15px; stroke: #34d399; }
+      .s1-frame {
+        position: absolute; left: 48px; right: 48px; top: 40px; bottom: 40px;
+        border: 1px solid rgba(148,163,184,.14); border-radius: 26px; pointer-events: none;
+      }
+      .s1-frame::before, .s1-frame::after {
+        content: ""; position: absolute; width: 22px; height: 22px;
+        border-left: 1px solid rgba(52,211,153,.5); border-top: 1px solid rgba(52,211,153,.5);
+      }
+      .s1-frame::before { left: -1px; top: -1px; border-radius: 26px 0 0 0; }
+      .s1-frame::after { right: -1px; bottom: -1px; border-right: 1px solid rgba(52,211,153,.5); border-bottom: 1px solid rgba(52,211,153,.5); border-left: 0; border-top: 0; border-radius: 0 0 26px 0; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-4l7j" id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080" data-fps="30">
+      <section data-hf-id="hf-x0no" id="scene-1" class="clip scene scene-dark s1" data-start="0" data-duration="4" data-track-index="1">
+        <div data-hf-id="hf-tan6" class="stage">
+          <div data-hf-id="hf-q4u8" class="grid-bg"></div>
+          <div data-hf-id="hf-sz2s" class="s1-frame"></div>
+          <div data-hf-id="hf-cfa0" class="glow glow-green" id="s1-glow1" style="width:1200px;height:1200px;left:-320px;top:-520px;"></div>
+          <div data-hf-id="hf-5ay5" class="glow glow-teal" id="s1-glow2" style="width:1000px;height:1000px;right:-240px;bottom:-460px;"></div>
+          <div data-hf-id="hf-q8qd" class="s1-wrap">
+            <div data-hf-id="hf-j433" class="brand s1-brand" id="s1-brand">
+              <div data-hf-id="hf-9gvv" class="mark">
+                <svg data-hf-id="hf-5l2t" viewBox="0 0 24 24" fill="none">
+                  <path data-hf-id="hf-wnof" d="M12 2.6 21 7.5v9L12 21.4 3 16.5v-9L12 2.6Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+                  <path data-hf-id="hf-deeg" d="m3.5 7.6 8.5 4.8 8.5-4.8M12 12.4v8.7" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div data-hf-id="hf-b85b" class="wordmark">Shop<span data-hf-id="hf-5ssq">Eazy</span></div>
+            </div>
+            <h1 data-hf-id="hf-hxys" class="h1" id="s1-title">
+              <span data-hf-id="hf-5jzp" class="line">Votre boutique en ligne.</span>
+              <span data-hf-id="hf-6c9z" class="line"><span data-hf-id="hf-85ow" class="grad-light">Prête en 5 minutes.</span></span>
+            </h1>
+            <p data-hf-id="hf-oeft" class="sub" id="s1-sub">Vendez vos produits, encaissez à la livraison et gérez tout depuis votre téléphone.<br data-hf-id="hf-x5px"><strong data-hf-id="hf-m8rn">Sans code. Sans carte bancaire.</strong></p>
+            <div data-hf-id="hf-41vy" class="s1-pills" id="s1-pills">
+              <div data-hf-id="hf-fhd7" class="pill"><span data-hf-id="hf-9gry" class="dot"></span>0 FCFA pour démarrer</div>
+              <div data-hf-id="hf-94qc" class="pill">
+                <svg data-hf-id="hf-78fp" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-5ith" x="2.5" y="5" width="19" height="14" rx="2.5" /><path data-hf-id="hf-c81r" d="M2.5 10h19" /></svg>
+                Paiement à la livraison
+              </div>
+              <div data-hf-id="hf-kl5x" class="pill">
+                <svg data-hf-id="hf-2hex" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-e5ik" x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path data-hf-id="hf-kz4m" d="M10.5 18.5h3" /></svg>
+                100% depuis mobile
+              </div>
+            </div>
+          </div>
+          <div data-hf-id="hf-da4w" class="s1-foot" id="s1-foot">
+            <div data-hf-id="hf-lwzx" class="left">
+              <svg data-hf-id="hf-ll0t" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path data-hf-id="hf-uiae" d="M12 3 21 7.5v9L12 21 3 16.5v-9L12 3Z" /></svg>
+              SHOPEAZY — LA PLATEFORME E-COMMERCE POUR L'AFRIQUE
+            </div>
+            <div data-hf-id="hf-l6dh" class="right">
+              <span data-hf-id="hf-d399" class="live-dot"></span>
+              MOTION 03 · 30 SECONDES
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-3l1j" id="scene-2" class="clip scene scene-light s2" data-start="4" data-duration="5.5" data-track-index="2">
+        <div data-hf-id="hf-xa86" class="stage">
+          <div data-hf-id="hf-wbnc" class="grid-bg"></div>
+          <div data-hf-id="hf-9i4t" class="glow glow-light" style="width:900px;height:900px;right:-180px;top:-300px;"></div>
+          <div data-hf-id="hf-3rfe" class="s2-head">
+            <div data-hf-id="hf-jytz" class="eyebrow" id="s2-eyebrow"><span data-hf-id="hf-3mph" class="idx">01</span> Création</div>
+            <h2 data-hf-id="hf-xhxp" class="h2" id="s2-title">
+              <span data-hf-id="hf-jffc" class="line">Votre vitrine en ligne</span>
+              <span data-hf-id="hf-tvt3" class="line"><span data-hf-id="hf-29kw" class="grad-dark">en quelques clics.</span></span>
+            </h2>
+            <p data-hf-id="hf-waex" class="sub" id="s2-sub">Un nom, une adresse, une devise. <strong data-hf-id="hf-29sf">Votre boutique est prête</strong> à recevoir ses premières commandes.</p>
+          </div>
+
+          <div data-hf-id="hf-l2z6" class="steps" id="s2-steps">
+            <div data-hf-id="hf-imp9" class="step-rail" data-layout-allow-occlusion=""></div>
+            <div data-hf-id="hf-d21q" class="step-rail-fill" id="s2-railfill" data-layout-allow-occlusion=""></div>
+            <div data-hf-id="hf-ly7k" class="step active">
+              <div data-hf-id="hf-b7cr" class="bullet">1</div>
+              <div data-hf-id="hf-yeow"><div data-hf-id="hf-6khd" class="step-title">Votre identité</div><div data-hf-id="hf-au3j" class="step-desc">Nom &amp; adresse de la boutique</div></div>
+            </div>
+            <div data-hf-id="hf-uqbq" class="step">
+              <div data-hf-id="hf-at1q" class="bullet">2</div>
+              <div data-hf-id="hf-y7yw"><div data-hf-id="hf-ej7h" class="step-title">Votre univers</div><div data-hf-id="hf-t9pl" class="step-desc">Couleurs, polices &amp; sections</div></div>
+            </div>
+            <div data-hf-id="hf-jlje" class="step">
+              <div data-hf-id="hf-aeqp" class="bullet">3</div>
+              <div data-hf-id="hf-x11t"><div data-hf-id="hf-1r5d" class="step-title">Vos produits</div><div data-hf-id="hf-rbfo" class="step-desc">Catalogue &amp; import</div></div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-tunb" class="panel create-panel" id="s2-panel">
+            <div data-hf-id="hf-95fx" class="panel-head">
+              <div data-hf-id="hf-tibi" class="panel-title">Créer ma boutique</div>
+              <div data-hf-id="hf-xqjm" class="panel-x">×</div>
+            </div>
+            <div data-hf-id="hf-of9d" class="create-body">
+              <div data-hf-id="hf-0ztw" class="field">
+                <label data-hf-id="hf-eti7">Nom de la boutique</label>
+                <div data-hf-id="hf-sc8k" class="input"><span data-hf-id="hf-0k1y" id="s2-shopname" class="typed"></span><span data-hf-id="hf-yp8p" class="caret" id="s2-caret"></span></div>
+              </div>
+              <div data-hf-id="hf-bxgc" class="field">
+                <label data-hf-id="hf-heyd">Adresse de ma boutique</label>
+                <div data-hf-id="hf-39qk" class="input">
+                  <span data-hf-id="hf-aljy" class="protocol">shopeazy.com/</span><span data-hf-id="hf-itqy" id="s2-url" class="typed"></span><span data-hf-id="hf-teg1" class="caret" id="s2-caret2"></span>
+                  <span data-hf-id="hf-vacz" class="check"><svg data-hf-id="hf-7631" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-6ynf" d="m5 12.5 4.5 4.5L19 7" /></svg></span>
+                </div>
+              </div>
+              <div data-hf-id="hf-d1pj" class="field input-row">
+                <div data-hf-id="hf-xfcu">
+                  <label data-hf-id="hf-u4ba">Pays</label>
+                  <div data-hf-id="hf-adof" class="select"><span data-hf-id="hf-cuja" class="flag">🇸🇳</span>Sénégal<svg data-hf-id="hf-ovc8" class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path data-hf-id="hf-zit5" d="m6 9 6 6 6-6" /></svg></div>
+                </div>
+                <div data-hf-id="hf-w8fr">
+                  <label data-hf-id="hf-l00b">Devise</label>
+                  <div data-hf-id="hf-5722" class="select">FCFA (XOF)<svg data-hf-id="hf-9xuo" class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path data-hf-id="hf-ai8d" d="m6 9 6 6 6-6" /></svg></div>
+                </div>
+              </div>
+              <div data-hf-id="hf-aqj9" class="field">
+                <div data-hf-id="hf-tiw8" class="btn" id="s2-create-btn">
+                  Créer ma boutique
+                  <svg data-hf-id="hf-vwdp" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-7qws" d="M4 12h15M13 6l6 6-6 6" /></svg>
+                </div>
+              </div>
+              <div data-hf-id="hf-37m7" class="safe">
+                <svg data-hf-id="hf-3oc0" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-eegd" x="4" y="10.5" width="16" height="10" rx="2" /><path data-hf-id="hf-xqka" d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>
+                Gratuit · Sans carte bancaire · En ligne immédiatement
+              </div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-nw2n" class="float-card fc-online" id="s2-float1">
+            <div data-hf-id="hf-ybfp" class="fc-ico" style="background:#d1fae5;">
+              <svg data-hf-id="hf-hf0s" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-1iwn" cx="12" cy="12" r="9" /><path data-hf-id="hf-uy06" d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></svg>
+            </div>
+            <div data-hf-id="hf-wmqs"><div data-hf-id="hf-eqyc" class="fc-title">Boutique en ligne</div><div data-hf-id="hf-34ca" class="fc-sub">dakarmode.shopeazy.com</div></div>
+            <span data-hf-id="hf-1qmd" class="live-dot" style="margin-left:10px;"></span>
+          </div>
+          <div data-hf-id="hf-zor6" class="float-card fc-time" id="s2-float2">
+            <div data-hf-id="hf-gj3y" class="fc-ico" style="background:#ccfbf1;">
+              <svg data-hf-id="hf-qxzw" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><circle data-hf-id="hf-q513" cx="12" cy="12" r="9" /><path data-hf-id="hf-j35d" d="M12 7v5.2l3.4 2" /></svg>
+            </div>
+            <div data-hf-id="hf-vftp"><div data-hf-id="hf-hku2" class="fc-title">5 minutes</div><div data-hf-id="hf-rob8" class="fc-sub">Mise en ligne</div></div>
+          </div>
+
+          <svg data-hf-id="hf-8ze1" class="cursor" id="s2-cursor" style="left:1508px;top:790px;" viewBox="0 0 26 30" fill="none">
+            <path data-hf-id="hf-2t57" d="M3 2.5 21.5 13l-8.2 2.6L9.7 24 3 2.5Z" fill="#0f172a" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+          <div data-hf-id="hf-1ygv" class="click-ring" id="s2-click" style="left:1492px;top:774px;"></div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-ut14" id="scene-3" class="clip scene scene-light s3" data-start="9.5" data-duration="6" data-track-index="3">
+        <div data-hf-id="hf-xoj7" class="stage">
+          <div data-hf-id="hf-v4q9" class="grid-bg"></div>
+          <div data-hf-id="hf-po7c" class="glow glow-light" style="width:920px;height:920px;right:-220px;bottom:-340px;"></div>
+          <div data-hf-id="hf-wl5p" class="s3-head">
+            <div data-hf-id="hf-bbvu" class="eyebrow" id="s3-eyebrow"><span data-hf-id="hf-4tmk" class="idx">02</span> Personnalisation</div>
+            <h2 data-hf-id="hf-g4k4" class="h2" id="s3-title">
+              <span data-hf-id="hf-i312" class="line">Votre marque,</span>
+              <span data-hf-id="hf-thi2" class="line"><span data-hf-id="hf-3ci3" class="grad-dark">votre style.</span></span>
+            </h2>
+            <p data-hf-id="hf-riv3" class="sub" id="s3-sub">Couleurs, polices, sections : <strong data-hf-id="hf-g5jl">tout se personnalise</strong> en direct, sans toucher une ligne de code.</p>
+          </div>
+
+          <div data-hf-id="hf-cut1" class="panel editor" id="s3-editor">
+            <div data-hf-id="hf-cmoy" class="editor-head">
+              <div data-hf-id="hf-vyfd" class="editor-title">Apparence</div>
+              <div data-hf-id="hf-ntkn" class="editor-badge">LIVE</div>
+            </div>
+            <div data-hf-id="hf-9ohq" class="section-label">Couleur principale</div>
+            <div data-hf-id="hf-41co" class="swatches">
+              <div data-hf-id="hf-m8q1" class="swatch-wrap"><div data-hf-id="hf-qhyk" class="swatch s1"></div></div>
+              <div data-hf-id="hf-lyfx" class="swatch-wrap"><div data-hf-id="hf-z5uf" class="swatch s2"></div></div>
+              <div data-hf-id="hf-r7c4" class="swatch-wrap"><div data-hf-id="hf-v7qe" class="swatch s3"></div></div>
+              <div data-hf-id="hf-qt13" class="swatch-wrap"><div data-hf-id="hf-3vm9" class="swatch s4"></div></div>
+              <div data-hf-id="hf-rzy6" class="swatch-wrap"><div data-hf-id="hf-33yg" class="swatch s5"></div></div>
+              <div data-hf-id="hf-hflq" class="sel-ring" id="s3-ring"></div>
+            </div>
+            <div data-hf-id="hf-3dxk" class="hex" id="s3-hex">#059669 · ÉMERAUDE</div>
+
+            <div data-hf-id="hf-417n" class="section-label" style="margin-top:26px;">Typographie</div>
+            <div data-hf-id="hf-b954" class="font-list">
+              <div data-hf-id="hf-g69j" class="font-row on">
+                <div data-hf-id="hf-mgk5" class="font-glyph" style="font-family:'Instrument Sans';">Aa</div>
+                <div data-hf-id="hf-b9rb" class="font-name">Instrument Sans</div>
+                <div data-hf-id="hf-zsdk" class="check"><svg data-hf-id="hf-toe9" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-bgzv" d="m5 12.5 4.5 4.5L19 7" /></svg></div>
+              </div>
+              <div data-hf-id="hf-cw6k" class="font-row">
+                <div data-hf-id="hf-ih9j" class="font-glyph" style="font-family:'Inter';">Aa</div>
+                <div data-hf-id="hf-4hwl" class="font-name">Inter</div>
+                <div data-hf-id="hf-melc" class="check"><svg data-hf-id="hf-uvbc" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-b2ou" d="m5 12.5 4.5 4.5L19 7" /></svg></div>
+              </div>
+              <div data-hf-id="hf-lt38" class="font-row">
+                <div data-hf-id="hf-36w0" class="font-glyph" style="font-family:Georgia, serif;">Aa</div>
+                <div data-hf-id="hf-ovn9" class="font-name" style="font-family:Georgia, serif;">Élégant</div>
+                <div data-hf-id="hf-l7o9" class="check"><svg data-hf-id="hf-uh0b" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-aodt" d="m5 12.5 4.5 4.5L19 7" /></svg></div>
+              </div>
+            </div>
+
+            <div data-hf-id="hf-0plj" class="toggles">
+              <div data-hf-id="hf-dnhb" class="toggle-row">Bannière d'accueil <div data-hf-id="hf-442f" class="switch on"></div></div>
+              <div data-hf-id="hf-5hip" class="toggle-row">Produits en vedette <div data-hf-id="hf-mutz" class="switch on"></div></div>
+              <div data-hf-id="hf-35sa" class="toggle-row">Témoignages clients <div data-hf-id="hf-10b0" class="switch"></div></div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-6c2v" class="preview" id="s3-preview">
+            <div data-hf-id="hf-i7so" class="browser">
+              <div data-hf-id="hf-80ig" class="browser-bar">
+                <span data-hf-id="hf-7tmx" class="bdot" style="background:#fca5a5;"></span>
+                <span data-hf-id="hf-p8kc" class="bdot" style="background:#fcd34d;"></span>
+                <span data-hf-id="hf-znaf" class="bdot" style="background:#86efac;"></span>
+                <div data-hf-id="hf-m71o" class="urlbar">
+                  <svg data-hf-id="hf-cv7n" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-4g2p" x="4" y="10.5" width="16" height="10" rx="2" /><path data-hf-id="hf-3rz2" d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>
+                  dakarmode.shopeazy.com
+                  <span data-hf-id="hf-3mw7" class="live-dot" style="margin-left:auto;"></span>
+                </div>
+              </div>
+              <div data-hf-id="hf-xu0e" class="pv">
+                <div data-hf-id="hf-qndq" class="pv-nav">
+                  <div data-hf-id="hf-0p7k" class="pv-logo" id="pv-logo">DAKAR MODE</div>
+                  <div data-hf-id="hf-28xm" class="pv-links"><span data-hf-id="hf-p1ah">Accueil</span><span data-hf-id="hf-eotz">Boutique</span><span data-hf-id="hf-dvr2">Nouveautés</span><span data-hf-id="hf-n4uf">Contact</span></div>
+                  <div data-hf-id="hf-l467" class="pv-cart">Panier (0)</div>
+                </div>
+                <div data-hf-id="hf-u4ac" class="pv-hero" id="pv-hero">
+                  <div data-hf-id="hf-u4im" class="pv-kicker">NOUVELLE COLLECTION</div>
+                  <div data-hf-id="hf-tb3m" class="pv-title">L'élégance<br data-hf-id="hf-rsrt">africaine.</div>
+                  <div data-hf-id="hf-l3y8" class="pv-sub">Des pièces uniques, façonnées à Dakar.</div>
+                  <div data-hf-id="hf-zg0w" class="pv-btn" id="pv-cta">Découvrir la collection →</div>
+                  <div data-hf-id="hf-mysi" class="pv-price" id="pv-price">Dès 8 500 FCFA</div>
+                  <div data-hf-id="hf-gl4c" class="pv-deco"></div>
+                </div>
+                <div data-hf-id="hf-wswz" class="pv-grid">
+                  <div data-hf-id="hf-oyu5" class="pv-card">
+                    <div data-hf-id="hf-8sxi" class="pv-thumb t1"><svg data-hf-id="hf-ak82" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-4vu7" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-tnh8" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg></div>
+                    <div data-hf-id="hf-cjht" class="pv-name">Sac en raphia</div><div data-hf-id="hf-743n" class="pv-cost">13 500 FCFA</div>
+                  </div>
+                  <div data-hf-id="hf-hf8x" class="pv-card">
+                    <div data-hf-id="hf-2n7p" class="pv-thumb t2"><svg data-hf-id="hf-1ozq" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-mmss" d="m12 3 2.4 5.6L20 11l-5.6 2.4L12 19l-2.4-5.6L4 11l5.6-2.4L12 3Z" /></svg></div>
+                    <div data-hf-id="hf-3y3c" class="pv-name">Boubou brodé</div><div data-hf-id="hf-mgoo" class="pv-cost">24 000 FCFA</div>
+                  </div>
+                  <div data-hf-id="hf-im60" class="pv-card">
+                    <div data-hf-id="hf-1vjw" class="pv-thumb t3"><svg data-hf-id="hf-23ar" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle data-hf-id="hf-xksm" cx="12" cy="12" r="8" /><circle data-hf-id="hf-2731" cx="12" cy="12" r="3" /></svg></div>
+                    <div data-hf-id="hf-ijf5" class="pv-name">Collier perles</div><div data-hf-id="hf-3jaj" class="pv-cost">8 500 FCFA</div>
+                  </div>
+                  <div data-hf-id="hf-i7uz" class="pv-card">
+                    <div data-hf-id="hf-pd1f" class="pv-thumb t4"><svg data-hf-id="hf-2hls" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-h80d" d="M7 4h10l2 5-3 2v9H8v-9L5 9l2-5Z" /></svg></div>
+                    <div data-hf-id="hf-1vck" class="pv-name">Sandales cuir</div><div data-hf-id="hf-3lbg" class="pv-cost">15 000 FCFA</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <svg data-hf-id="hf-10th" class="cursor" id="s3-cursor" style="left:172px;top:654px;" viewBox="0 0 26 30" fill="none">
+            <path data-hf-id="hf-70bv" d="M3 2.5 21.5 13l-8.2 2.6L9.7 24 3 2.5Z" fill="#0f172a" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+          <div data-hf-id="hf-tqc3" class="click-ring" id="s3-click" style="left:156px;top:638px;"></div>
+          <div data-hf-id="hf-x6ew" class="pill" id="s3-nocode" style="position:absolute;left:120px;top:930px;">Aucun code requis</div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-sbmw" id="scene-4" class="clip scene scene-light s4" data-start="15.5" data-duration="6" data-track-index="4">
+        <div data-hf-id="hf-y2u8" class="stage">
+          <div data-hf-id="hf-vj1a" class="grid-bg"></div>
+          <div data-hf-id="hf-xqp9" class="glow glow-light" style="width:900px;height:900px;left:-280px;bottom:-320px;"></div>
+          <div data-hf-id="hf-0ynk" class="s4-head">
+            <div data-hf-id="hf-wysp" class="eyebrow" id="s4-eyebrow"><span data-hf-id="hf-4fbj" class="idx">03</span> Catalogue</div>
+            <h2 data-hf-id="hf-vh8g" class="h2" id="s4-title" style="font-size:58px;">
+              <span data-hf-id="hf-5bc3" class="line">Vos produits,</span>
+              <span data-hf-id="hf-t371" class="line"><span data-hf-id="hf-xwmy" class="grad-dark">importés en un instant.</span></span>
+            </h2>
+            <p data-hf-id="hf-kmr0" class="sub" id="s4-sub">Collez le lien de votre boutique existante. <strong data-hf-id="hf-0djs">Photos, prix et descriptions</strong> sont récupérés automatiquement.</p>
+          </div>
+
+          <div data-hf-id="hf-g4t7" class="panel import-panel" id="s4-import">
+            <div data-hf-id="hf-mlc6" class="import-title">
+              <div data-hf-id="hf-vyb3" class="import-ico">
+                <svg data-hf-id="hf-3a0z" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-ncac" d="M12 3v12M7 10l5 5 5-5" /><path data-hf-id="hf-2h0w" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+              </div>
+              Importer un catalogue
+            </div>
+            <div data-hf-id="hf-0ths" class="url-input">
+              <span data-hf-id="hf-f6ay" class="proto">https://</span><span data-hf-id="hf-wshk" class="url-clip" id="s4-url"></span>
+            </div>
+            <div data-hf-id="hf-31j5" class="progress"><div data-hf-id="hf-103y" class="progress-bar" id="s4-progress"></div></div>
+            <div data-hf-id="hf-rpf1" class="progress-meta"><span data-hf-id="hf-89w5" id="s4-status">Analyse de la boutique…</span><b data-hf-id="hf-6l54" id="s4-percent">0%</b></div>
+            <div data-hf-id="hf-psnl" class="import-chips">
+              <div data-hf-id="hf-6n7t" class="ichip" id="s4-chip1"><svg data-hf-id="hf-lbu1" viewBox="0 0 24 24" fill="none"><path data-hf-id="hf-aa2s" d="m5 12.5 4.5 4.5L19 7" /></svg>Photos</div>
+              <div data-hf-id="hf-7wqs" class="ichip" id="s4-chip2"><svg data-hf-id="hf-mir4" viewBox="0 0 24 24" fill="none"><path data-hf-id="hf-9vrr" d="m5 12.5 4.5 4.5L19 7" /></svg>Prix</div>
+              <div data-hf-id="hf-w6s1" class="ichip" id="s4-chip3"><svg data-hf-id="hf-m4g3" viewBox="0 0 24 24" fill="none"><path data-hf-id="hf-9hgq" d="m5 12.5 4.5 4.5L19 7" /></svg>Descriptions</div>
+            </div>
+            <div data-hf-id="hf-y2rm" class="import-result" id="s4-result" style="opacity:0;">
+              <div data-hf-id="hf-rvp4" class="import-thumb"><svg data-hf-id="hf-1pw7" viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path data-hf-id="hf-tmj3" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-t9n8" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg></div>
+              <div data-hf-id="hf-vu4q"><div data-hf-id="hf-duzw" class="import-name">4 produits importés</div><div data-hf-id="hf-r98c" class="import-sub">Catalogue synchronisé</div></div>
+              <div data-hf-id="hf-llza" class="check"><svg data-hf-id="hf-shh6" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-935p" d="m5 12.5 4.5 4.5L19 7" /></svg></div>
+            </div>
+            <div data-hf-id="hf-uk9s" style="display:flex;gap:8px;margin-top:16px;">
+              <div data-hf-id="hf-5pev" class="pill" style="padding:9px 13px;font-size:12px;">Shopify</div>
+              <div data-hf-id="hf-vt59" class="pill" style="padding:9px 13px;font-size:12px;">WooCommerce</div>
+              <div data-hf-id="hf-xf9x" class="pill" style="padding:9px 13px;font-size:12px;">Instagram</div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-zl57" class="panel catalog-panel" id="s4-catalog">
+            <div data-hf-id="hf-aqc8" class="catalog-head">
+              <div data-hf-id="hf-0qyk" class="catalog-count"><b data-hf-id="hf-ubk3">4</b> produits dans la boutique</div>
+              <div data-hf-id="hf-oazf" class="catalog-add">
+                <svg data-hf-id="hf-h29x" viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path data-hf-id="hf-1zsu" d="M12 5v14M5 12h14" /></svg>
+                Ajouter
+              </div>
+            </div>
+            <div data-hf-id="hf-otfu" class="product-grid">
+              <div data-hf-id="hf-aduc" class="product-card">
+                <div data-hf-id="hf-v2mk" class="product-img p1"><svg data-hf-id="hf-2zgt" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path data-hf-id="hf-t882" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-s2q5" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg></div>
+                <div data-hf-id="hf-fx4l" class="product-meta"><div data-hf-id="hf-1043"><div data-hf-id="hf-0fv6" class="product-name">Sac en raphia</div><div data-hf-id="hf-xuqo" class="product-price">13 500 FCFA</div></div><div data-hf-id="hf-s4ck" class="status">En ligne</div></div>
+              </div>
+              <div data-hf-id="hf-i6jw" class="product-card">
+                <div data-hf-id="hf-3qif" class="product-img p2"><svg data-hf-id="hf-he81" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path data-hf-id="hf-60sk" d="m12 3 2.4 5.6L20 11l-5.6 2.4L12 19l-2.4-5.6L4 11l5.6-2.4L12 3Z" /></svg></div>
+                <div data-hf-id="hf-h41o" class="product-meta"><div data-hf-id="hf-1ef4"><div data-hf-id="hf-ziet" class="product-name">Boubou brodé</div><div data-hf-id="hf-2vy7" class="product-price">24 000 FCFA</div></div><div data-hf-id="hf-7juk" class="status">En ligne</div></div>
+              </div>
+              <div data-hf-id="hf-gzmt" class="product-card">
+                <div data-hf-id="hf-zsee" class="product-img p3"><svg data-hf-id="hf-il54" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle data-hf-id="hf-yx6y" cx="12" cy="12" r="8" /><circle data-hf-id="hf-ibn5" cx="12" cy="12" r="3" /></svg></div>
+                <div data-hf-id="hf-gpqn" class="product-meta"><div data-hf-id="hf-c4s8"><div data-hf-id="hf-x3d8" class="product-name">Collier perles</div><div data-hf-id="hf-32yi" class="product-price">8 500 FCFA</div></div><div data-hf-id="hf-6cxh" class="status">En ligne</div></div>
+              </div>
+              <div data-hf-id="hf-hdxu" class="product-card">
+                <div data-hf-id="hf-anw1" class="product-img p4"><svg data-hf-id="hf-i6u3" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path data-hf-id="hf-av41" d="M7 4h10l2 5-3 2v9H8v-9L5 9l2-5Z" /></svg></div>
+                <div data-hf-id="hf-hwnq" class="product-meta"><div data-hf-id="hf-bqh7"><div data-hf-id="hf-tafv" class="product-name">Sandales cuir</div><div data-hf-id="hf-bpgn" class="product-price">15 000 FCFA</div></div><div data-hf-id="hf-6r8i" class="status">En ligne</div></div>
+              </div>
+            </div>
+            <div data-hf-id="hf-c7mn" style="display:flex;align-items:center;justify-content:space-between;padding:4px 28px 24px;">
+              <div data-hf-id="hf-hvdu" style="font-size:12px;color:#94a3b8;font-weight:600;">Valeur du catalogue</div>
+              <div data-hf-id="hf-5hil" style="font-family:'Instrument Sans';font-size:20px;font-weight:700;color:#0f172a;">61 000 FCFA</div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-snlc" class="s4-callouts" id="s4-callouts">
+            <div data-hf-id="hf-7alz" class="pill"><span data-hf-id="hf-zcc2" class="dot"></span>Import automatique</div>
+            <div data-hf-id="hf-ooey" class="pill">
+              <svg data-hf-id="hf-1ahu" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-f9u3" d="M4 12a8 8 0 0 1 14-5.3L20 9" /><path data-hf-id="hf-p1qc" d="M20 4v5h-5" /><path data-hf-id="hf-a790" d="M20 12a8 8 0 0 1-14 5.3L4 15" /><path data-hf-id="hf-xkze" d="M4 20v-5h5" /></svg>
+              Synchronisation en temps réel
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-tbza" id="scene-5" class="clip scene scene-light s5" data-start="21.5" data-duration="5.5" data-track-index="5">
+        <div data-hf-id="hf-vap1" class="stage">
+          <div data-hf-id="hf-uc47" class="grid-bg"></div>
+          <div data-hf-id="hf-6fnr" class="glow glow-light" style="width:900px;height:900px;right:-160px;top:-340px;"></div>
+          <div data-hf-id="hf-a9jv" class="s5-head">
+            <div data-hf-id="hf-kk21" class="eyebrow" id="s5-eyebrow"><span data-hf-id="hf-5m8m" class="idx">04</span> Vente</div>
+            <h2 data-hf-id="hf-0rua" class="h2" id="s5-title">
+              <span data-hf-id="hf-427r" class="line">Votre première vente,</span>
+              <span data-hf-id="hf-vvc8" class="line"><span data-hf-id="hf-5ewu" class="grad-dark">dès aujourd'hui.</span></span>
+            </h2>
+            <p data-hf-id="hf-qkw7" class="sub" id="s5-sub">Partagez votre lien, recevez la commande, <strong data-hf-id="hf-hnw7">encaissez à la livraison.</strong> ShopEazy s'occupe du reste.</p>
+          </div>
+
+          <div data-hf-id="hf-oanm" class="s5-callouts" id="s5-callouts">
+            <div data-hf-id="hf-z9fi" class="pill"><span data-hf-id="hf-zqn3" class="dot"></span>Lien de boutique</div>
+            <div data-hf-id="hf-gty6" class="pill">
+              <svg data-hf-id="hf-0w6t" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-uzlb" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path data-hf-id="hf-ytra" d="M10.3 21a2 2 0 0 0 3.4 0" /></svg>
+              Notification instantanée
+            </div>
+          </div>
+
+          <div data-hf-id="hf-6j6i" class="browser shop-browser" id="s5-shop">
+            <div data-hf-id="hf-30mo" class="browser-bar">
+              <span data-hf-id="hf-a1fh" class="bdot" style="background:#fca5a5;"></span>
+              <span data-hf-id="hf-e1ec" class="bdot" style="background:#fcd34d;"></span>
+              <span data-hf-id="hf-t5c7" class="bdot" style="background:#86efac;"></span>
+              <div data-hf-id="hf-keys" class="urlbar">
+                <svg data-hf-id="hf-pa4j" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-5mzs" x="4" y="10.5" width="16" height="10" rx="2" /><path data-hf-id="hf-46a3" d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>
+                dakarmode.shopeazy.com
+              </div>
+            </div>
+            <div data-hf-id="hf-o4r8" class="shop">
+              <div data-hf-id="hf-jn5o" class="shop-nav">
+                <div data-hf-id="hf-py66" class="shop-brand">DAKAR MODE</div>
+                <div data-hf-id="hf-9k2k" class="shop-links"><span data-hf-id="hf-xwvx">Accueil</span><span data-hf-id="hf-b7zr">Boutique</span><span data-hf-id="hf-cv6q">Nouveautés</span><span data-hf-id="hf-edlz">Contact</span></div>
+              </div>
+              <div data-hf-id="hf-b5pp" class="shop-hero">
+                <div data-hf-id="hf-g1qm" class="shop-copy">
+                  <div data-hf-id="hf-q3s4" class="shop-kicker">NOUVELLE COLLECTION</div>
+                  <div data-hf-id="hf-szkk" class="shop-title">L'élégance<br data-hf-id="hf-szow">africaine.</div>
+                  <div data-hf-id="hf-qfce" class="shop-sub">Des pièces uniques, façonnées à Dakar.</div>
+                  <div data-hf-id="hf-y6r3" class="shop-cta">Découvrir la collection →</div>
+                </div>
+                <div data-hf-id="hf-la1x" class="shop-visual">
+                  <div data-hf-id="hf-d1uq" class="halo"></div>
+                  <div data-hf-id="hf-fe5o" class="visual-block">
+                    <svg data-hf-id="hf-8dio" viewBox="0 0 24 24" fill="none" stroke-width="1.4"><path data-hf-id="hf-stx1" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-sh16" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg>
+                  </div>
+                </div>
+              </div>
+              <div data-hf-id="hf-s05h" class="shop-grid">
+                <div data-hf-id="hf-tug4" class="shop-item"><div data-hf-id="hf-j2vj" class="shop-item-img a"><svg data-hf-id="hf-zpgl" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-vm28" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-ugkb" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg></div><div data-hf-id="hf-72kz" class="shop-item-name">Sac en raphia</div><div data-hf-id="hf-k46n" class="shop-item-price">13 500 FCFA</div></div>
+                <div data-hf-id="hf-sffg" class="shop-item"><div data-hf-id="hf-87dw" class="shop-item-img b"><svg data-hf-id="hf-03rm" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-4tvh" d="m12 3 2.4 5.6L20 11l-5.6 2.4L12 19l-2.4-5.6L4 11l5.6-2.4L12 3Z" /></svg></div><div data-hf-id="hf-q0pe" class="shop-item-name">Boubou brodé</div><div data-hf-id="hf-57wk" class="shop-item-price">24 000 FCFA</div></div>
+                <div data-hf-id="hf-r8id" class="shop-item"><div data-hf-id="hf-b6nh" class="shop-item-img c"><svg data-hf-id="hf-0i2n" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle data-hf-id="hf-zbhz" cx="12" cy="12" r="8" /><circle data-hf-id="hf-jik8" cx="12" cy="12" r="3" /></svg></div><div data-hf-id="hf-6vff" class="shop-item-name">Collier perles</div><div data-hf-id="hf-o13j" class="shop-item-price">8 500 FCFA</div></div>
+                <div data-hf-id="hf-rmte" class="shop-item"><div data-hf-id="hf-rqre" class="shop-item-img d"><svg data-hf-id="hf-0wdo" viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path data-hf-id="hf-c214" d="M7 4h10l2 5-3 2v9H8v-9L5 9l2-5Z" /></svg></div><div data-hf-id="hf-m1my" class="shop-item-name">Sandales cuir</div><div data-hf-id="hf-vt6w" class="shop-item-price">15 000 FCFA</div></div>
+              </div>
+              <div data-hf-id="hf-jnb5" class="shop-live"><span data-hf-id="hf-04y4" class="dot"></span>Boutique en ligne</div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-xipd" class="phone" id="s5-phone-frame">
+            <div data-hf-id="hf-9o7x" class="phone-screen" data-layout-allow-overlap data-layout-allow-occlusion>
+              <div data-hf-id="hf-c27x" class="phone-notch"></div>
+              <div data-hf-id="hf-3hcz" class="ph-status">
+                <span data-hf-id="hf-zwmt">9:41</span>
+                <span data-hf-id="hf-zxxh" class="signal"><i data-hf-id="hf-6aqh" style="height:4px;"></i><i data-hf-id="hf-61db" style="height:6px;"></i><i data-hf-id="hf-bdhx" style="height:8px;"></i><i data-hf-id="hf-nmds" style="height:10px;"></i></span>
+              </div>
+              <div data-hf-id="hf-qh4o" class="ph-nav"><span data-hf-id="hf-9sco" class="back">←</span><span data-hf-id="hf-4ogf" class="ph-brand">DAKAR MODE</span></div>
+              <div data-hf-id="hf-t93e" class="ph-img">
+                <svg data-hf-id="hf-ct9d" viewBox="0 0 24 24" fill="none" stroke-width="1.25"><path data-hf-id="hf-v7r7" d="M6 9.5h12l1.4 10H4.6l1.4-10Z" /><path data-hf-id="hf-uuvc" d="M9 9.5V8a3 3 0 0 1 6 0v1.5" /></svg>
+              </div>
+              <div data-hf-id="hf-7rnd" class="ph-info">
+                <div data-hf-id="hf-5vjr" class="ph-name">Sac en raphia</div>
+                <div data-hf-id="hf-vxpf" class="ph-price">13 500 FCFA</div>
+                <div data-hf-id="hf-3phx" class="ph-sizes"><div data-hf-id="hf-orl0" class="ph-size on">M</div><div data-hf-id="hf-z6wq" class="ph-size">L</div><div data-hf-id="hf-3o8m" class="ph-size">XL</div></div>
+              </div>
+              <div data-hf-id="hf-tgit" class="ph-cta" id="s5-ph-cta">Commander
+                <svg data-hf-id="hf-x8bl" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-xp4k" d="M4 12h15M13 6l6 6-6 6" /></svg>
+              </div>
+              <div data-hf-id="hf-0qzm" class="checkout-sheet" id="s5-sheet">
+                <div data-hf-id="hf-egi8" class="sheet-grab"></div>
+                <div data-hf-id="hf-qtri" class="sheet-title">Finaliser la commande</div>
+                <div data-hf-id="hf-gvbx" class="sheet-sub">Paiement à la livraison · Dakar</div>
+                <div data-hf-id="hf-se96" class="sheet-field"><span data-hf-id="hf-nos3" class="fplaceholder" id="s5-name-ph">Nom complet</span><span data-hf-id="hf-wgy7" class="fclip" id="s5-name"></span><span data-hf-id="hf-odce" class="caret" id="s5-caret"></span></div>
+                <div data-hf-id="hf-ay9a" class="sheet-field"><span data-hf-id="hf-mzwa" class="fplaceholder" id="s5-phone-ph">Téléphone</span><span data-hf-id="hf-8btm" class="fclip" id="s5-phone"></span></div>
+                <div data-hf-id="hf-bckb" class="sheet-field"><span data-hf-id="hf-29jt" class="fplaceholder" id="s5-address-ph">Adresse de livraison</span><span data-hf-id="hf-cww2" class="fclip" id="s5-address"></span></div>
+                <div data-hf-id="hf-4qs2" class="sheet-field" style="background:#f0fdf4;border-color:#bbf7d0;">
+                  <svg data-hf-id="hf-d2jr" style="width:16px;height:16px;stroke:#059669;margin-right:8px;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect data-hf-id="hf-h51h" x="2.5" y="6" width="19" height="12" rx="2" /><circle data-hf-id="hf-y1oj" cx="12" cy="12" r="2.5" /></svg>
+                  Paiement à la livraison
+                  <span data-hf-id="hf-34z2" class="check" style="margin-left:auto;width:18px;height:18px;border-radius:50%;background:#059669;display:grid;place-items:center;"><svg data-hf-id="hf-44uk" style="width:9px;height:9px;stroke:#fff;stroke-width:3.5;" viewBox="0 0 24 24" fill="none"><path data-hf-id="hf-f1r4" d="m5 12.5 4.5 4.5L19 7" /></svg></span>
+                </div>
+                <div data-hf-id="hf-1iir" class="sheet-btn" id="s5-pay">Confirmer la commande · 13 500 FCFA</div>
+                <div data-hf-id="hf-orn2" class="sheet-note">
+                  <svg data-hf-id="hf-233w" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-58or" x="4" y="10.5" width="16" height="10" rx="2" /><path data-hf-id="hf-4kl4" d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>
+                  Vos informations restent privées
+                </div>
+              </div>
+              <div data-hf-id="hf-oo4u" class="success-overlay" id="s5-success">
+                <div data-hf-id="hf-svx2" class="success-check"><svg data-hf-id="hf-s365" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-eng3" d="m5 12.5 4.5 4.5L19 7" /></svg></div>
+                <div data-hf-id="hf-cd22" class="success-title">Commande confirmée</div>
+                <div data-hf-id="hf-6ioh" class="success-sub">Le vendeur a été notifié</div>
+                <div data-hf-id="hf-ltcm" class="success-order">N° SE-1042 · 13 500 FCFA</div>
+              </div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-zpo7" class="notif" id="s5-notif" style="opacity:0;">
+            <div data-hf-id="hf-yqre" class="notif-ico"><svg data-hf-id="hf-1osv" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-h80f" d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path data-hf-id="hf-olnu" d="M10.3 21a2 2 0 0 0 3.4 0" /></svg></div>
+            <div data-hf-id="hf-bc66">
+              <div data-hf-id="hf-4i77" class="notif-title">Nouvelle commande</div>
+              <div data-hf-id="hf-7jgc" class="notif-sub">Aïssatou D. · Sac en raphia</div>
+            </div>
+            <div data-hf-id="hf-rgii" class="notif-amount">13 500 FCFA</div>
+          </div>
+
+          <svg data-hf-id="hf-463m" class="cursor" id="s5-cursor" style="left:1452px;top:790px;" viewBox="0 0 26 30" fill="none">
+            <path data-hf-id="hf-6m0u" d="M3 2.5 21.5 13l-8.2 2.6L9.7 24 3 2.5Z" fill="#0f172a" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+          <div data-hf-id="hf-nc6s" class="click-ring" id="s5-click" style="left:1436px;top:774px;"></div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-4pvx" id="scene-6" class="clip scene scene-dark s6" data-start="27" data-duration="3" data-track-index="6">
+        <div data-hf-id="hf-vp02" class="stage">
+          <div data-hf-id="hf-uqf8" class="grid-bg"></div>
+          <div data-hf-id="hf-pasj" class="glow glow-green" id="s6-glow1" style="width:1200px;height:1200px;left:-340px;top:-520px;"></div>
+          <div data-hf-id="hf-i6es" class="glow glow-teal" id="s6-glow2" style="width:1100px;height:1100px;right:-300px;bottom:-520px;"></div>
+          <div data-hf-id="hf-n4e9" style="position:absolute;left:50%;top:50%;width:820px;height:820px;margin:-410px 0 0 -410px;border:1px solid rgba(52,211,153,.12);border-radius:50%;"></div>
+          <div data-hf-id="hf-72q3" style="position:absolute;left:50%;top:50%;width:1080px;height:1080px;margin:-540px 0 0 -540px;border:1px solid rgba(52,211,153,.07);border-radius:50%;"></div>
+          <div data-hf-id="hf-bl4c" class="s1-frame"></div>
+          <div data-hf-id="hf-e0lx" class="outro">
+            <div data-hf-id="hf-oly2" class="brand" id="s6-brand">
+              <div data-hf-id="hf-78s2" class="mark" style="width:76px;height:76px;border-radius:22px;">
+                <svg data-hf-id="hf-dzr8" viewBox="0 0 24 24" fill="none" style="width:37px;height:37px;">
+                  <path data-hf-id="hf-gpy7" d="M12 2.6 21 7.5v9L12 21.4 3 16.5v-9L12 2.6Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+                  <path data-hf-id="hf-7dpc" d="m3.5 7.6 8.5 4.8 8.5-4.8M12 12.4v8.7" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div data-hf-id="hf-mgbm" class="wordmark" style="font-size:38px;">Shop<span data-hf-id="hf-ryku">Eazy</span></div>
+            </div>
+            <h1 data-hf-id="hf-xziu" class="h1" id="s6-title" style="font-size:92px;">
+              <span data-hf-id="hf-c92h" class="line">Vendez plus.</span>
+              <span data-hf-id="hf-vh17" class="line"><span data-hf-id="hf-amd7" class="grad-light">Gérez mieux.</span></span>
+            </h1>
+            <p data-hf-id="hf-78l7" class="sub" id="s6-sub">La vitrine qui travaille pour vous, <strong data-hf-id="hf-hyur">24 h/24.</strong></p>
+            <div data-hf-id="hf-2vns" class="outro-cta" id="s6-cta">
+              shopeazy.com
+              <svg data-hf-id="hf-yf8o" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-wi7h" d="M4 12h15M13 6l6 6-6 6" /></svg>
+            </div>
+            <div data-hf-id="hf-08wn" class="outro-badge" id="s6-badge"><b data-hf-id="hf-cdw3">0 FCFA</b> pour commencer · Sans carte bancaire</div>
+            <div data-hf-id="hf-praz" class="outro-foot" id="s6-foot">Créer ma boutique <span data-hf-id="hf-1bmq">·</span> Gérer mes commandes <span data-hf-id="hf-8hs6">·</span> Livrer &amp; encaisser</div>
+          </div>
+        </div>
+      </section>
+
+      <div data-hf-id="hf-o6ww" id="progress"><div data-hf-id="hf-c4bu" id="progress-fill"></div></div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      gsap.set("#s1-brand", { opacity: 0, y: 26 });
+      gsap.set("#s1-title .line", { opacity: 0, y: 70 });
+      gsap.set(["#s1-sub", "#s1-pills"], { opacity: 0, y: 30 });
+      gsap.set("#s1-foot", { opacity: 0 });
+      gsap.set(["#s2-eyebrow", "#s2-title", "#s2-sub"], { opacity: 0, y: 32 });
+      gsap.set("#s2-steps .step", { opacity: 0, x: -26 });
+      gsap.set("#s2-panel", { opacity: 0, x: 70 });
+      gsap.set(["#s2-float1", "#s2-float2"], { opacity: 0, scale: 0.9, y: 14 });
+      gsap.set("#s2-cursor", { opacity: 0 });
+      gsap.set("#s2-click", { opacity: 0 });
+      gsap.set("#s2-panel .check", { opacity: 0, scale: 0.4 });
+
+      gsap.set(["#s3-eyebrow", "#s3-title", "#s3-sub"], { opacity: 0, y: 32 });
+      gsap.set("#s3-editor", { opacity: 0, x: 60 });
+      gsap.set("#s3-preview", { opacity: 0, y: 46 });
+      gsap.set("#s3-nocode", { opacity: 0, y: 12 });
+      gsap.set("#s3-cursor", { opacity: 0 });
+      gsap.set("#s3-click", { opacity: 0 });
+
+      tl.to("#s1-glow1", { scale: 1.12, opacity: 0.9, duration: 3.6, ease: "sine.inOut" }, 0)
+        .to("#s1-glow2", { scale: 1.08, opacity: 0.9, duration: 3.2, ease: "sine.inOut" }, 0.2)
+        .to("#s1-brand", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.12)
+        .to("#s1-title .line", { opacity: 1, y: 0, duration: 1, stagger: 0.14, ease: "power3.out" }, 0.42)
+        .to("#s1-sub", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.9)
+        .to("#s1-pills", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 1.22)
+        .to("#s1-foot", { opacity: 1, duration: 0.7 }, 1.5)
+        .to(".s1-wrap", { opacity: 0, y: -28, duration: 0.6, ease: "power2.in" }, 3.22)
+        .to("#s1-foot", { opacity: 0, duration: 0.4 }, 3.26);
+
+      tl.to("#s2-eyebrow", { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 4.05)
+        .to("#s2-title", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 4.2)
+        .to("#s2-sub", { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 4.45)
+        .to("#s2-steps .step", { opacity: 1, x: 0, duration: 0.6, stagger: 0.12, ease: "power3.out" }, 4.45)
+        .to("#s2-panel", { opacity: 1, x: 0, duration: 0.8, ease: "power3.out" }, 4.6)
+        .to("#s2-float1", { opacity: 1, scale: 1, y: 0, duration: 0.55, ease: "back.out(1.6)" }, 7.3)
+        .to("#s2-float2", { opacity: 1, scale: 1, y: 0, duration: 0.55, ease: "back.out(1.6)" }, 7.45);
+
+      const s2name = "Dakar Mode";
+      const s2url = "dakarmode";
+      const s2o1 = { n: 0 };
+      const s2o2 = { n: 0 };
+      tl.set("#s2-caret", { opacity: 1 }, 4.95)
+        .to(s2o1, {
+          n: s2name.length, duration: 0.8, ease: "none",
+          onUpdate: () => { document.querySelector("#s2-shopname").textContent = s2name.slice(0, Math.round(s2o1.n)); }
+        }, 4.95)
+        .set("#s2-caret2", { opacity: 1 }, 6)
+        .to(s2o2, {
+          n: s2url.length, duration: 0.75, ease: "none",
+          onUpdate: () => { document.querySelector("#s2-url").textContent = s2url.slice(0, Math.round(s2o2.n)); }
+        }, 6)
+        .to("#s2-panel .check", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 6.78)
+        .set(["#s2-caret", "#s2-caret2"], { opacity: 0 }, 6.9)
+        .to("#s2-cursor", { opacity: 1, duration: 0.2 }, 6.95)
+        .to("#s2-cursor", { x: -96, y: -248, duration: 0.75, ease: "power2.inOut" }, 7)
+        .set("#s2-click", { opacity: 0.9, scale: 0.35 }, 7.78)
+        .to("#s2-click", { opacity: 0, scale: 1.8, duration: 0.5, ease: "power2.out" }, 7.82)
+        .to("#s2-create-btn", { scale: 0.96, duration: 0.1 }, 7.8)
+        .to("#s2-create-btn", { scale: 1, duration: 0.3, ease: "back.out(2)" }, 7.92)
+        .to("#s2-cursor", { opacity: 0, duration: 0.3 }, 8.2)
+        .to(["#s2-title", "#s2-sub", "#s2-steps"], { opacity: 0, y: -18, duration: 0.5, ease: "power2.in" }, 8.92)
+        .to(["#s2-panel", "#s2-float1", "#s2-float2"], { opacity: 0, y: -22, duration: 0.5, ease: "power2.in" }, 8.98);
+
+      tl.set(["#s2-panel", "#s2-float1", "#s2-float2"], { opacity: 0 }, 9.5);
+
+      tl.to("#s3-eyebrow", { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 9.6)
+        .to("#s3-title", { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" }, 9.72)
+        .to("#s3-sub", { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, 9.95)
+        .to("#s3-editor", { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" }, 9.9)
+        .to("#s3-preview", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 10)
+        .to("#s3-nocode", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 10.4)
+        .to("#s3-preview .pv-card", { opacity: 1, y: 0, duration: 0.5, stagger: 0.07 }, 10.5);
+
+      gsap.set("#s3-preview .pv-card", { opacity: 0, y: 18 });
+
+      tl.to("#s3-ring", { x: 64, duration: 0.35, ease: "power2.inOut" }, 11)
+        .to("#pv-hero", { backgroundColor: "#fff7ed", duration: 0.45 }, 11.02)
+        .to("#pv-cta", { backgroundColor: "#c2410c", duration: 0.45 }, 11.02)
+        .to("#pv-price", { color: "#c2410c", duration: 0.45 }, 11.02)
+        .to("#pv-logo", { color: "#c2410c", duration: 0.45 }, 11.02)
+        .call(() => { document.querySelector("#s3-hex").textContent = "#C2410C · TERRE CUITE"; }, null, 11.1)
+        .to("#s3-cursor", { opacity: 1, duration: 0.2 }, 10.9)
+        .to("#s3-cursor", { x: 62, y: -152, duration: 0.65, ease: "power2.inOut" }, 10.98)
+        .set("#s3-click", { opacity: 0.9, scale: 0.35 }, 11.62)
+        .to("#s3-click", { opacity: 0, scale: 1.8, duration: 0.45 }, 11.66)
+        .to("#s3-ring", { x: 0, duration: 0.35, ease: "power2.inOut" }, 12.5)
+        .to("#pv-hero", { backgroundColor: "#ecfdf5", duration: 0.45 }, 12.52)
+        .to("#pv-cta", { backgroundColor: "#047857", duration: 0.45 }, 12.52)
+        .to("#pv-price", { color: "#047857", duration: 0.45 }, 12.52)
+        .to("#pv-logo", { color: "#0f172a", duration: 0.45 }, 12.52)
+        .call(() => { document.querySelector("#s3-hex").textContent = "#059669 · ÉMERAUDE"; }, null, 12.62)
+        .to("#s3-cursor", { x: 0, y: 0, duration: 0.6, ease: "power2.inOut" }, 12.55)
+        .to("#s3-cursor", { opacity: 0, duration: 0.25 }, 13.1);
+
+      tl.call(() => {
+        const rows = document.querySelectorAll(".font-row");
+        rows.forEach((row) => row.classList.remove("on"));
+        rows[1].classList.add("on");
+      }, null, 13.25)
+        .call(() => {
+          const switches = document.querySelectorAll(".toggle-row .switch");
+          switches[2].classList.add("on");
+        }, null, 13.9)
+        .to("#s3-nocode", { scale: 1.04, duration: 0.2, yoyo: true, repeat: 1 }, 14.1)
+        .to(["#s3-title", "#s3-sub"], { opacity: 0, y: -18, duration: 0.45, ease: "power2.in" }, 14.95)
+        .to("#s3-editor", { opacity: 0, x: -30, duration: 0.5, ease: "power2.in" }, 15)
+        .to("#s3-preview", { opacity: 0, y: -30, duration: 0.5, ease: "power2.in" }, 15.02);
+
+      tl.set("#s3-editor", { opacity: 0 }, 15.5);
+      tl.set("#s3-preview", { opacity: 0 }, 15.5);
+
+      gsap.set(["#s4-eyebrow", "#s4-title", "#s4-sub"], { opacity: 0, y: 32 });
+      gsap.set("#s4-import", { opacity: 0, x: -60 });
+      gsap.set("#s4-catalog", { opacity: 0, x: 60 });
+      gsap.set("#s4-catalog .product-card", { opacity: 0, y: 24, scale: 0.96 });
+      gsap.set("#s4-result", { opacity: 0, y: 10 });
+      gsap.set("#s4-callouts .pill", { opacity: 0, y: 12 });
+
+      gsap.set(["#s5-eyebrow", "#s5-title", "#s5-sub"], { opacity: 0, y: 30 });
+      gsap.set("#s5-shop", { opacity: 0, y: 40 });
+      gsap.set("#s5-phone-frame", { opacity: 0, y: 70 });
+      gsap.set("#s5-callouts .pill", { opacity: 0, y: 12 });
+      gsap.set("#s5-notif", { opacity: 0, y: -14, scale: 0.97 });
+      gsap.set("#s5-sheet", { yPercent: 100 });
+      gsap.set("#s5-success", { opacity: 0 });
+      gsap.set("#s5-cursor", { opacity: 0 });
+      gsap.set("#s5-click", { opacity: 0 });
+
+      gsap.set(["#s6-brand", "#s6-sub", "#s6-cta", "#s6-badge", "#s6-foot"], { opacity: 0, y: 26 });
+      gsap.set("#s6-title .line", { opacity: 0, y: 62 });
+      gsap.set("#progress-fill", { scaleX: 0 });
+
+      tl.to("#s4-eyebrow", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 15.6)
+        .to("#s4-title", { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 15.72)
+        .to("#s4-sub", { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 15.95)
+        .to("#s4-import", { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" }, 15.9)
+        .to("#s4-catalog", { opacity: 1, x: 0, duration: 0.8, ease: "power3.out" }, 16.02)
+        .to("#s4-callouts .pill", { opacity: 1, y: 0, duration: 0.45, stagger: 0.1 }, 16.4);
+
+      const s4url = "dakarmode.shop/catalogue";
+      const s4o = { n: 0, progress: 0 };
+      tl.to(s4o, {
+        n: s4url.length, duration: 0.8, ease: "none",
+        onUpdate: () => { document.querySelector("#s4-url").textContent = s4url.slice(0, Math.round(s4o.n)); }
+      }, 16.25)
+        .call(() => { document.querySelector("#s4-status").textContent = "Analyse de la boutique…"; }, null, 17.08)
+        .to(s4o, {
+          progress: 100, duration: 1.45, ease: "power1.inOut",
+          onUpdate: () => {
+            const v = Math.round(s4o.progress);
+            document.querySelector("#s4-progress").style.width = v + "%";
+            document.querySelector("#s4-percent").textContent = v + "%";
+          }
+        }, 17.1)
+        .call(() => { document.querySelector("#s4-status").textContent = "Récupération des produits…"; }, null, 17.75)
+        .call(() => { document.querySelector("#s4-chip1").classList.add("done"); }, null, 17.9)
+        .call(() => { document.querySelector("#s4-chip2").classList.add("done"); }, null, 18.15)
+        .call(() => { document.querySelector("#s4-chip3").classList.add("done"); }, null, 18.38)
+        .call(() => { document.querySelector("#s4-status").textContent = "Catalogue synchronisé"; }, null, 18.55)
+        .to("#s4-result", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 18.6)
+        .to("#s4-catalog .product-card", { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.1, ease: "back.out(1.4)" }, 18.75)
+        .to(["#s4-title", "#s4-sub"], { opacity: 0, y: -18, duration: 0.45, ease: "power2.in" }, 20.95)
+        .to("#s4-import", { opacity: 0, x: -36, duration: 0.5, ease: "power2.in" }, 21)
+        .to("#s4-catalog", { opacity: 0, x: 36, duration: 0.5, ease: "power2.in" }, 21.02);
+
+      tl.set("#s4-import", { opacity: 0 }, 21.5);
+      tl.set("#s4-catalog", { opacity: 0 }, 21.5);
+
+      tl.to("#s5-eyebrow", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 21.6)
+        .to("#s5-title", { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 21.72)
+        .to("#s5-sub", { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 21.94)
+        .to("#s5-callouts .pill", { opacity: 1, y: 0, duration: 0.45, stagger: 0.1 }, 22.05)
+        .to("#s5-shop", { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" }, 21.95)
+        .to("#s5-phone-frame", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 22.1)
+        .to("#s5-notif", { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "back.out(1.7)" }, 22.5)
+        .to("#s5-notif", { opacity: 0, y: -12, duration: 0.4, ease: "power2.in" }, 24.2)
+        .to("#s5-cursor", { opacity: 1, duration: 0.2 }, 22.85)
+        .to("#s5-cursor", { x: 18, y: -152, duration: 0.7, ease: "power2.inOut" }, 22.9)
+        .set("#s5-click", { opacity: 0.9, scale: 0.35 }, 23.12)
+        .to("#s5-click", { opacity: 0, scale: 1.8, duration: 0.45 }, 23.16)
+        .to("#s5-ph-cta", { scale: 0.95, duration: 0.1 }, 23.12)
+        .to("#s5-ph-cta", { scale: 1, duration: 0.3, ease: "back.out(2)" }, 23.24)
+        .to("#s5-sheet", { yPercent: 0, duration: 0.7, ease: "power3.out" }, 23.3)
+        .to("#s5-cursor", { opacity: 0, duration: 0.25 }, 23.6);
+
+      const s5name = "Aïssatou Diop";
+      const s5phone = "+221 77 123 45 67";
+      const s5addr = "Sacré-Cœur 3, Dakar";
+      const s5o1 = { n: 0 }, s5o2 = { n: 0 }, s5o3 = { n: 0 };
+      tl.call(() => { document.querySelector("#s5-name-ph").style.display = "none"; document.querySelector("#s5-caret").style.opacity = "1"; }, null, 23.55)
+        .to(s5o1, {
+          n: s5name.length, duration: 0.5, ease: "none",
+          onUpdate: () => { document.querySelector("#s5-name").textContent = s5name.slice(0, Math.round(s5o1.n)); }
+        }, 23.55)
+        .call(() => { document.querySelector("#s5-phone-ph").style.display = "none"; }, null, 24.1)
+        .to(s5o2, {
+          n: s5phone.length, duration: 0.5, ease: "none",
+          onUpdate: () => { document.querySelector("#s5-phone").textContent = s5phone.slice(0, Math.round(s5o2.n)); }
+        }, 24.1)
+        .call(() => { document.querySelector("#s5-address-ph").style.display = "none"; document.querySelector("#s5-caret").style.opacity = "0"; }, null, 24.65)
+        .to(s5o3, {
+          n: s5addr.length, duration: 0.5, ease: "none",
+          onUpdate: () => { document.querySelector("#s5-address").textContent = s5addr.slice(0, Math.round(s5o3.n)); }
+        }, 24.65)
+        .to("#s5-pay", { scale: 0.97, duration: 0.1 }, 25.25)
+        .to("#s5-pay", { scale: 1, duration: 0.3, ease: "back.out(2)" }, 25.35)
+        .to("#s5-sheet", { yPercent: 100, duration: 0.55, ease: "power3.in" }, 25.35)
+        .to("#s5-success", { opacity: 1, duration: 0.4 }, 25.6)
+        .fromTo("#s5-success .success-check", { scale: 0.5 }, { scale: 1, duration: 0.55, ease: "back.out(2)" }, 25.6)
+        .fromTo("#s5-success .success-order", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 }, 25.95)
+        .to("#s5-phone-frame", { scale: 1.02, duration: 0.5, ease: "sine.inOut" }, 26.2)
+        .to("#s5-phone-frame", { scale: 1, duration: 0.5, ease: "sine.inOut" }, 26.7);
+
+      tl.to("#s6-glow1", { scale: 1.1, duration: 2.8, ease: "sine.inOut" }, 27)
+        .to("#s6-glow2", { scale: 1.08, duration: 2.6, ease: "sine.inOut" }, 27.2)
+        .to("#s6-brand", { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 27.08)
+        .to("#s6-title .line", { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, ease: "power3.out" }, 27.24)
+        .to("#s6-sub", { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 27.62)
+        .to("#s6-cta", { opacity: 1, y: 0, duration: 0.6, ease: "back.out(1.5)" }, 27.84)
+        .to("#s6-badge", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 28.12)
+        .to("#s6-foot", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 28.3)
+        .to("#s6-cta", { scale: 1.035, duration: 0.35, yoyo: true, repeat: 1, ease: "sine.inOut" }, 28.6)
+        .to("#progress-fill", { scaleX: 1, duration: 30, ease: "none" }, 0);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

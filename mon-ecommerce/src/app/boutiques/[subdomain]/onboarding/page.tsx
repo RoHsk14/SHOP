@@ -146,14 +146,14 @@ export default function OnboardingPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Devise par défaut</label>
                 <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} className={inputClass}>
-                  <optgroup label="🌍 Afrique">
+                  <optgroup label="Devises Africaines">
                     {worldCurrencies.filter(c => c.region === "africa").map((curr) => (
-                      <option key={curr.code} value={curr.code}>{curr.flag} {curr.name} ({curr.code})</option>
+                      <option key={curr.code} value={curr.code}>{curr.code} — {curr.name}</option>
                     ))}
                   </optgroup>
-                  <optgroup label="🌐 Monde">
+                  <optgroup label="Autres Devises">
                     {worldCurrencies.filter(c => c.region !== "africa").map((curr) => (
-                      <option key={curr.code} value={curr.code}>{curr.flag} {curr.name} ({curr.code})</option>
+                      <option key={curr.code} value={curr.code}>{curr.code} — {curr.name}</option>
                     ))}
                   </optgroup>
                 </select>

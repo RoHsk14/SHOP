@@ -87,6 +87,10 @@ input::placeholder, select::placeholder, textarea::placeholder {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes marquee-ltr {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
 
 .animate-fade-in { animation: fadeIn 0.4s ease-out both; }
 .animate-slide-up { animation: slideUp 0.5s ease-out both; }
@@ -204,6 +208,10 @@ input::placeholder, select::placeholder, textarea::placeholder {
 /* Dark mode overrides for light (gray/white) admin classes */
 [data-admin-theme="dark"] .bg-gray-50 { background-color: #09090b !important; }
 [data-admin-theme="dark"] .bg-gray-50\/50 { background-color: rgba(9, 9, 11, 0.5) !important; }
+[data-admin-theme="dark"] .bg-gray-50\/60 { background-color: rgba(9, 9, 11, 0.6) !important; }
+[data-admin-theme="dark"] .bg-gray-50\/70 { background-color: #09090b !important; }
+[data-admin-theme="dark"] .bg-gray-50\/80 { background-color: #09090b !important; }
+[data-admin-theme="dark"] .bg-gray-50\/90 { background-color: #09090b !important; }
 [data-admin-theme="dark"] .bg-white { background-color: #18181b !important; }
 [data-admin-theme="dark"] .bg-gray-100 { background-color: #27272a !important; }
 [data-admin-theme="dark"] .bg-gray-200 { background-color: #3f3f46 !important; }
@@ -217,7 +225,15 @@ input::placeholder, select::placeholder, textarea::placeholder {
 [data-admin-theme="dark"] .bg-green-100 { background-color: rgba(34, 197, 94, 0.1) !important; }
 [data-admin-theme="dark"] .bg-yellow-50 { background-color: rgba(250, 204, 21, 0.06) !important; }
 [data-admin-theme="dark"] .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.06) !important; }
-[data-admin-theme="dark"] .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.1) !important; }
+[data-admin-theme="dark"] .bg-emerald-50\/50 { background-color: rgba(16, 185, 129, 0.08) !important; }
+[data-admin-theme="dark"] .bg-emerald-50\/60 { background-color: rgba(16, 185, 129, 0.08) !important; }
+[data-admin-theme="dark"] .bg-emerald-50\/70 { background-color: rgba(16, 185, 129, 0.1) !important; }
+[data-admin-theme="dark"] .bg-emerald-50\/80 { background-color: rgba(16, 185, 129, 0.12) !important; }
+[data-admin-theme="dark"] .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
+[data-admin-theme="dark"] .bg-emerald-950 { background-color: rgba(6, 78, 59, 0.4) !important; }
+[data-admin-theme="dark"] .bg-emerald-900 { background-color: rgba(6, 78, 59, 0.3) !important; }
+[data-admin-theme="dark"] .bg-purple-50 { background-color: rgba(147, 51, 234, 0.15) !important; }
+[data-admin-theme="dark"] .bg-purple-100 { background-color: rgba(147, 51, 234, 0.25) !important; }
 [data-admin-theme="dark"] .text-gray-900 { color: #fafafa !important; }
 [data-admin-theme="dark"] .text-gray-800 { color: #e4e4e7 !important; }
 [data-admin-theme="dark"] .text-gray-700 { color: #d4d4d8 !important; }
@@ -230,24 +246,38 @@ input::placeholder, select::placeholder, textarea::placeholder {
 [data-admin-theme="dark"] .text-green-700 { color: #22c55e !important; }
 [data-admin-theme="dark"] .text-green-800 { color: #22c55e !important; }
 [data-admin-theme="dark"] .text-yellow-800 { color: #fbbf24 !important; }
-[data-admin-theme="dark"] .text-emerald-700 { color: #34d399 !important; }
-[data-admin-theme="dark"] .text-emerald-800 { color: #34d399 !important; }
-[data-admin-theme="dark"] .text-emerald-600 { color: #10b981 !important; }
+[data-admin-theme="dark"] .text-emerald-950 { color: #ecfdf5 !important; }
+[data-admin-theme="dark"] .text-emerald-900 { color: #d1fae5 !important; }
+[data-admin-theme="dark"] .text-emerald-900\/80 { color: rgba(209, 250, 229, 0.85) !important; }
+[data-admin-theme="dark"] .text-emerald-800 { color: #a7f3d0 !important; }
+[data-admin-theme="dark"] .text-emerald-700 { color: #6ee7b7 !important; }
+[data-admin-theme="dark"] .text-emerald-600 { color: #34d399 !important; }
 [data-admin-theme="dark"] .text-emerald-500 { color: #10b981 !important; }
+[data-admin-theme="dark"] .text-purple-800 { color: #d8b4fe !important; }
+[data-admin-theme="dark"] .text-purple-700 { color: #c084fc !important; }
+[data-admin-theme="dark"] .text-purple-600 { color: #c084fc !important; }
 [data-admin-theme="dark"] .text-red-500 { color: #f43f5e !important; }
 [data-admin-theme="dark"] .text-red-700 { color: #f43f5e !important; }
 [data-admin-theme="dark"] .text-white\/60 { color: rgba(255, 255, 255, 0.4) !important; }
 [data-admin-theme="dark"] .text-white\/70 { color: rgba(255, 255, 255, 0.5) !important; }
 [data-admin-theme="dark"] .text-white\/80 { color: rgba(255, 255, 255, 0.6) !important; }
 [data-admin-theme="dark"] .border-gray-200 { border-color: rgba(39, 39, 42, 0.5) !important; }
+[data-admin-theme="dark"] .border-gray-200\/80 { border-color: rgba(39, 39, 42, 0.6) !important; }
+[data-admin-theme="dark"] .border-gray-200\/90 { border-color: rgba(39, 39, 42, 0.6) !important; }
+[data-admin-theme="dark"] .border-gray-200\/60 { border-color: rgba(39, 39, 42, 0.4) !important; }
 [data-admin-theme="dark"] .border-gray-100 { border-color: rgba(39, 39, 42, 0.3) !important; }
 [data-admin-theme="dark"] .border-gray-50 { border-color: rgba(39, 39, 42, 0.15) !important; }
 [data-admin-theme="dark"] .border-gray-300 { border-color: #3f3f46 !important; }
 [data-admin-theme="dark"] .border-gray-400 { border-color: #52525b !important; }
 [data-admin-theme="dark"] .border-green-200 { border-color: rgba(34, 197, 94, 0.2) !important; }
-[data-admin-theme="dark"] .border-yellow-100 { border-color: rgba(250, 204, 21, 0.15) !important; }
-[data-admin-theme="dark"] .border-emerald-100\/50 { border-color: rgba(16, 185, 129, 0.2) !important; }
+[data-admin-theme="dark"] .border-emerald-100 { border-color: rgba(16, 185, 129, 0.2) !important; }
+[data-admin-theme="dark"] .border-emerald-100\/50 { border-color: rgba(16, 185, 129, 0.15) !important; }
+[data-admin-theme="dark"] .border-emerald-100\/70 { border-color: rgba(16, 185, 129, 0.15) !important; }
+[data-admin-theme="dark"] .border-emerald-200 { border-color: rgba(16, 185, 129, 0.25) !important; }
+[data-admin-theme="dark"] .border-emerald-200\/80 { border-color: rgba(16, 185, 129, 0.25) !important; }
 [data-admin-theme="dark"] .border-emerald-500 { border-color: rgba(16, 185, 129, 0.5) !important; }
+[data-admin-theme="dark"] .border-purple-200 { border-color: rgba(147, 51, 234, 0.3) !important; }
+[data-admin-theme="dark"] .border-purple-200\/80 { border-color: rgba(147, 51, 234, 0.25) !important; }
 [data-admin-theme="dark"] .border-white\/30 { border-color: rgba(255, 255, 255, 0.1) !important; }
 [data-admin-theme="dark"] .divide-gray-50 > * + * { border-color: rgba(39, 39, 42, 0.15) !important; }
 [data-admin-theme="dark"] .divide-gray-100 > * + * { border-color: rgba(39, 39, 42, 0.3) !important; }
@@ -318,6 +348,10 @@ input::placeholder, select::placeholder, textarea::placeholder {
 [data-admin-theme="dark"] .focus\:border-green-500:focus { border-color: #22c55e !important; }
 [data-admin-theme="dark"] .focus\:ring-emerald-500:focus { --tw-ring-color: #10b981 !important; }
 [data-admin-theme="dark"] .focus\:ring-green-500:focus { --tw-ring-color: #22c55e !important; }
+[data-admin-theme="dark"] input[type="file"]::file-selector-button {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
 
 /* Also keep zinc overrides for any pages still using them */
 [data-admin-theme="dark"] .bg-zinc-950 { background-color: #09090b !important; }
@@ -465,9 +499,68 @@ input::placeholder, select::placeholder, textarea::placeholder {
 .tiptap h2 { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.5rem; line-height: 1.3; }
 .tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0 0.25rem; line-height: 1.3; }
 
+/* ─── TipTap & Prose Dark Mode Support ─── */
+[data-admin-theme="dark"] .prose {
+  --tw-prose-body: #e4e4e7;
+  --tw-prose-headings: #ffffff;
+  --tw-prose-lead: #d4d4d8;
+  --tw-prose-links: #34d399;
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: #a1a1aa;
+  --tw-prose-bullets: #71717a;
+  --tw-prose-hr: #3f3f46;
+  --tw-prose-quotes: #d4d4d8;
+  --tw-prose-quote-borders: #10b981;
+  --tw-prose-captions: #a1a1aa;
+  --tw-prose-code: #ffffff;
+  --tw-prose-pre-code: #e4e4e7;
+  --tw-prose-pre-bg: #18181b;
+  --tw-prose-th-borders: #3f3f46;
+  --tw-prose-td-borders: #27272a;
+  color: #e4e4e7 !important;
+}
+
+[data-admin-theme="dark"] .tiptap {
+  color: #e4e4e7 !important;
+}
+[data-admin-theme="dark"] .tiptap h1,
+[data-admin-theme="dark"] .tiptap h2,
+[data-admin-theme="dark"] .tiptap h3,
+[data-admin-theme="dark"] .tiptap h4,
+[data-admin-theme="dark"] .tiptap h5,
+[data-admin-theme="dark"] .tiptap h6 {
+  color: #ffffff !important;
+}
+[data-admin-theme="dark"] .tiptap p,
+[data-admin-theme="dark"] .tiptap li,
+[data-admin-theme="dark"] .tiptap span {
+  color: #e4e4e7 !important;
+}
+[data-admin-theme="dark"] .tiptap strong,
+[data-admin-theme="dark"] .tiptap b {
+  color: #ffffff !important;
+}
+[data-admin-theme="dark"] .tiptap a {
+  color: #34d399 !important;
+}
+[data-admin-theme="dark"] .tiptap blockquote {
+  color: #a1a1aa !important;
+  border-left-color: #10b981 !important;
+}
+[data-admin-theme="dark"] .tiptap p.is-editor-empty:first-child::before {
+  color: #71717a !important;
+}
+
 /* ─── Confetti ─── */
 .confetti-wrap { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
 .confetti-dot { position: absolute; top: -12px; animation: confettiFall 3s linear forwards; }
+
+/* ─── Sticky Admin Header ─── */
+.admin-header-sticky {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
 
 /* ─── Dark mode structural enhancements ─── */
 [data-admin-theme="dark"] .admin-scroll-wrap {
@@ -653,5 +746,187 @@ input::placeholder, select::placeholder, textarea::placeholder {
 [data-admin-theme="dark"] .text-emerald-600 {
   color: #34d399 !important;
 }
+
+/* ─── Customizer Studio Mobile Preview Simulation (390px frame inside desktop window) ─── */
+.is-mobile-canvas {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.is-mobile-canvas * {
+  box-sizing: border-box;
+}
+
+/* Force 1-column layouts for desktop grids inside mobile canvas */
+.is-mobile-canvas .lg\:grid-cols-12,
+.is-mobile-canvas .lg\:grid-cols-2,
+.is-mobile-canvas .md\:grid-cols-2 {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+.is-mobile-canvas .lg\:col-span-12,
+.is-mobile-canvas .lg\:col-span-7,
+.is-mobile-canvas .lg\:col-span-6,
+.is-mobile-canvas .lg\:col-span-5 {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Product cards: on mobile they should strictly be 2 columns */
+.is-mobile-canvas .lg\:grid-cols-4,
+.is-mobile-canvas .lg\:grid-cols-3,
+.is-mobile-canvas .md\:grid-cols-4,
+.is-mobile-canvas .md\:grid-cols-3,
+.is-mobile-canvas .sm\:grid-cols-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+/* ─── Mobile Canvas Simulator Rules (Simulates true mobile viewport on desktop) ─── */
+.is-mobile-canvas {
+  width: 100% !important;
+  max-width: 390px !important;
+  margin: 0 auto !important;
+  font-size: 14px !important;
+}
+
+/* Clamping container widths */
+.is-mobile-canvas .max-w-\[1240px\],
+.is-mobile-canvas .max-w-7xl,
+.is-mobile-canvas .max-w-6xl,
+.is-mobile-canvas .max-w-5xl,
+.is-mobile-canvas .max-w-4xl,
+.is-mobile-canvas .max-w-3xl {
+  max-width: 100% !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+/* Force mobile single column grids across all responsive breakpoints */
+.is-mobile-canvas .grid.lg\:grid-cols-12,
+.is-mobile-canvas .lg\:grid-cols-12,
+.is-mobile-canvas .lg\:grid-cols-4,
+.is-mobile-canvas .lg\:grid-cols-3,
+.is-mobile-canvas .md\:grid-cols-4,
+.is-mobile-canvas .md\:grid-cols-3,
+.is-mobile-canvas .md\:grid-cols-2,
+.is-mobile-canvas .sm\:grid-cols-3 {
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}
+
+/* Product cards: allow 2 columns on mobile if grid-cols-2 is specified */
+.is-mobile-canvas .grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+.is-mobile-canvas .lg\:col-span-7,
+.is-mobile-canvas .lg\:col-span-5,
+.is-mobile-canvas .lg\:col-span-8,
+.is-mobile-canvas .lg\:col-span-4,
+.is-mobile-canvas .md\:col-span-2,
+.is-mobile-canvas .sm\:col-span-2 {
+  grid-column: span 1 / span 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Force vertical flex stacks where desktop uses row */
+.is-mobile-canvas .md\:flex-row,
+.is-mobile-canvas .lg\:flex-row {
+  flex-direction: column !important;
+}
+
+/* Show all mobile elements */
+.is-mobile-canvas .sm\:hidden,
+.is-mobile-canvas .md\:hidden,
+.is-mobile-canvas .lg\:hidden {
+  display: block !important;
+}
+.is-mobile-canvas button.sm\:hidden,
+.is-mobile-canvas button.md\:hidden,
+.is-mobile-canvas button.lg\:hidden {
+  display: inline-flex !important;
+}
+.is-mobile-canvas span.sm\:hidden,
+.is-mobile-canvas span.md\:hidden,
+.is-mobile-canvas span.lg\:hidden {
+  display: inline !important;
+}
+
+/* Hide all desktop-only elements */
+.is-mobile-canvas .hidden.sm\:flex,
+.is-mobile-canvas .hidden.md\:flex,
+.is-mobile-canvas .hidden.lg\:flex {
+  display: none !important;
+}
+.is-mobile-canvas .hidden.sm\:block,
+.is-mobile-canvas .hidden.md\:block,
+.is-mobile-canvas .hidden.lg\:block {
+  display: none !important;
+}
+.is-mobile-canvas .hidden.sm\:grid,
+.is-mobile-canvas .hidden.md\:grid,
+.is-mobile-canvas .hidden.lg\:grid {
+  display: none !important;
+}
+.is-mobile-canvas .hidden.sm\:inline,
+.is-mobile-canvas .hidden.md\:inline,
+.is-mobile-canvas .hidden.lg\:inline {
+  display: none !important;
+}
+
+/* Scale down oversized desktop typography in mobile canvas */
+.is-mobile-canvas h1,
+.is-mobile-canvas .text-4xl,
+.is-mobile-canvas .text-5xl,
+.is-mobile-canvas .text-6xl,
+.is-mobile-canvas .sm\:text-4xl,
+.is-mobile-canvas .sm\:text-5xl,
+.is-mobile-canvas .lg\:text-4xl,
+.is-mobile-canvas .lg\:text-5xl,
+.is-mobile-canvas .lg\:text-6xl {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+.is-mobile-canvas h2,
+.is-mobile-canvas .text-3xl,
+.is-mobile-canvas .sm\:text-3xl,
+.is-mobile-canvas .lg\:text-3xl {
+  font-size: 1.25rem !important;
+  line-height: 1.75rem !important;
+}
+
+/* Section vertical padding normalization for mobile canvas */
+.is-mobile-canvas section,
+.is-mobile-canvas .py-12,
+.is-mobile-canvas .py-16,
+.is-mobile-canvas .py-20,
+.is-mobile-canvas .py-24,
+.is-mobile-canvas .sm\:py-16,
+.is-mobile-canvas .sm\:py-20,
+.is-mobile-canvas .sm\:py-24,
+.is-mobile-canvas .lg\:py-20,
+.is-mobile-canvas .lg\:py-24 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* Disable sticky positioning in mobile canvas */
+.is-mobile-canvas .lg\:sticky {
+  position: static !important;
+}
+
+/* Product Description: exactly once */
+.is-mobile-canvas .desktop-only-description {
+  display: none !important;
+}
+.is-mobile-canvas .mobile-only-description {
+  display: block !important;
+}
+
 
 

@@ -16,19 +16,21 @@ export default function AuthCallbackPage() {
   };
 
   async function exchangeRefreshToken(token: string, log: (s: string) => void): Promise<any | null> {
+    const authUrl = getNhostAuthUrl();
     for (let attempt = 1; attempt <= 4; attempt++) {
-      log(`[${attempt}] POST ${AUTH_URL}/token ...`);
+      log(`[${attempt}] POST ${authUrl}/token ...`);
       try {
-        const res = await fetch(`${AUTH_URL}/token`, {
+        const res = await fetch(`${authUrl}/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken: token }),
         });
         const data = await res.json().catch(() => null);
-        log(`[${attempt}] status=${res.status} session=${!!data?.session}${data && !data.session ? " body=" + JSON.stringify(data).slice(0, 200) : ""}`);
-        if (data?.session) {
-          localStorage.setItem("nhost-auth-session", JSON.stringify(data.session));
-          return data.session;
+        const session = data?.session || (data?.accessToken ? data : null);
+        log(`[${attempt}] status=${res.status} session=${!!session}${data && !session ? " body=" + JSON.stringify(data).slice(0, 200) : ""}`);
+        if (session) {
+          localStorage.setItem("nhost-auth-session", JSON.stringify(session));
+          return session;
         }
         if (res.status === 429 && attempt < 4) {
           const wait = attempt * 2000;
@@ -67,8 +69,8 @@ export default function AuthCallbackPage() {
         qs.get("error_description") ||
         hash.get("error_description") ||
         "";
-      log("Nhost error: " + urlError + " " + desc);
-      window.location.replace(`${getSiteUrl()}/login?error=callback_error`);
+      console.error("Nhost error:", urlError, desc);
+      window.location.replace(`${getSiteUrl()}/login?error=${encodeURIComponent(urlError)}&error_description=${encodeURIComponent(desc)}`);
       return;
     }
 
@@ -89,7 +91,9 @@ export default function AuthCallbackPage() {
     window.history.replaceState({}, "", window.location.pathname);
 
     if (!stored) {
-      window.location.replace(`${getSiteUrl()}/login?error=session_not_found`);
+      const debugInfo = allKeys.length > 0 ? allKeys.map(k => `${k}=${qs.get(k) || hash.get(k)}`).join("&") : "aucun_paramètre";
+      console.error("Session not found. Params reçus:", debugInfo);
+      window.location.replace(`${getSiteUrl()}/login?error=session_not_found&error_description=${encodeURIComponent(debugInfo)}`);
       return;
     }
 

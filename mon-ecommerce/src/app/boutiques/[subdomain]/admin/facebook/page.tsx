@@ -192,7 +192,7 @@ export default function FacebookChannelPage() {
       const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${metaSettings.meta_access_token}`);
       const data = await res.json();
       if (data.id) {
-        toast.success(`✅ Connecté à Facebook (ID: ${data.id})`);
+        toast.success(`Connecté à Facebook avec succès (ID: ${data.id})`);
       } else {
         toast.error(data.error?.message || "Token invalide");
       }
@@ -531,7 +531,7 @@ export default function FacebookChannelPage() {
 
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs text-amber-700">
-              💡 Les données d&apos;insights sont actuellement en mode <strong>{insights.length > 0 ? "réelles (Meta API)" : "démonstration"}</strong>.
+              Note : Les données d&apos;insights sont actuellement en mode <strong>{insights.length > 0 ? "réelles (Meta API)" : "démonstration"}</strong>.
               {insights.length === 0 && " Connectez un compte Meta Business actif pour voir vos vraies performances."}
             </p>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ArrowLeft,
   Eye,
@@ -16,10 +16,12 @@ import {
   Sliders,
   Layers,
   Sparkles,
+  MousePointerClick,
 } from "lucide-react";
 import { getSectionDefinition } from "@/lib/sections";
 import type { SectionSetting, BlockSetting, SettingDefinition } from "@/lib/theme-config";
 import ImagePicker from "@/components/ImagePicker";
+import { useEditor } from "@/lib/editor-context";
 
 interface SectionInspectorProps {
   section: SectionSetting;
@@ -39,9 +41,44 @@ export default function SectionInspector({
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
   const [expandedBlockIndex, setExpandedBlockIndex] = useState<number | null>(0);
 
+  const { activeFieldKey, activeBlockId, hoveredField, setHoveredField } = useEditor();
+
   const definition = useMemo(() => {
     return getSectionDefinition(section.type);
   }, [section.type]);
+
+  // If a block is focused from the preview canvas, auto-expand it
+  useEffect(() => {
+    if (activeBlockId && section.blocks) {
+      const idx = section.blocks.findIndex(
+        (b, i) => b.id === activeBlockId || String(i) === activeBlockId
+      );
+      if (idx >= 0) {
+        setExpandedBlockIndex(idx);
+      }
+    }
+  }, [activeBlockId, section.blocks]);
+
+  // When activeFieldKey is selected, smoothly scroll the input into view and focus it
+  useEffect(() => {
+    if (!activeFieldKey) return;
+    const targetId = `field-input-${section.id}-${activeFieldKey}${
+      activeBlockId ? `-${activeBlockId}` : ""
+    }`;
+    const timer = setTimeout(() => {
+      const el =
+        document.getElementById(targetId) ||
+        document.getElementById(`field-input-${section.id}-${activeFieldKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+          el.focus();
+          el.select?.();
+        }
+      }
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [activeFieldKey, activeBlockId, section.id]);
 
   const updateSetting = (key: string, value: any) => {
     onUpdateSection({
@@ -142,15 +179,34 @@ export default function SectionInspector({
     return definition.settings.filter((s) => universalKeys.includes(s.key));
   }, [definition]);
 
-  const renderField = (setting: SettingDefinition, value: any, onChange: (val: any) => void) => {
-    const baseInput =
-      "w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-sm";
+  const renderField = (
+    setting: SettingDefinition,
+    value: any,
+    onChange: (val: any) => void,
+    blockId?: string
+  ) => {
+    const inputId = `field-input-${section.id}-${setting.key}${blockId ? `-${blockId}` : ""}`;
+    const isFieldFocused =
+      activeFieldKey === setting.key && (!blockId || activeBlockId === blockId);
+    const isFieldHovered =
+      hoveredField?.sectionId === section.id &&
+      hoveredField?.fieldKey === setting.key &&
+      (!blockId || hoveredField?.blockId === blockId);
+
+    const isHighlighted = isFieldFocused || isFieldHovered;
+
+    const baseInput = `w-full text-sm px-3 py-2 bg-white border rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm ${
+      isHighlighted
+        ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-50/20"
+        : "border-gray-200 focus:border-emerald-500"
+    }`;
 
     switch (setting.type) {
       case "text":
       case "url":
         return (
           <input
+            id={inputId}
             type="text"
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
@@ -162,6 +218,7 @@ export default function SectionInspector({
       case "textarea":
         return (
           <textarea
+            id={inputId}
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={setting.placeholder || (setting.default as string) || ""}
@@ -175,7 +232,7 @@ export default function SectionInspector({
 
       case "color":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" id={inputId}>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -210,6 +267,7 @@ export default function SectionInspector({
       case "select":
         return (
           <select
+            id={inputId}
             value={value ?? (setting.default as string)}
             onChange={(e) => onChange(e.target.value)}
             className={baseInput}
@@ -224,7 +282,14 @@ export default function SectionInspector({
 
       case "boolean":
         return (
-          <label className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200/80 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+          <label
+            id={inputId}
+            className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-colors ${
+              isHighlighted
+                ? "bg-emerald-50/70 border-emerald-400"
+                : "bg-gray-50 border-gray-200/80 hover:bg-gray-100"
+            }`}
+          >
             <span className="text-xs font-semibold text-gray-800">{setting.label}</span>
             <input
               type="checkbox"
@@ -357,16 +422,42 @@ export default function SectionInspector({
           <>
             {/* Primary content fields */}
             <div className="space-y-4">
-              {contentSettings.map((s) => (
-                <div key={s.key} className="space-y-1.5">
-                  {s.type !== "boolean" && (
-                    <label className="block text-xs font-bold text-gray-700">
-                      {s.label}
-                    </label>
-                  )}
-                  {renderField(s, section.settings[s.key], (val) => updateSetting(s.key, val))}
-                </div>
-              ))}
+              {contentSettings.map((s) => {
+                const isHighlighted =
+                  (activeFieldKey === s.key && !activeBlockId) ||
+                  (hoveredField?.sectionId === section.id &&
+                    hoveredField?.fieldKey === s.key &&
+                    !hoveredField?.blockId);
+
+                return (
+                  <div
+                    key={s.key}
+                    onMouseEnter={() => setHoveredField({ sectionId: section.id, fieldKey: s.key })}
+                    onMouseLeave={() => setHoveredField(null)}
+                    className={`space-y-1.5 p-2 rounded-xl transition-all ${
+                      isHighlighted
+                        ? "bg-emerald-50/70 ring-1 ring-emerald-300 shadow-xs"
+                        : "hover:bg-gray-50/60"
+                    }`}
+                  >
+                    {s.type !== "boolean" && (
+                      <label
+                        htmlFor={`field-input-${section.id}-${s.key}`}
+                        className="block text-xs font-bold text-gray-700 flex items-center justify-between cursor-pointer"
+                      >
+                        <span>{s.label}</span>
+                        {isHighlighted && (
+                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Sur le preview
+                          </span>
+                        )}
+                      </label>
+                    )}
+                    {renderField(s, section.settings[s.key], (val) => updateSetting(s.key, val))}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Blocks / Elements (Slides, FAQ items, etc.) */}
@@ -441,16 +532,51 @@ export default function SectionInspector({
 
                         {isExpanded && blockDef && (
                           <div className="p-3.5 space-y-3 border-t border-gray-100 bg-white">
-                            {blockDef.settings.map((bs) => (
-                              <div key={bs.key} className="space-y-1">
-                                <label className="block text-xs font-medium text-gray-600">
-                                  {bs.label}
-                                </label>
-                                {renderField(bs, block.settings[bs.key], (val) =>
-                                  updateBlockSetting(idx, bs.key, val)
-                                )}
-                              </div>
-                            ))}
+                            {blockDef.settings.map((bs) => {
+                              const isBlockFieldHighlighted =
+                                (activeFieldKey === bs.key && activeBlockId === block.id) ||
+                                (hoveredField?.sectionId === section.id &&
+                                  hoveredField?.fieldKey === bs.key &&
+                                  hoveredField?.blockId === block.id);
+
+                              return (
+                                <div
+                                  key={bs.key}
+                                  onMouseEnter={() =>
+                                    setHoveredField({
+                                      sectionId: section.id,
+                                      fieldKey: bs.key,
+                                      blockId: block.id,
+                                    })
+                                  }
+                                  onMouseLeave={() => setHoveredField(null)}
+                                  className={`space-y-1 p-2 rounded-xl transition-all ${
+                                    isBlockFieldHighlighted
+                                      ? "bg-emerald-50/70 ring-1 ring-emerald-300 shadow-xs"
+                                      : "hover:bg-gray-50/60"
+                                  }`}
+                                >
+                                  <label
+                                    htmlFor={`field-input-${section.id}-${bs.key}-${block.id}`}
+                                    className="block text-xs font-medium text-gray-700 flex items-center justify-between cursor-pointer"
+                                  >
+                                    <span>{bs.label}</span>
+                                    {isBlockFieldHighlighted && (
+                                      <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        Sur le preview
+                                      </span>
+                                    )}
+                                  </label>
+                                  {renderField(
+                                    bs,
+                                    block.settings[bs.key],
+                                    (val) => updateBlockSetting(idx, bs.key, val),
+                                    block.id
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -481,16 +607,33 @@ export default function SectionInspector({
               <span>Ajustez l'espacement et l'arrière-plan de cette section uniquement.</span>
             </div>
 
-            {styleSettings.map((s) => (
-              <div key={s.key} className="space-y-1.5">
-                {s.type !== "boolean" && (
-                  <label className="block text-xs font-bold text-gray-700">
-                    {s.label}
-                  </label>
-                )}
-                {renderField(s, section.settings[s.key], (val) => updateSetting(s.key, val))}
-              </div>
-            ))}
+            {styleSettings.map((s) => {
+              const isHighlighted =
+                hoveredField?.sectionId === section.id && hoveredField?.fieldKey === s.key;
+
+              return (
+                <div
+                  key={s.key}
+                  onMouseEnter={() => setHoveredField({ sectionId: section.id, fieldKey: s.key })}
+                  onMouseLeave={() => setHoveredField(null)}
+                  className={`space-y-1.5 p-2 rounded-xl transition-all ${
+                    isHighlighted
+                      ? "bg-emerald-50/70 ring-1 ring-emerald-300 shadow-xs"
+                      : "hover:bg-gray-50/60"
+                  }`}
+                >
+                  {s.type !== "boolean" && (
+                    <label
+                      htmlFor={`field-input-${section.id}-${s.key}`}
+                      className="block text-xs font-bold text-gray-700 cursor-pointer"
+                    >
+                      {s.label}
+                    </label>
+                  )}
+                  {renderField(s, section.settings[s.key], (val) => updateSetting(s.key, val))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

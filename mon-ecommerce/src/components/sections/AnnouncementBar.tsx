@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { AnnouncementMessage } from "@/lib/theme-config";
 import EditableText, { hasTextValue } from "@/components/EditableText";
+import { useShop } from "@/lib/shop-context";
+import { useEditor } from "@/lib/editor-context";
 
 interface Props {
   settings: {
@@ -16,8 +18,10 @@ interface Props {
 }
 
 export default function AnnouncementBar({ settings }: Props) {
+  const { shopLink } = useShop();
+  const { isEditor } = useEditor();
   const messages = settings.messages?.length ? settings.messages : [
-    { id: "a1", text: (settings.text as any) || "🚚 Livraison gratuite !", background: settings.background || "var(--theme-primary)" },
+    { id: "a1", text: (settings.text as any) || "Livraison gratuite pour toute commande !", background: settings.background || "var(--theme-primary)" },
   ];
   const [current, setCurrent] = useState(0);
 
@@ -49,11 +53,13 @@ export default function AnnouncementBar({ settings }: Props) {
       )}
       {msg?.url ? (
         <Link
-          href={msg.url}
+          href={shopLink(msg.url)}
           className="transition-opacity hover:opacity-80"
           style={{ color: textColor }}
           onClick={(e) => {
-            if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+            if (isEditor || (e.target as HTMLElement)?.isContentEditable) {
+              e.preventDefault();
+            }
           }}
         >
           <EditableText as="span" value={displayText} />

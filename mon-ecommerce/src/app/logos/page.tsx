@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 
 const LOGOS = [
   {
@@ -117,8 +118,9 @@ export default function LogoSelector() {
         </div>
 
         {selected && (
-          <div className="fixed bottom-6 right-6 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-slide-up">
-            ✅ SVG copié dans le presse-papier
+          <div className="fixed bottom-6 right-6 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-slide-up flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0" />
+            SVG copié dans le presse-papier
           </div>
         )}
       </div>

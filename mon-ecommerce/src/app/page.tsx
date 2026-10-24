@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Menu, X, Star, Play, TrendingUp, Palette, BarChart4 } from "lucide-react";
+import { ChevronDown, Menu, X, Star, Play, TrendingUp, Palette, BarChart4, Store, Upload, ShoppingBag } from "lucide-react";
 
 const testimonials = [
   {
@@ -85,6 +86,100 @@ const brands = [
   { name: "Guinée Market", initials: "GM" },
   { name: "Boutique Ami", initials: "BA" },
 ];
+
+const journeySteps = [
+  {
+    icon: Store,
+    title: "Boutique en 5 minutes",
+    text: "Nom, adresse et devise : votre vitrine est prête à recevoir ses premières commandes.",
+  },
+  {
+    icon: Upload,
+    title: "Catalogue importé",
+    text: "Photos, prix et descriptions récupérés automatiquement depuis votre ancienne boutique.",
+  },
+  {
+    icon: ShoppingBag,
+    title: "Première vente",
+    text: "Notification instantanée, commande centralisée et encaissement à la livraison.",
+  },
+];
+
+function MotionPlayer({
+  src,
+  poster,
+  label,
+  className = "",
+}: {
+  src: string;
+  poster: string;
+  label: string;
+  className?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(video);
+    return () => {
+      observer.disconnect();
+      video.pause();
+    };
+  }, []);
+
+  return (
+    <div className={`relative ${className}`}>
+      <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-r from-emerald-400/10 via-teal-400/10 to-blue-400/10 blur-2xl" />
+      <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-2xl shadow-emerald-900/10 sm:rounded-3xl">
+        <div className="flex h-8 items-center gap-1.5 border-b border-gray-100 bg-gray-50 px-3 sm:h-9 sm:gap-2 sm:px-4">
+          <span className="h-2 w-2 rounded-full bg-red-400 sm:h-2.5 sm:w-2.5" />
+          <span className="h-2 w-2 rounded-full bg-amber-400 sm:h-2.5 sm:w-2.5" />
+          <span className="h-2 w-2 rounded-full bg-emerald-400 sm:h-2.5 sm:w-2.5" />
+          <div className="ml-2 flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[10px] text-gray-400 ring-1 ring-gray-100 sm:ml-3 sm:text-[11px]">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span className="truncate">shopeazy.com/apercu</span>
+          </div>
+          <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-gray-500 ring-1 ring-gray-100 sm:inline-flex">
+            30 s
+          </span>
+        </div>
+        <div className="relative aspect-video overflow-hidden bg-gray-900">
+          <video
+            ref={videoRef}
+            src={src}
+            poster={poster}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label={label}
+            className="h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-gray-700 shadow-sm backdrop-blur sm:bottom-4 sm:left-4">
+            <Play className="h-3 w-3 fill-emerald-600 text-emerald-600" />
+            Démo · 30 s
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AnimatedCounter({ value, suffix = "", decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
   const [count, setCount] = useState(0);
@@ -280,52 +375,19 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Card cluster — TrendTrack-style overlapping cards */}
-          <div className="animate-fade-up delay-4 flex flex-col items-center">
-            <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-              {/* Glow behind main card */}
-              <div className="hidden sm:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-400/20 rounded-full blur-[80px] pointer-events-none" />
-
-              {/* Sidebar card (left, smaller) — rotated & offset */}
-              <div className="hidden sm:block w-28 lg:w-32 -mb-8 sm:mb-0 sm:-mr-8 lg:-mr-10 rotate-[-3deg] hover:rotate-0 hover:z-20 transition-all duration-500 hover:shadow-2xl">
-                <div className="rounded-2xl border border-gray-200/70 shadow-lg bg-white overflow-hidden">
-                  <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                    <span className="w-2 h-2 rounded-full bg-red-400" />
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <img src="/screenshots/sidebar.png" alt="Menu latéral" className="w-full h-auto" />
-                </div>
-                <p className="text-center text-[10px] text-gray-400 mt-1.5 tracking-wide uppercase font-medium">Navigation</p>
-              </div>
-
-              {/* Main analytics card — elevated with glow */}
-              <div className="relative w-72 sm:w-80 lg:w-96 z-10 hover:scale-[1.02] transition-transform duration-500">
-                <div className="absolute -inset-[3px] bg-gradient-to-br from-emerald-400/30 via-teal-400/20 to-transparent rounded-[18px] blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl border border-gray-200/80 shadow-2xl shadow-emerald-900/10 bg-white overflow-hidden">
-                  <div className="h-6 sm:h-7 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4">
-                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400 shadow-sm" />
-                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 shadow-sm" />
-                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 shadow-sm" />
-                    <div className="ml-2 sm:ml-3 h-2 sm:h-2.5 w-20 sm:w-28 bg-gray-200/60 rounded-full" />
-                  </div>
-                  <img src="/screenshots/dashboard-analytics.png" alt="Dashboard analytique" className="w-full h-auto" />
-                </div>
-                <p className="text-center text-[10px] text-gray-400 mt-1.5 tracking-wide uppercase font-medium">Analytics</p>
-              </div>
-
-              {/* Welcome card (right, smaller) — rotated & offset */}
-              <div className="hidden sm:block w-36 lg:w-44 -mt-8 sm:mt-0 sm:-ml-8 lg:-ml-10 rotate-[3deg] hover:rotate-0 hover:z-20 transition-all duration-500 hover:shadow-2xl">
-                <div className="rounded-2xl border border-gray-200/70 shadow-lg bg-white overflow-hidden">
-                  <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                    <span className="w-2 h-2 rounded-full bg-red-400" />
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  </div>
-                  <img src="/screenshots/dashboard-welcome.png" alt="Accueil dashboard" className="w-full h-auto" />
-                </div>
-                <p className="text-center text-[10px] text-gray-400 mt-1.5 tracking-wide uppercase font-medium">Accueil</p>
-              </div>
+          <div className="animate-fade-up delay-4 mx-auto max-w-5xl">
+            <MotionPlayer
+              src="/motion/mot3.mp4"
+              poster="/motion/mot3-poster.jpg"
+              label="Démonstration ShopEazy : création de boutique, personnalisation, import du catalogue et première vente"
+            />
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              {["Commandes en temps réel", "Suivi des statuts", "Paiement à la livraison"].map((item) => (
+                <span key={item} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -396,14 +458,14 @@ export default function LandingPage() {
             </div>
             <div className="animate-fade-up delay-3 relative flex justify-center lg:justify-end">
               <div className="hidden sm:block absolute -top-4 -left-4 w-40 h-40 bg-emerald-200/20 rounded-full blur-[60px] pointer-events-none" />
-              <div className="relative w-full max-w-md rounded-2xl border border-gray-200/80 shadow-2xl shadow-emerald-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
+              <div className="relative w-full max-w-lg rounded-2xl border border-gray-200/80 shadow-2xl shadow-emerald-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
                 <div className="h-6 sm:h-7 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4">
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 shadow-sm" />
                   <div className="ml-2 sm:ml-3 h-2 sm:h-2.5 w-28 sm:w-36 bg-gray-200/60 rounded-full" />
                 </div>
-                <img src="/screenshots/products-table.png" alt="Gestion des produits" className="w-full h-auto" />
+                <Image src="/motion/mot3-catalogue.jpg" alt="Catalogue de produits importé dans ShopEazy" width={1200} height={900} sizes="(min-width: 1024px) 512px, 100vw" className="w-full h-auto" />
               </div>
             </div>
           </div>
@@ -414,14 +476,14 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div className="animate-fade-up order-2 lg:order-1 relative flex justify-center lg:justify-start">
               <div className="hidden sm:block absolute -bottom-4 -right-4 w-40 h-40 bg-blue-200/20 rounded-full blur-[60px] pointer-events-none" />
-              <div className="relative w-full max-w-md rounded-2xl border border-gray-200/80 shadow-2xl shadow-blue-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
+              <div className="relative w-full max-w-lg rounded-2xl border border-gray-200/80 shadow-2xl shadow-blue-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
                 <div className="h-6 sm:h-7 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4">
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 shadow-sm" />
                   <div className="ml-2 sm:ml-3 h-2 sm:h-2.5 w-28 sm:w-36 bg-gray-200/60 rounded-full" />
                 </div>
-                <img src="/screenshots/dashboard-analytics.png" alt="Dashboard" className="w-full h-auto" />
+                <Image src="/motion/mot4-dashboard.jpg" alt="Commandes et indicateurs de ventes dans le dashboard ShopEazy" width={1200} height={900} sizes="(min-width: 1024px) 512px, 100vw" className="w-full h-auto" />
               </div>
             </div>
             <div className="animate-fade-up delay-3 order-1 lg:order-2">
@@ -478,14 +540,14 @@ export default function LandingPage() {
             </div>
             <div className="animate-fade-up delay-3 relative flex justify-center lg:justify-end">
               <div className="hidden sm:block absolute -top-4 -left-4 w-40 h-40 bg-purple-200/20 rounded-full blur-[60px] pointer-events-none" />
-              <div className="relative w-full max-w-md rounded-2xl border border-gray-200/80 shadow-2xl shadow-purple-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
+              <div className="relative w-full max-w-lg rounded-2xl border border-gray-200/80 shadow-2xl shadow-purple-900/8 bg-white overflow-hidden hover:scale-[1.01] transition-transform duration-500">
                 <div className="h-6 sm:h-7 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4">
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 shadow-sm" />
                   <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 shadow-sm" />
                   <div className="ml-2 sm:ml-3 h-2 sm:h-2.5 w-28 sm:w-36 bg-gray-200/60 rounded-full" />
                 </div>
-                <img src="/screenshots/settings.png" alt="Personnalisation" className="w-full h-auto" />
+                <Image src="/motion/mot3-personnalisation.jpg" alt="Aperçu d'une boutique personnalisée avec ShopEazy" width={1200} height={900} sizes="(min-width: 1024px) 512px, 100vw" className="w-full h-auto" />
               </div>
             </div>
           </div>
@@ -493,126 +555,42 @@ export default function LandingPage() {
 
       </section>
 
-      {/* ── Admin Showcase ── */}
+      {/* ── Full Journey Showcase ── */}
       <section className="py-16 sm:py-24 bg-gray-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <div className="animate-fade-up inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 border border-emerald-200/50">
-              Administration
+              Parcours ShopEazy
             </div>
             <h2 className="animate-fade-up delay-2 text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 tracking-tight font-heading">
-              Gérez votre boutique en toute simplicité
+              De l&apos;idée à la première vente
             </h2>
             <p className="animate-fade-up delay-3 text-gray-500 mt-4 text-lg max-w-2xl mx-auto">
-              Produits, commandes, notifications et paramètres &mdash; tout est centralisé
+              Créez votre vitrine, importez votre catalogue et encaissez votre première commande &mdash; sans friction
             </p>
           </div>
 
-          {/* Row 1: Products + Orders */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-6">
-
-            {/* ─── Products card ─── */}
-            <div className="animate-fade-up delay-3 group relative bg-white rounded-2xl border border-gray-200/70 p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/[0.03] to-transparent pointer-events-none" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-sm shadow-blue-500/20 shrink-0">
-                    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm">Produits</h3>
-                    <p className="text-xs text-gray-400">Catalogue &amp; stock</p>
-                  </div>
-                </div>
-                <div className="relative">
-                  <div className="rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm group-hover:shadow-md transition-shadow duration-500">
-                    <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                      <span className="w-2 h-2 rounded-full bg-red-300" />
-                      <span className="w-2 h-2 rounded-full bg-amber-300" />
-                      <span className="w-2 h-2 rounded-full bg-emerald-300" />
-                    </div>
-                    <img src="/screenshots/products-table.png" alt="Tableau produits" className="w-full h-auto" />
-                  </div>
-                  <div className="absolute -bottom-3 -right-3 w-3/5 rounded-lg border border-gray-100 overflow-hidden bg-white shadow-lg rotate-[4deg] group-hover:rotate-0 group-hover:-translate-x-1 transition-all duration-500">
-                    <div className="h-4 bg-gray-50 border-b border-gray-100 flex items-center gap-1 px-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-300" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-                    </div>
-                    <img src="/screenshots/products-kpi.png" alt="KPIs produits" className="w-full h-auto" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ─── Orders card ─── */}
-            <div className="animate-fade-up delay-4 group relative bg-white rounded-2xl border border-gray-200/70 p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-transparent pointer-events-none" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center shadow-sm shadow-orange-500/20 shrink-0">
-                    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm">Commandes</h3>
-                    <p className="text-xs text-gray-400">Suivi &amp; historique</p>
-                  </div>
-                </div>
-                <div className="relative">
-                  <div className="rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm group-hover:shadow-md transition-shadow duration-500">
-                    <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                      <span className="w-2 h-2 rounded-full bg-red-300" />
-                      <span className="w-2 h-2 rounded-full bg-amber-300" />
-                      <span className="w-2 h-2 rounded-full bg-emerald-300" />
-                    </div>
-                    <img src="/screenshots/orders-list.png" alt="Liste commandes" className="w-full h-auto" />
-                  </div>
-                  <div className="absolute -bottom-3 -right-3 w-2/5 rounded-lg border border-gray-100 overflow-hidden bg-white shadow-lg rotate-[4deg] group-hover:rotate-0 group-hover:-translate-x-1 transition-all duration-500">
-                    <div className="h-4 bg-gray-50 border-b border-gray-100 flex items-center gap-1 px-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-300" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-                    </div>
-                    <img src="/screenshots/orders-kpi.png" alt="KPIs commandes" className="w-full h-auto" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          <div className="animate-fade-up delay-4 mx-auto max-w-5xl">
+            <MotionPlayer
+              src="/motion/mot4.mp4"
+              poster="/motion/mot4-poster.jpg"
+              label="Démonstration ShopEazy : commandes, dashboard et suivi des livraisons"
+            />
           </div>
 
-          {/* Row 2: Settings + Notifications */}
-          <div className="animate-fade-up delay-5 group relative bg-white rounded-2xl border border-gray-200/70 p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/[0.03] to-transparent pointer-events-none" />
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center shadow-sm shadow-purple-500/20 shrink-0">
-                  <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <div className="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-3">
+            {journeySteps.map(({ icon: Icon, title, text }) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-gray-200/70 bg-white p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                  <Icon className="h-[18px] w-[18px]" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-sm">Paramètres</h3>
-                  <p className="text-xs text-gray-400">Configuration &amp; notifications</p>
-                </div>
+                <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{text}</p>
               </div>
-              <div className="flex gap-4">
-                <div className="flex-[3] rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm group-hover:shadow-md transition-shadow duration-500">
-                  <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                    <span className="w-2 h-2 rounded-full bg-red-300" />
-                    <span className="w-2 h-2 rounded-full bg-amber-300" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-300" />
-                  </div>
-                  <img src="/screenshots/settings.png" alt="Paramètres boutique" className="w-full h-auto" />
-                </div>
-                <div className="flex-1 rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm group-hover:shadow-md transition-shadow duration-500">
-                  <div className="h-5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 px-3">
-                    <span className="w-2 h-2 rounded-full bg-red-300" />
-                    <span className="w-2 h-2 rounded-full bg-amber-300" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-300" />
-                  </div>
-                  <img src="/screenshots/notifications.png" alt="Notifications" className="w-full h-auto" />
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
         </div>
@@ -634,14 +612,14 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 max-w-4xl mx-auto">
             {[
-              { name: "Paiement à la livraison", initials: "💵", color: "from-emerald-500 to-emerald-600", coming: false },
+              { name: "Paiement à la livraison", initials: "COD", color: "from-emerald-500 to-emerald-600", coming: false },
               { name: "Orange Money", initials: "OM", color: "from-orange-500 to-orange-600", coming: true },
               { name: "Wave", initials: "WV", color: "from-blue-500 to-blue-600", coming: true },
               { name: "MTN Money", initials: "MTN", color: "from-yellow-500 to-yellow-600", coming: true },
               { name: "Moov Money", initials: "MV", color: "from-red-500 to-red-600", coming: true },
               { name: "Free Money", initials: "FM", color: "from-purple-500 to-purple-600", coming: true },
               { name: "Airtel Money", initials: "AM", color: "from-pink-500 to-pink-600", coming: true },
-              { name: "Carte bancaire", initials: "💳", color: "from-indigo-500 to-indigo-600", coming: true },
+              { name: "Carte bancaire", initials: "CB", color: "from-indigo-500 to-indigo-600", coming: true },
             ].map((p, i) => (
               <div key={p.name} className={`animate-fade-up delay-${i + 1} group relative bg-white rounded-2xl border p-5 transition-all duration-300 ${
                 p.coming ? "border-gray-100 opacity-60 grayscale hover:opacity-80" : "border-emerald-200 shadow-sm shadow-emerald-100 hover:shadow-xl hover:-translate-y-0.5"
@@ -894,9 +872,16 @@ export default function LandingPage() {
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Légal</h4>
               <ul className="space-y-2">
-                {["Conditions d'utilisation", "Politique de confidentialité", "CGV"].map((l) => (
-                  <li key={l}><Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors">{l}</Link></li>
-                ))}
+                <li>
+                  <Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    Conditions d'utilisation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    Politique de confidentialité
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

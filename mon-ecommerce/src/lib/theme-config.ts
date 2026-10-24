@@ -401,13 +401,12 @@ export function getSystemPageDefaultContentSections(slug: string): SectionSettin
   if (slug === "/products/[slug]") {
     return [
       { id: "product-breadcrumbs", type: "product-breadcrumbs", settings: {} },
-      { id: "product-gallery", type: "product-gallery", settings: { lightbox: true, layout: "sidebar", thumbnails_position: "bottom", sticky: false, zoom: true } },
-      { id: "product-info", type: "product-info", settings: { show_title: true, show_price: true, show_description: true, show_badges: true, description_mode: "inline", description_placement: "below", description_title: "Description", description_bg: "", image_position: "left" } },
-      { id: "product-messaging", type: "product-messaging", settings: { show_delivery: false, delivery_text: "", show_payment: false, payment_text: "", show_returns: false, returns_text: "", show_guarantee: false, guarantee_text: "", layout: "row" } },
-      { id: "product-accordion", type: "product-accordion", settings: {}, blocks: [
+      { id: "product-gallery", type: "product-gallery", settings: { lightbox: true, layout: "sidebar", thumbnails_position: "bottom", sticky: true, zoom: true } },
+      { id: "product-info", type: "product-info", settings: { show_title: true, show_price: true, show_description: true, show_badges: true, description_mode: "inline", description_placement: "under_gallery", description_title: "Description", description_bg: "", image_position: "left" } },
+      { id: "product-accordion", type: "product-accordion", disabled: true, settings: {}, blocks: [
         { id: "panel-desc", type: "panel", settings: { title: "Description", content: "", icon: "info", open_by_default: true } },
-        { id: "panel-delivery", type: "panel", settings: { title: "Livraison", content: "Livraison sous 3-5 jours ouvrés.", icon: "truck", open_by_default: false } },
-        { id: "panel-returns", type: "panel", settings: { title: "Retours", content: "Retour gratuit sous 30 jours.", icon: "refresh", open_by_default: false } },
+        { id: "panel-delivery", type: "panel", settings: { title: "Livraison", content: "Livraison sous 24-48h.", icon: "truck", open_by_default: false } },
+        { id: "panel-returns", type: "panel", settings: { title: "Retours", content: "Retour gratuit sous 14 jours.", icon: "refresh", open_by_default: false } },
       ] },
       { id: "product-sharing", type: "product-sharing", settings: { show_facebook: true, show_twitter: true, show_linkedin: true, show_share: true, label: "Partager" } },
     ];
@@ -449,21 +448,68 @@ export function ensureSystemPageInConfig(config: ThemeConfig, slug: string): The
 }
 
 export function getPageSections(config: ThemeConfig, slug: string): SectionSetting[] {
-  if (slug === "/") return config.sections;
+  if (slug === "/") return enforceFooterAtEnd(config.sections || []);
 
   const page = config.pages?.find((p) => p.slug === slug);
 
   if (isSystemPage(slug)) {
-    const globals = getGlobalSections(config.sections);
-    let content = (page?.sections || []).filter((s) => !GLOBAL_SECTION_TYPES.includes(s.type as any));
+    // Header & Announcement bar go BEFORE content:
+    const headerGlobals = (config.sections || []).filter(
+      (s) => s.type === "announcement-bar" || s.type === "header"
+    );
+    const hasHeader = headerGlobals.some((s) => s.type === "header");
+    const topSections = hasHeader
+      ? headerGlobals
+      : [
+          {
+            id: "header",
+            type: "header",
+            settings: {
+              sticky: true,
+              logo_url: "",
+              logo_max_width: 140,
+              navigation_style: "inline",
+            },
+          },
+          ...headerGlobals,
+        ];
+
+    // Footer goes AFTER content:
+    const footerGlobals = (config.sections || []).filter(
+      (s) => s.type === "footer"
+    );
+    const bottomSections =
+      footerGlobals.length > 0
+        ? footerGlobals
+        : [
+            {
+              id: "footer",
+              type: "footer",
+              settings: { show_payment_methods: true },
+              blocks: [
+                {
+                  id: "footer_text",
+                  type: "text",
+                  settings: {
+                    title: "À propos",
+                    content: "Boutique en ligne propulsée par ShopEazy",
+                    show_social_media: true,
+                  },
+                },
+              ],
+            },
+          ];
+
+    let content = (page?.sections || []).filter(
+      (s) => !GLOBAL_SECTION_TYPES.includes(s.type as any)
+    );
     if (content.length === 0) {
       content = getSystemPageDefaultContentSections(slug);
     }
-    const result = [...globals, ...content];
-    return result;
+    return [...topSections, ...content, ...bottomSections];
   }
 
-  return page?.sections || config.sections;
+  return enforceFooterAtEnd(page?.sections || config.sections || []);
 }
 
 /** Ensure footer sections are always at the end */
@@ -482,9 +528,9 @@ export function getDefaultSections(themeId?: string): SectionSetting[] {
         speed: 4000,
         background: "#059669",
         messages: [
-          { id: "a1", text: "🚚 Livraison gratuite pour toute commande — Profitez-en !", url: "" },
-          { id: "a2", text: "🎉 Nouveautés chaque semaine — Découvrez nos derniers produits", url: "/products" },
-          { id: "a3", text: "💳 Paiement sécurisé — 100% satisfait ou remboursé", url: "" },
+          { id: "a1", text: "Livraison gratuite pour toute commande — Profitez-en !", url: "" },
+          { id: "a2", text: "Nouveautés chaque semaine — Découvrez nos derniers produits", url: "/products" },
+          { id: "a3", text: "Paiement sécurisé — 100% satisfait ou remboursé", url: "" },
         ],
       },
     },
@@ -503,8 +549,29 @@ export function getDefaultSections(themeId?: string): SectionSetting[] {
       },
     },
     {
+      id: "hero-banner",
+      type: "image-banner",
+      settings: {
+        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop",
+        background: "#0f172a",
+        title: "Bienvenue sur notre boutique",
+        subheading: "Découvrez notre sélection exclusive de produits soigneusement choisis pour vous.",
+        button_text: "Voir nos produits",
+        button_url: "/products",
+        button_style: "solid",
+        height: "large",
+        text_align: "center",
+        text_position: "center",
+        show_text_box: false,
+        text_color: "#ffffff",
+        overlay_color: "#000000",
+        overlay_opacity: 0.35,
+      },
+    },
+    {
       id: "hero",
       type: "slideshow",
+      disabled: true,
       settings: {
         autoplay: true,
         speed: 6000,
@@ -574,15 +641,6 @@ export function getDefaultSections(themeId?: string): SectionSetting[] {
       id: "cta-banner",
       type: "cta-banner",
       settings: {},
-    },
-    {
-      id: "bundle-offer",
-      type: "bundle-offer",
-      settings: {
-        title: "Offres groupées",
-        subtitle: "Profitez de nos offres spéciales",
-        layout: "list",
-      },
     },
     {
       id: "footer",

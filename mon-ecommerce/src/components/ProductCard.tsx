@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { addToCart } from "@/components/CartDrawer";
 import WishlistButton from "@/components/WishlistButton";
+import { useEditor } from "@/lib/editor-context";
 
 interface Product {
   id: string;
@@ -54,6 +55,7 @@ const BADGE_STYLES: Record<string, { bg: string; text: string }> = {
 };
 
 export default function ProductCard({ product, subdomain, showBadges = true, showWishlist = true }: ProductCardProps) {
+  const { isEditor } = useEditor();
   const imageUrl = product.images?.[0]
     || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop";
   const slug = product.slug || (product.name || "").toLowerCase().replace(/\s+/g, "-");
@@ -75,6 +77,9 @@ export default function ProductCard({ product, subdomain, showBadges = true, sho
   return (
     <Link
       href={`/boutiques/${subdomain}/products/${slug}`}
+      onClick={(e) => {
+        if (isEditor) e.preventDefault();
+      }}
       className="group block rounded-xl overflow-hidden transition-all hover:shadow-lg relative"
       style={{
         background: "var(--theme-surface, #ffffff)",

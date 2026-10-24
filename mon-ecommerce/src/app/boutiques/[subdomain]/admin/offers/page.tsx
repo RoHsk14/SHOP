@@ -25,6 +25,7 @@ type Offer = {
   max_quantity: number | null;
   products: OfferProduct[];
   status: "active" | "inactive";
+  active?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -131,6 +132,7 @@ export default function OffersPage() {
       max_quantity: form.max_quantity,
       products: form.products,
       status: form.status,
+      active: form.status === "active",
     };
 
     if (editingOffer) {
@@ -169,9 +171,29 @@ export default function OffersPage() {
   };
 
   const toggleStatus = async (offer: Offer) => {
-    const newStatus = offer.status === "active" ? "inactive" : "active";
-    await supabase.from("offers").update({ status: newStatus }).eq("id", offer.id);
-    fetchOffers();
+    const isCurrentlyActive = offer.status === "active" || offer.active === true;
+    const newStatus: "active" | "inactive" = isCurrentlyActive ? "inactive" : "active";
+    const newActive = !isCurrentlyActive;
+
+    // Optimistic UI update
+    setOffers((prev) =>
+      prev.map((o) =>
+        o.id === offer.id ? { ...o, status: newStatus, active: newActive } : o
+      )
+    );
+
+    const { error } = await supabase
+      .from("offers")
+      .update({ status: newStatus, active: newActive })
+      .eq("id", offer.id);
+
+    if (error) {
+      toast.error("Erreur lors de la mise à jour : " + (error.message || "Erreur"));
+      fetchOffers();
+    } else {
+      toast.success(newStatus === "active" ? "Offre activée" : "Offre désactivée");
+      fetchOffers();
+    }
   };
 
   const addProduct = (product: { id: string; name: string; images: string[] | null }) => {
@@ -216,8 +238,8 @@ export default function OffersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--theme-text, #111827)" }}>Offres groupées</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
+          <h1 className="text-2xl font-bold text-gray-900">Offres groupées</h1>
+          <p className="text-sm mt-1 text-gray-500">
             Créez des offres de quantité et bundles pour vos produits
           </p>
         </div>
@@ -231,14 +253,13 @@ export default function OffersPage() {
 
       {/* Search */}
       <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--theme-text-muted, #9ca3af)" }} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
           placeholder="Rechercher une offre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm bg-white"
-          style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
         />
       </div>
 
@@ -249,9 +270,9 @@ export default function OffersPage() {
         </div>
       ) : filteredOffers.length === 0 ? (
         <div className="text-center py-20">
-          <Tag className="w-12 h-12 mx-auto mb-4" style={{ color: "var(--theme-text-muted, #9ca3af)" }} />
-          <p className="text-lg font-medium" style={{ color: "var(--theme-text, #111827)" }}>Aucune offre pour le moment</p>
-          <p className="text-sm mt-1" style={{ color: "var(--theme-text-muted, #6b7280)" }}>Créez votre première offre groupée ou de quantité</p>
+          <Tag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-medium text-gray-900">Aucune offre pour le moment</p>
+          <p className="text-sm mt-1 text-gray-500">Créez votre première offre groupée ou de quantité</p>
           <button
             onClick={openCreate}
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-all"
@@ -261,16 +282,17 @@ export default function OffersPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredOffers.map((offer) => (
+          {filteredOffers.map((offer) => {
+            const isActive = offer.status === "active" || offer.active === true;
+            return (
             <div
               key={offer.id}
-              className="bg-white rounded-xl border p-5 transition-all hover:shadow-sm"
-              style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+              className="bg-white rounded-xl border border-gray-200 p-5 transition-all hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-base truncate" style={{ color: "var(--theme-text, #111827)" }}>{offer.name}</h3>
+                    <h3 className="font-semibold text-base truncate text-gray-900">{offer.name}</h3>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         offer.type === "bundle"
@@ -283,21 +305,21 @@ export default function OffersPage() {
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        offer.status === "active"
+                        isActive
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {offer.status === "active" ? "Actif" : "Inactif"}
+                      {isActive ? "Actif" : "Inactif"}
                     </span>
                   </div>
 
                   {offer.description && (
-                    <p className="text-sm mb-2 line-clamp-1" style={{ color: "var(--theme-text-muted, #6b7280)" }}>{offer.description}</p>
+                    <p className="text-sm mb-2 line-clamp-1 text-gray-500">{offer.description}</p>
                   )}
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
-                    <span className="font-medium" style={{ color: "var(--theme-primary, #059669)" }}>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <span className="font-medium text-emerald-600">
                       {formatDiscount(offer)} de réduction
                     </span>
                     {offer.type === "quantity" && (
@@ -312,8 +334,7 @@ export default function OffersPage() {
                     {offer.products.map((p) => (
                       <div
                         key={p.product_id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-lg text-xs"
-                        style={{ color: "var(--theme-text, #111827)" }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-lg text-xs text-gray-900 border border-gray-200/60"
                       >
                         {p.image && (
                           <img src={p.image} alt="" className="w-4 h-4 rounded object-cover" />
@@ -330,12 +351,12 @@ export default function OffersPage() {
                   <button
                     onClick={() => toggleStatus(offer)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                      offer.status === "active"
+                      isActive
                         ? "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                     }`}
                   >
-                    {offer.status === "active" ? "Désactiver" : "Activer"}
+                    {isActive ? "Désactiver" : "Activer"}
                   </button>
                   <button
                     onClick={() => openEdit(offer)}
@@ -352,7 +373,8 @@ export default function OffersPage() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -360,9 +382,9 @@ export default function OffersPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 px-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-t-2xl px-6 py-5 flex items-center justify-between z-10">
+            <div className="shrink-0 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-t-2xl px-6 py-5 flex items-center justify-between z-20">
               <h2 className="text-lg font-semibold text-white">
                 {editingOffer ? "Modifier l'offre" : "Nouvelle offre"}
               </h2>
@@ -371,10 +393,10 @@ export default function OffersPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                <label className="block text-sm font-medium mb-1.5 text-gray-900">
                   Nom de l'offre
                 </label>
                 <input
@@ -382,14 +404,13 @@ export default function OffersPage() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ex: Pack découverte"
-                  className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white"
-                  style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                <label className="block text-sm font-medium mb-1.5 text-gray-900">
                   Description
                 </label>
                 <textarea
@@ -397,36 +418,33 @@ export default function OffersPage() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Description de l'offre..."
                   rows={2}
-                  className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white resize-none"
-                  style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white resize-none"
                 />
               </div>
 
               {/* Type + Discount row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                  <label className="block text-sm font-medium mb-1.5 text-gray-900">
                     Type d'offre
                   </label>
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value as "bundle" | "quantity" })}
-                    className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white"
-                    style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
                   >
                     <option value="bundle">Bundle (plusieurs produits)</option>
                     <option value="quantity">Quantité (même produit)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                  <label className="block text-sm font-medium mb-1.5 text-gray-900">
                     Type de réduction
                   </label>
                   <select
                     value={form.discount_type}
                     onChange={(e) => setForm({ ...form, discount_type: e.target.value as "percentage" | "fixed" })}
-                    className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white"
-                    style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
                   >
                     <option value="percentage">Pourcentage (%)</option>
                     <option value="fixed">Montant fixe (XOF)</option>
@@ -437,7 +455,7 @@ export default function OffersPage() {
               {/* Discount value + Min quantity */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                  <label className="block text-sm font-medium mb-1.5 text-gray-900">
                     Valeur de la réduction
                   </label>
                   <input
@@ -445,12 +463,11 @@ export default function OffersPage() {
                     value={form.discount_value}
                     onChange={(e) => setForm({ ...form, discount_value: parseFloat(e.target.value) || 0 })}
                     min={0}
-                    className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white"
-                    style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--theme-text, #111827)" }}>
+                  <label className="block text-sm font-medium mb-1.5 text-gray-900">
                     Quantité minimum
                   </label>
                   <input
@@ -458,8 +475,7 @@ export default function OffersPage() {
                     value={form.min_quantity}
                     onChange={(e) => setForm({ ...form, min_quantity: parseInt(e.target.value) || 1 })}
                     min={1}
-                    className="w-full px-4 py-2.5 border rounded-xl text-sm bg-white"
-                    style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
                   />
                 </div>
               </div>
@@ -467,7 +483,7 @@ export default function OffersPage() {
               {/* Products picker */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium" style={{ color: "var(--theme-text, #111827)" }}>
+                  <label className="text-sm font-medium text-gray-900">
                     Produits dans l'offre
                   </label>
                   <button
@@ -479,7 +495,7 @@ export default function OffersPage() {
                 </div>
 
                 {showProductPicker && (
-                  <div className="mb-3 p-3 border rounded-xl bg-gray-50" style={{ borderColor: "var(--theme-border, #e5e7eb)" }}>
+                  <div className="mb-3 p-3 border border-gray-200 rounded-xl bg-gray-50">
                     <div className="relative mb-2">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
@@ -487,8 +503,7 @@ export default function OffersPage() {
                         placeholder="Rechercher un produit..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm bg-white"
-                        style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
                         autoFocus
                       />
                     </div>
@@ -509,7 +524,7 @@ export default function OffersPage() {
                                 <Package className="w-3.5 h-3.5 text-gray-400" />
                               </div>
                             )}
-                            <span className="truncate">{p.name}</span>
+                            <span className="truncate text-gray-900">{p.name}</span>
                           </button>
                         ))
                       )}
@@ -518,7 +533,7 @@ export default function OffersPage() {
                 )}
 
                 {form.products.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-3 text-center border border-dashed rounded-xl" style={{ borderColor: "var(--theme-border, #e5e7eb)" }}>
+                  <p className="text-sm text-gray-400 py-3 text-center border border-dashed border-gray-200 rounded-xl">
                     Aucun produit sélectionné
                   </p>
                 ) : (
@@ -526,8 +541,7 @@ export default function OffersPage() {
                     {form.products.map((p) => (
                       <div
                         key={p.product_id}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl border bg-white"
-                        style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
                       >
                         {p.image ? (
                           <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover bg-gray-100" />
@@ -537,7 +551,7 @@ export default function OffersPage() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{p.product_name}</p>
+                          <p className="text-sm font-medium truncate text-gray-900">{p.product_name}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <label className="text-xs text-gray-500">Qté:</label>
@@ -546,8 +560,7 @@ export default function OffersPage() {
                             value={p.quantity}
                             onChange={(e) => updateProductQty(p.product_id, parseInt(e.target.value) || 1)}
                             min={1}
-                            className="w-16 px-2 py-1 border rounded-lg text-sm text-center"
-                            style={{ borderColor: "var(--theme-border, #e5e7eb)" }}
+                            className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm text-center"
                           />
                         </div>
                         <button
@@ -564,7 +577,7 @@ export default function OffersPage() {
 
               {/* Status */}
               <div className="flex items-center gap-3">
-                <label className="text-sm font-medium" style={{ color: "var(--theme-text, #111827)" }}>
+                <label className="text-sm font-medium text-gray-900">
                   Actif
                 </label>
                 <button
@@ -583,7 +596,7 @@ export default function OffersPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex items-center justify-end gap-3" style={{ borderColor: "var(--theme-border, #e5e7eb)" }}>
+            <div className="shrink-0 px-6 py-4 border-t border-gray-200 bg-gray-50/80 flex items-center justify-end gap-3 rounded-b-2xl">
               <button
                 onClick={() => setModalOpen(false)}
                 className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-medium transition-all"
@@ -609,8 +622,8 @@ export default function OffersPage() {
             <div className="w-12 h-12 mx-auto mb-4 bg-red-50 rounded-2xl flex items-center justify-center">
               <Trash2 className="w-6 h-6 text-red-500" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Supprimer l'offre ?</h3>
-            <p className="text-sm mb-6" style={{ color: "var(--theme-text-muted, #6b7280)" }}>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Supprimer l'offre ?</h3>
+            <p className="text-sm mb-6 text-gray-500">
               Cette action est irréversible.
             </p>
             <div className="flex gap-3 justify-center">

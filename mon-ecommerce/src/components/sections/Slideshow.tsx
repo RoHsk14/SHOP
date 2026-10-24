@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import EditableText, { hasTextValue, plainText } from "@/components/EditableText";
+import { useShop } from "@/lib/shop-context";
+import { useEditor } from "@/lib/editor-context";
 
 interface SlideBlock {
   settings: {
@@ -39,13 +41,15 @@ interface Props {
 }
 
 const headingSizes: Record<string, string> = {
-  small: "text-2xl sm:text-3xl",
-  medium: "text-3xl sm:text-4xl",
-  large: "text-4xl sm:text-5xl lg:text-6xl",
-  xlarge: "text-5xl sm:text-6xl lg:text-7xl",
+  small: "text-lg sm:text-2xl",
+  medium: "text-xl sm:text-3xl",
+  large: "text-2xl sm:text-4xl lg:text-5xl",
+  xlarge: "text-2xl sm:text-5xl lg:text-6xl",
 };
 
 export default function Slideshow({ settings, blocks }: Props) {
+  const { shopLink, isMobile } = useShop();
+  const { isEditor } = useEditor();
   const slides = blocks || [];
   const [current, setCurrent] = useState(0);
 
@@ -81,13 +85,21 @@ export default function Slideshow({ settings, blocks }: Props) {
   const arrowStyle = settings.arrow_style || "outline";
   const showDots = settings.show_dots !== false;
 
-  const heightClass = settings.height === "fullscreen"
+  const heightClass = isMobile
+    ? settings.height === "fullscreen"
+      ? "h-[75vh]"
+      : settings.height === "small"
+      ? "h-[260px]"
+      : settings.height === "large"
+      ? "h-[420px]"
+      : "h-[340px]"
+    : settings.height === "fullscreen"
     ? "h-screen"
     : settings.height === "small"
-      ? "h-[40vh]"
-      : settings.height === "large"
-        ? "h-[80vh]"
-        : "h-[60vh]";
+    ? "h-[40vh]"
+    : settings.height === "large"
+    ? "h-[80vh]"
+    : "h-[60vh]";
 
   const positionClasses: Record<string, string> = {
     center: "items-center justify-center",
@@ -172,7 +184,7 @@ export default function Slideshow({ settings, blocks }: Props) {
             )}
             {hasTextValue(slide?.settings?.button_text) && (
               <Link
-                href={slide?.settings?.button_url || "#"}
+                href={shopLink(slide?.settings?.button_url || "/products")}
                 className={`inline-block px-8 py-3 text-sm font-semibold transition-all hover:opacity-90 ${btnClasses}`}
                 style={
                   buttonStyle === "outline"
@@ -190,7 +202,9 @@ export default function Slideshow({ settings, blocks }: Props) {
                         }
                 }
                 onClick={(e) => {
-                  if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+                  if (isEditor || (e.target as HTMLElement)?.isContentEditable) {
+                    e.preventDefault();
+                  }
                 }}
               >
                 <EditableText as="span" value={slide?.settings?.button_text} />

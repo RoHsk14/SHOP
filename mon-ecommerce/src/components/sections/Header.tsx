@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Menu, Search, ShoppingCart, X, ChevronDown } from "lucide-react";
 import { useShop } from "@/lib/shop-context";
 import { useCartCount } from "@/components/CartDrawer";
+import { useEditor } from "@/lib/editor-context";
 import type { NavMenu, SocialLinks, BrandAssets } from "@/lib/theme-config";
 
 interface Props {
@@ -67,7 +68,8 @@ function SubMenu({ items, parentHref, shopLink }: { items: { label: string; url:
 }
 
 export default function Header({ settings, shopName, menus, brand }: Props) {
-  const { openSearch, openCart, mobileMenuOpen, setMobileMenuOpen, config, shopLink } = useShop();
+  const { openSearch, openCart, mobileMenuOpen, setMobileMenuOpen, config, shopLink, isMobile } = useShop();
+  const { isEditor } = useEditor();
   const cartCount = useCartCount();
   const showCart = config?.layout?.showCart !== false;
   const headerStyle = config?.layout?.headerStyle || "standard";
@@ -95,6 +97,9 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
           href={shopLink(item.url)}
           className="inline-flex items-center px-3 py-2 text-sm font-medium transition-colors hover:opacity-70"
           style={{ color: "var(--theme-header-text, var(--theme-text))" }}
+          onClick={(e) => {
+            if (isEditor) e.preventDefault();
+          }}
           {...(item.openInNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         >
           {item.label}
@@ -104,19 +109,25 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
   );
 
   const renderLogo = () => (
-    <div className="flex-shrink-0">
+    <Link
+      href={shopLink("/")}
+      className="flex-shrink-0 inline-block hover:opacity-85 transition-opacity max-w-[170px] sm:max-w-none truncate"
+      onClick={(e) => {
+        if (isEditor) e.preventDefault();
+      }}
+    >
       {logoUrl ? (
         <Image
           src={logoUrl}
           alt="Logo"
           width={logoMaxWidth}
           height={40}
-          className="object-contain"
+          className="object-contain max-h-8 sm:max-h-10 w-auto"
           unoptimized
         />
       ) : (
         <span
-          className="text-lg font-bold"
+          className="text-base sm:text-lg font-bold tracking-tight truncate block"
           style={{
             color: "var(--theme-header-text, var(--theme-text))",
             fontFamily: "var(--theme-font-heading)",
@@ -125,7 +136,7 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
           {shopName || "Ma Boutique"}
         </span>
       )}
-    </div>
+    </Link>
   );
 
   const renderIcons = () => (
@@ -171,7 +182,25 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
       }}
     >
       <div className="mx-auto px-4 sm:px-6" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
-        {isCentered ? (
+        {isMobile ? (
+          /* Mobile layout: burger left, logo centered, icons right */
+          <div className="flex items-center justify-between h-14">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 -ml-2 hover:opacity-75 transition-opacity"
+              aria-label="Menu"
+              style={{ color: "var(--theme-header-text, var(--theme-text))" }}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="flex-1 flex justify-center px-2 truncate min-w-0">
+              {renderLogo()}
+            </div>
+            <div className="flex-shrink-0">
+              {renderIcons()}
+            </div>
+          </div>
+        ) : isCentered ? (
           /* Centered layout: logo centered, nav above, icons absolute */
           <div className="flex flex-col items-center py-3">
             <nav className="hidden sm:flex items-center gap-0 mb-2">
@@ -222,7 +251,10 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t" style={{ borderColor: "var(--theme-border)", background: "var(--theme-surface, #fff)" }}>
+        <div
+          className={`${isMobile ? "block" : "sm:hidden"} border-t animate-in fade-in-50 duration-150`}
+          style={{ borderColor: "var(--theme-border)", background: "var(--theme-surface, #fff)" }}
+        >
           <nav className="px-4 py-3 space-y-1">
             {menuItems.map((item: any) =>
               hasChildren(item) ? (

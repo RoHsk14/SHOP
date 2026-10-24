@@ -1,0 +1,10 @@
+{
+  "name": "shopeazy-mot4",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npx --yes hyperframes@0.7.105 check",
+    "render": "npx --yes hyperframes@0.7.105 render -o renders/mot4.mp4"
+  }
+}

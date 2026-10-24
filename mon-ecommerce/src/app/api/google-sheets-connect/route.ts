@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Initier la connexion OAuth
+// Initier la connexion OAuth Google
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const sheetUrl = searchParams.get("sheet_url") || "";
   const shopSlug = searchParams.get("shop_slug") || "";
 
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const host = request.headers.get("host") || "localhost:3000";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const defaultBaseUrl = `${protocol}://${host}`;
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || defaultBaseUrl;
 
-  if (!GOOGLE_CLIENT_ID || !BASE_URL) {
+  if (!GOOGLE_CLIENT_ID) {
     return NextResponse.json(
-      { error: "Google OAuth non configuré. Ajoutez GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et NEXT_PUBLIC_BASE_URL dans .env.local" },
+      { error: "Google OAuth non configuré. GOOGLE_CLIENT_ID manquant dans les variables d'environnement." },
       { status: 500 }
     );
   }
@@ -20,6 +23,7 @@ export async function GET(request: NextRequest) {
 
   const scopes = [
     "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/userinfo.email"
   ].join(" ");
 

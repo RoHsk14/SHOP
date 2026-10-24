@@ -29,11 +29,13 @@ import CTABanner from "./CTABanner";
 import FeaturedCollection from "./FeaturedCollection";
 import CountdownTimer from "./CountdownTimer";
 import ContactForm from "./ContactForm";
+import ImageBanner from "./ImageBanner";
 
 export const sectionComponents: Record<string, React.ComponentType<any>> = {
   "announcement-bar": AnnouncementBar,
   header: Header,
   slideshow: Slideshow,
+  "image-banner": ImageBanner,
   "featured-products": FeaturedProducts,
   "text-with-image": TextWithImage,
   video: Video,

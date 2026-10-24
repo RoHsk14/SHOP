@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import type { SectionSetting, BlockSetting, SettingDefinition, PageConfig } from "@/lib/theme-config";
 import { SYSTEM_PAGES, getContentSections, getSystemPageDefaultContentSections } from "@/lib/theme-config";
 import { sectionRegistry, getSectionDefinition, createDefaultSection } from "@/lib/sections";
-import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff, Settings2, Save, FilePlus, X, Copy } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff, Settings2, Save, FilePlus, X, Copy, Home, Package, Search, Heart, CheckCircle2, FileText } from "lucide-react";
 import ImagePicker from "@/components/ImagePicker";
 
 interface Props {
@@ -357,12 +357,12 @@ interface PageEditorProps {
   savingSectionIndex?: number | null;
 }
 
-const systemPageIcons: Record<string, string> = {
-  "/": "🏠",
-  "/products": "📦",
-  "/products/[slug]": "🔍",
-  "/thank-you": "✅",
-  "/wishlist": "❤️",
+const systemPageIcons: Record<string, any> = {
+  "/": Home,
+  "/products": Package,
+  "/products/[slug]": Search,
+  "/thank-you": CheckCircle2,
+  "/wishlist": Heart,
 };
 
 export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSaveSection, savingSectionIndex }: PageEditorProps) {
@@ -422,7 +422,7 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
       slug,
       name,
       sections: [
-        { id: "announcement", type: "announcement-bar", settings: { speed: 4000, background: "#059669", messages: [{ id: "a1", text: "🚚 Livraison gratuite !", url: "" }] } },
+        { id: "announcement", type: "announcement-bar", settings: { speed: 4000, background: "#059669", messages: [{ id: "a1", text: "Livraison gratuite pour toute commande !", url: "" }] } },
         { id: "header", type: "header", settings: { sticky: true, logo_url: "", logo_max_width: 140, navigation_style: "inline", menu_items: [{ label: "Accueil", url: "/" }, { label: "Produits", url: "/products" }] } },
         { id: "footer", type: "footer", settings: { show_payment_methods: true } },
       ],
@@ -468,28 +468,33 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
         <div className="flex-1 flex items-center gap-1 overflow-x-auto pb-1">
           <button
             onClick={() => setActivePageId("__default__")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
               activePageId === "__default__"
                 ? "bg-gray-900 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
             }`}
           >
-            🏠 Accueil
+            <Home className="w-3.5 h-3.5" />
+            Accueil
           </button>
           <span className="text-xs text-gray-300 mx-1">|</span>
-          {allSystemPages.filter((sp) => sp.slug !== "/").map((sp) => (
-            <button
-              key={sp.id}
-              onClick={() => setActivePageId(sp.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
-                activePageId === sp.id
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-              }`}
-            >
-              {systemPageIcons[sp.slug] || "📄"} {sp.name}
-            </button>
-          ))}
+          {allSystemPages.filter((sp) => sp.slug !== "/").map((sp) => {
+            const Icon = systemPageIcons[sp.slug] || FileText;
+            return (
+              <button
+                key={sp.id}
+                onClick={() => setActivePageId(sp.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                  activePageId === sp.id
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {sp.name}
+              </button>
+            );
+          })}
           {pages.filter((p) => !SYSTEM_PAGES.some((sp) => sp.slug === p.slug)).length > 0 && (
             <span className="text-xs text-gray-300 mx-1">|</span>
           )}
@@ -497,13 +502,14 @@ export function PageSectionEditor({ pagesProp, defaultSections, onChange, onSave
             <span key={p.id} className="flex items-center gap-0.5">
               <button
                 onClick={() => setActivePageId(p.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
                   activePageId === p.id
                     ? "bg-gray-900 text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                 }`}
               >
-                📄 {p.name}
+                <FileText className="w-3.5 h-3.5" />
+                {p.name}
               </button>
               {activePageId === p.id && (
                 <button

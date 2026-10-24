@@ -1,6 +1,7 @@
 "use client";
 
 import type { SocialLinks, SocialPlatform } from "@/lib/theme-config";
+import { SOCIAL_SVG } from "@/components/sections/Footer";
 
 const PLATFORMS: { key: SocialPlatform; label: string; icon: string; placeholder: string }[] = [
   { key: "facebook", label: "Facebook", icon: "facebook", placeholder: "https://facebook.com/mapage" },
@@ -16,20 +17,6 @@ const PLATFORMS: { key: SocialPlatform; label: string; icon: string; placeholder
   { key: "messenger", label: "Messenger", icon: "messenger", placeholder: "https://m.me/mapage" },
 ];
 
-const ICONS: Record<string, string> = {
-  facebook: "📘",
-  instagram: "📷",
-  twitter: "𝕏",
-  tiktok: "🎵",
-  youtube: "▶️",
-  pinterest: "📌",
-  linkedin: "💼",
-  whatsapp: "💬",
-  snapchat: "👻",
-  telegram: "✈️",
-  messenger: "💭",
-};
-
 export default function TabSocial({
   social,
   onChange,
@@ -41,21 +28,32 @@ export default function TabSocial({
     <div className="space-y-4">
       <p className="text-xs text-gray-500">Ajoutez les liens vers vos réseaux sociaux. Ils apparaîtront dans le pied de page et les sections qui les utilisent.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {PLATFORMS.map(({ key, label, placeholder }) => (
-          <div key={key} className="flex items-center gap-3">
-            <span className="text-lg w-8 text-center shrink-0">{ICONS[key]}</span>
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium text-gray-500 mb-0.5">{label}</label>
-              <input
-                type="url"
-                value={social[key] || ""}
-                onChange={(e) => onChange({ ...social, [key]: e.target.value })}
-                placeholder={placeholder}
-                className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              />
+        {PLATFORMS.map(({ key, label, placeholder }) => {
+          const svg = SOCIAL_SVG[key];
+          return (
+            <div key={key} className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200/60 flex items-center justify-center text-gray-700 shrink-0">
+                {svg ? (
+                  <svg viewBox={svg.viewBox} className="w-4 h-4" fill="currentColor">
+                    <path d={svg.path} />
+                  </svg>
+                ) : (
+                  <span className="text-xs font-bold uppercase">{key[0]}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <label className="block text-xs font-medium text-gray-600 mb-0.5">{label}</label>
+                <input
+                  type="url"
+                  value={social[key] || ""}
+                  onChange={(e) => onChange({ ...social, [key]: e.target.value })}
+                  placeholder={placeholder}
+                  className="w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

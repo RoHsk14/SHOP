@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Mail } from "lucide-react";
+import { X, Mail, Check } from "lucide-react";
 import type { NewsletterPopupSettings } from "@/lib/theme-config";
 
 const POPUP_SEEN_KEY = "newsletter-popup-seen";
@@ -82,8 +82,9 @@ export default function NewsletterPopup({ settings }: { settings: NewsletterPopu
           )}
 
           {subscribed ? (
-            <p className="text-sm font-semibold" style={{ color: settings.buttonBg }}>
-              Merci de votre inscription ! 🎉
+            <p className="text-sm font-semibold flex items-center justify-center gap-1.5" style={{ color: settings.buttonBg }}>
+              <Check className="w-4 h-4 inline" />
+              Merci pour votre inscription !
             </p>
           ) : (
             <form onSubmit={handleSubmit} className="flex gap-2">

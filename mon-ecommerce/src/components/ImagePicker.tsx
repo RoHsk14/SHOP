@@ -11,6 +11,14 @@ import {
   Link as LinkIcon,
   Check,
   FolderOpen,
+  Shirt,
+  Smartphone,
+  Globe,
+  Gem,
+  Home,
+  Activity,
+  Coffee,
+  Palette,
 } from "lucide-react";
 
 export interface StockThemeImage {
@@ -24,13 +32,13 @@ export interface StockThemeImage {
 export const THEMES_IMAGE_LIBRARY: {
   id: string;
   label: string;
-  icon: string;
+  icon: any;
   images: { label: string; url: string }[];
 }[] = [
   {
     id: "fashion",
     label: "Mode & Vêtements",
-    icon: "👗",
+    icon: Shirt,
     images: [
       {
         label: "Femme style streetwear moderne",
@@ -61,7 +69,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "beauty",
     label: "Beauté & Cosmétiques",
-    icon: "💄",
+    icon: Sparkles,
     images: [
       {
         label: "Flacon sérum avec pipette en verre",
@@ -92,7 +100,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "tech",
     label: "High-Tech & Gadgets",
-    icon: "📱",
+    icon: Smartphone,
     images: [
       {
         label: "Smartphone moderne écran haute définition",
@@ -123,7 +131,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "afro",
     label: "Afrique & Wax / Afro-Chic",
-    icon: "🌍",
+    icon: Globe,
     images: [
       {
         label: "Femme africaine élégante tissu wax",
@@ -150,7 +158,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "luxury",
     label: "Bijoux, Montres & Luxe",
-    icon: "💍",
+    icon: Gem,
     images: [
       {
         label: "Bague diamant en or précieux",
@@ -177,7 +185,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "home",
     label: "Maison & Décoration",
-    icon: "🏠",
+    icon: Home,
     images: [
       {
         label: "Salon moderne scandinave épuré",
@@ -208,7 +216,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "sports",
     label: "Sport, Fitness & Santé",
-    icon: "🏋️",
+    icon: Activity,
     images: [
       {
         label: "Haltères et salle de sport",
@@ -235,7 +243,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "food",
     label: "Food & Épicerie Fine",
-    icon: "☕",
+    icon: Coffee,
     images: [
       {
         label: "Tasse de café latte art crémeux",
@@ -262,7 +270,7 @@ export const THEMES_IMAGE_LIBRARY: {
   {
     id: "abstract",
     label: "Fonds, Textures & Bannières",
-    icon: "🎨",
+    icon: Palette,
     images: [
       {
         label: "Dégradé pastel doux et moderne",
@@ -494,6 +502,7 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
                     </span>
                     {THEMES_IMAGE_LIBRARY.map((theme) => {
                       const isSelected = selectedThemeId === theme.id && !searchQuery;
+                      const Icon = theme.icon;
                       return (
                         <button
                           key={theme.id}
@@ -508,8 +517,8 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
                               : "text-gray-600 hover:bg-gray-100/80"
                           }`}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-base shrink-0">{theme.icon}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon className={`w-4 h-4 shrink-0 ${isSelected ? "text-emerald-600" : "text-gray-400"}`} />
                             <span className="truncate">{theme.label}</span>
                           </div>
                           <span className="text-[10px] text-gray-400 font-mono">

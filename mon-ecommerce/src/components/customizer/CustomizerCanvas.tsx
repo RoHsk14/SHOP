@@ -6,6 +6,8 @@ import { themeConfigToCSS, enforceFooterAtEnd } from "@/lib/theme-config";
 import { sectionComponents } from "@/components/sections";
 import { getSectionDefinition } from "@/lib/sections";
 import { ShopProvider } from "@/lib/shop-context";
+import { ProductGridProvider } from "@/lib/product-grid-context";
+import { ProductProvider } from "@/lib/product-context";
 import GoogleFontsLoader from "@/components/GoogleFontsLoader";
 import SectionWrapper from "@/components/SectionWrapper";
 import {
@@ -30,6 +32,7 @@ interface CustomizerCanvasProps {
   onMoveSection: (index: number, direction: "up" | "down") => void;
   onToggleVisibility: (sectionId: string) => void;
   onDeleteSection: (sectionId: string) => void;
+  onNavigatePage?: (slug: string) => void;
 }
 
 export default function CustomizerCanvas({
@@ -43,6 +46,7 @@ export default function CustomizerCanvas({
   onMoveSection,
   onToggleVisibility,
   onDeleteSection,
+  onNavigatePage,
 }: CustomizerCanvasProps) {
   const [hoveredSectionId, setHoveredSectionId] = useState<string | null>(null);
 
@@ -87,7 +91,32 @@ export default function CustomizerCanvas({
 
         {/* Live Scrollable Canvas Content */}
         <div
-          className="flex-1 overflow-y-auto relative scrollbar-thin"
+          className={`flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-thin ${
+            viewport === "mobile" ? "is-mobile-canvas" : ""
+          }`}
+          onClickCapture={(e) => {
+            // Prevent all link navigation inside the customizer studio preview
+            const target = e.target as HTMLElement | null;
+            const linkEl = target?.closest("a");
+            if (linkEl) {
+              e.preventDefault();
+              const href = linkEl.getAttribute("href") || "";
+              // If the link points to a customizable store page, switch to it inside the customizer:
+              if (onNavigatePage) {
+                if (href.endsWith("/products") || href === "/products") {
+                  onNavigatePage("/products");
+                } else if (href.includes("/products/") && !href.endsWith("/products")) {
+                  onNavigatePage("/products/[slug]");
+                } else if (href === "/" || href.endsWith(`/boutiques/${subdomain}`)) {
+                  onNavigatePage("/");
+                }
+              }
+            }
+          }}
+          onSubmitCapture={(e) => {
+            // Prevent form submissions from navigating or reloading during customization
+            e.preventDefault();
+          }}
           style={{
             ...cssVars,
             background: cssVars["--theme-bg"] || "#ffffff",
@@ -103,106 +132,169 @@ export default function CustomizerCanvas({
             }}
           />
 
-          <ShopProvider config={config} shopName={shopName} subdomain={subdomain}>
-            {activeSections.map((section, idx) => {
-              const Component = sectionComponents[section.type];
-              if (!Component) return null;
+          <ShopProvider
+            config={config}
+            shopName={shopName}
+            subdomain={subdomain}
+            isMobilePreview={viewport === "mobile"}
+          >
+            <ProductGridProvider subdomain={subdomain}>
+              <ProductProvider subdomain={subdomain}>
+                {(() => {
+                  const renderSectionItem = (section: SectionSetting, idx: number) => {
+                    const Component = sectionComponents[section.type];
+                    if (!Component) return null;
 
-              const isSelected = selectedSectionId === section.id;
-              const isHovered = hoveredSectionId === section.id;
-              const def = getSectionDefinition(section.type);
+                    const isSelected = selectedSectionId === section.id;
+                    const isHovered = hoveredSectionId === section.id;
+                    const def = getSectionDefinition(section.type);
 
-              return (
-                <div
-                  key={`${section.id}-${idx}`}
-                  onMouseEnter={() => setHoveredSectionId(section.id)}
-                  onMouseLeave={() => setHoveredSectionId(null)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectSection(section.id);
-                  }}
-                  className={`relative group transition-all duration-150 cursor-pointer ${
-                    isSelected
-                      ? "ring-2 ring-emerald-500 ring-offset-2 z-20 shadow-md"
-                      : isHovered
-                      ? "ring-2 ring-blue-400 ring-offset-1 z-10"
-                      : ""
-                  }`}
-                >
-                  {/* Floating Selection Badge & Action Toolbar (on hover or select) */}
-                  {(isHovered || isSelected) && (
-                    <div
-                      className="absolute top-2 left-2 z-30 flex items-center gap-1.5 bg-gray-900/90 text-white backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-semibold shadow-lg animate-fade-in"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span className="flex items-center gap-1 text-[11px] text-emerald-400">
-                        <Edit2 className="w-3 h-3" />
-                        {def?.name || section.type}
-                      </span>
+                    return (
+                      <div
+                        key={`${section.id}-${idx}`}
+                        onMouseEnter={() => setHoveredSectionId(section.id)}
+                        onMouseLeave={() => setHoveredSectionId(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectSection(section.id);
+                        }}
+                        className={`relative group transition-all duration-150 cursor-pointer ${
+                          isSelected
+                            ? "ring-2 ring-emerald-500 ring-offset-2 z-20 shadow-md"
+                            : isHovered
+                            ? "ring-2 ring-blue-400 ring-offset-1 z-10"
+                            : ""
+                        }`}
+                      >
+                        {/* Floating Selection Badge & Action Toolbar */}
+                        {(isHovered || isSelected) && (
+                          <div
+                            className="absolute top-2 left-2 z-30 flex items-center gap-1.5 bg-gray-900/90 text-white backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-semibold shadow-lg animate-fade-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="flex items-center gap-1 text-[11px] text-emerald-400">
+                              <Edit2 className="w-3 h-3" />
+                              {def?.name || section.type}
+                            </span>
 
-                      <div className="flex items-center gap-0.5 ml-2 pl-2 border-l border-white/20">
-                        <button
-                          onClick={() => onMoveSection(idx, "up")}
-                          disabled={idx === 0}
-                          className="p-1 hover:bg-white/20 rounded disabled:opacity-30"
-                          title="Déplacer vers le haut"
+                            <div className="flex items-center gap-0.5 ml-2 pl-2 border-l border-white/20">
+                              <button
+                                onClick={() => onMoveSection(idx, "up")}
+                                disabled={idx === 0}
+                                className="p-1 hover:bg-white/20 rounded disabled:opacity-30"
+                                title="Déplacer vers le haut"
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => onMoveSection(idx, "down")}
+                                disabled={idx === activeSections.length - 1}
+                                className="p-1 hover:bg-white/20 rounded disabled:opacity-30"
+                                title="Déplacer vers le bas"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => onToggleVisibility(section.id)}
+                                className="p-1 hover:bg-white/20 rounded text-amber-300"
+                                title="Masquer la section"
+                              >
+                                <EyeOff className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm("Supprimer cette section ?")) {
+                                    onDeleteSection(section.id);
+                                  }
+                                }}
+                                className="p-1 hover:bg-red-500/40 rounded text-red-300"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* The actual section render */}
+                        <SectionWrapper
+                          settings={section.settings}
+                          blocks={section.blocks}
+                          sectionId={section.id}
                         >
-                          <ChevronUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => onMoveSection(idx, "down")}
-                          disabled={idx === activeSections.length - 1}
-                          className="p-1 hover:bg-white/20 rounded disabled:opacity-30"
-                          title="Déplacer vers le bas"
-                        >
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => onToggleVisibility(section.id)}
-                          className="p-1 hover:bg-white/20 rounded text-amber-300"
-                          title="Masquer la section"
-                        >
-                          <EyeOff className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm("Supprimer cette section ?")) {
-                              onDeleteSection(section.id);
-                            }
-                          }}
-                          className="p-1 hover:bg-red-500/40 rounded text-red-300"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                          <Component
+                            settings={section.settings}
+                            blocks={section.blocks}
+                            shopName={shopName}
+                            {...sectionSharedProps}
+                          />
+                        </SectionWrapper>
                       </div>
-                    </div>
-                  )}
+                    );
+                  };
 
-                  {/* The actual section render */}
-                  <SectionWrapper settings={section.settings}>
-                    <Component
-                      settings={section.settings}
-                      blocks={section.blocks}
-                      shopName={shopName}
-                      {...sectionSharedProps}
-                    />
-                  </SectionWrapper>
-                </div>
-              );
-            })}
+                  const elements: React.ReactNode[] = [];
+                  let i = 0;
+                  const isMobileView = viewport === "mobile";
 
-            {activeSections.length === 0 && (
-              <div className="py-20 text-center px-4">
-                <Sparkles className="w-10 h-10 mx-auto text-emerald-500 mb-3" />
-                <h3 className="text-base font-bold text-gray-900">
-                  Votre boutique n'a pas encore de section
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                  Cliquez sur "+ Ajouter une section" dans le panneau de gauche pour commencer à personnaliser votre vitrine.
-                </p>
-              </div>
-            )}
+                  while (i < activeSections.length) {
+                    const section = activeSections[i];
+                    const next = activeSections[i + 1];
+
+                    const isGallery = section.type === "product-gallery";
+                    const isInfo = section.type === "product-info";
+
+                    // Pair gallery and info side-by-side on desktop, stacked cleanly on mobile
+                    if (isGallery && next?.type === "product-info") {
+                      elements.push(
+                        <div key={`pair-${i}`} className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10">
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-12 items-start">
+                            <div className="min-w-0 lg:col-span-7">
+                              {renderSectionItem(section, i)}
+                            </div>
+                            <div className="min-w-0 lg:col-span-5">
+                              {renderSectionItem(next, i + 1)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                      i += 2;
+                    } else if (isInfo && next?.type === "product-gallery") {
+                      elements.push(
+                        <div key={`pair-${i}`} className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10">
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-12 items-start">
+                            <div className="min-w-0 lg:col-span-5 lg:order-2">
+                              {renderSectionItem(section, i)}
+                            </div>
+                            <div className="min-w-0 lg:col-span-7 lg:order-1">
+                              {renderSectionItem(next, i + 1)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                      i += 2;
+                    } else {
+                      elements.push(renderSectionItem(section, i));
+                      i += 1;
+                    }
+                  }
+
+                  return elements;
+                })()}
+
+                {activeSections.length === 0 && (
+                  <div className="py-20 text-center px-4">
+                    <Sparkles className="w-10 h-10 mx-auto text-emerald-500 mb-3" />
+                    <h3 className="text-base font-bold text-gray-900">
+                      Votre boutique n'a pas encore de section
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                      Cliquez sur "+ Ajouter une section" dans le panneau de gauche pour commencer à personnaliser votre vitrine.
+                    </p>
+                  </div>
+                )}
+              </ProductProvider>
+            </ProductGridProvider>
           </ShopProvider>
         </div>
       </div>

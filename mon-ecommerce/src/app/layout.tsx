@@ -31,8 +31,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${instrumentSans.variable} ${inter.variable}`} style={{ scrollBehavior: "smooth" }}>
-      <body className="antialiased" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <html
+      lang="fr"
+      className={`${instrumentSans.variable} ${inter.variable}`}
+      style={{ scrollBehavior: "smooth" }}
+      suppressHydrationWarning
+    >
+      <body
+        className="antialiased"
+        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        suppressHydrationWarning
+      >
         <Suspense fallback={null}>
           <MetaPixel />
           <VisitorTracker />

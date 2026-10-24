@@ -407,7 +407,7 @@ const menuItems = [
   {/* Main content */}
    <main className="admin-main flex-1 min-h-screen lg:ml-64 flex flex-col">
   {/* Top Header */}
-  <header className="admin-header h-16 border-b border-gray-100 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative">
+  <header className="admin-header admin-header-sticky h-16 border-b border-gray-100 bg-white/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 sticky top-0 z-30">
  <div className="flex items-center gap-3">
     <span className="header-text text-sm font-medium text-gray-500 ml-12 lg:ml-0">
     Boutique active : <span className="header-shop font-semibold text-gray-900">{shopName || slug}</span>

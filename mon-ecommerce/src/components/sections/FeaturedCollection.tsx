@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function FeaturedCollection({ settings, layout: _layout }: Props) {
-  const { config, subdomain } = useShop();
+  const { config, subdomain, isMobile } = useShop();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +83,17 @@ export default function FeaturedCollection({ settings, layout: _layout }: Props)
             <p className="text-sm" style={{ color: "var(--theme-text-muted)" }}>Aucun produit dans cette collection</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div
+            className={`grid gap-3.5 sm:gap-6 ${
+              isMobile
+                ? products.length === 1
+                  ? "grid-cols-1 max-w-[320px] mx-auto"
+                  : "grid-cols-2"
+                : products.length === 1
+                ? "grid-cols-1 max-w-sm mx-auto"
+                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+            }`}
+          >
             {products.map((product) => (
               <ProductCard
                 key={product.id}

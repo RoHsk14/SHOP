@@ -52,11 +52,11 @@ function toArgs(filters: FilterOp[], orders: OrderSpec[], limit: number | null, 
 }
 
 const KNOWN_COLUMNS: Record<string, string[]> = {
-  settings: ["id", "shop_slug", "user_id", "shop_name", "owner_name", "shop_description", "shop_country", "default_currency", "theme_id", "theme_config", "pixel_id", "capi_token", "meta_access_token", "meta_business_account_id", "meta_catalog_id", "google_sheet_url", "google_sheet_columns", "whatsapp_group_id", "whatsapp_enabled", "is_super_admin", "custom_form_fields", "created_at", "updated_at"],
+  settings: ["id", "shop_slug", "user_id", "shop_name", "owner_name", "shop_description", "shop_country", "default_currency", "theme_id", "theme_config", "pixel_id", "capi_token", "meta_access_token", "meta_business_account_id", "meta_catalog_id", "google_sheet_url", "google_sheet_columns", "google_access_token", "google_refresh_token", "whatsapp_group_id", "whatsapp_enabled", "is_super_admin", "custom_form_fields", "created_at", "updated_at"],
   whatsapp_sessions: ["shop_slug", "status", "phone_number", "last_qr_at", "connected_at", "updated_at", "created_at"],
   products: ["id", "shop_slug", "name", "description", "price", "slug", "sku", "track_stock", "stock_quantity", "images", "status", "barcode", "category", "tags", "created_at", "updated_at"],
   orders: ["id", "shop_slug", "customer_name", "customer_phone", "customer_address", "total_price", "currency", "product_id", "product_name", "quantity", "status", "payment_method", "notes", "created_at", "updated_at"],
-  offers: ["id", "shop_slug", "name", "description", "type", "discount_type", "discount_value", "min_quantity", "products", "active", "created_at", "updated_at"],
+  offers: ["id", "shop_slug", "name", "description", "type", "discount_type", "discount_value", "min_quantity", "max_quantity", "products", "status", "active", "created_at", "updated_at"],
   visitors: ["id", "session_id", "shop_slug", "is_online", "last_seen", "created_at"],
   admin_devices: ["id", "shop_slug", "push_token", "created_at"],
 };
@@ -321,12 +321,13 @@ function createAuthProxy() {
               body: JSON.stringify({ refreshToken }),
             });
             const data = await res.json().catch(() => null);
-            console.log("[auth] /token status:", res.status, "session?", !!data?.session);
-            if (!data?.session && data) console.log("[auth] /token body:", JSON.stringify(data).slice(0, 300));
-            if (data?.session) {
-              setStoredSession(data.session);
+            const session = data?.session || (data?.accessToken ? data : null);
+            console.log("[auth] /token status:", res.status, "session?", !!session);
+            if (!session && data) console.log("[auth] /token body:", JSON.stringify(data).slice(0, 300));
+            if (session) {
+              setStoredSession(session);
               window.history.replaceState({}, "", window.location.pathname);
-              return { data: { session: toSupabaseSession(data.session) }, error: null };
+              return { data: { session: toSupabaseSession(session) }, error: null };
             }
           } catch (err) {
             console.error("[auth] refreshToken exchange failed:", err);
@@ -342,10 +343,11 @@ function createAuthProxy() {
               body: JSON.stringify({ code }),
             });
             const data = await res.json().catch(() => null);
-            if (data?.session) {
-              setStoredSession(data.session);
+            const session = data?.session || (data?.accessToken ? data : null);
+            if (session) {
+              setStoredSession(session);
               window.history.replaceState({}, "", window.location.pathname);
-              return { data: { session: toSupabaseSession(data.session) }, error: null };
+              return { data: { session: toSupabaseSession(session) }, error: null };
             }
           } catch (err) {
             console.error("[auth] code exchange failed:", err);
@@ -478,7 +480,8 @@ function createAuthProxy() {
           body: JSON.stringify({ refreshToken: stored.refreshToken }),
         });
         const data = await res.json().catch(() => null);
-        if (!res.ok || !data?.session) {
+        const session = data?.session || (data?.accessToken ? data : null);
+        if (!res.ok || !session) {
           // Ne pas effacer la session locale : l'access token peut encore être valide
           return {
             data: { session: null },
@@ -490,8 +493,8 @@ function createAuthProxy() {
             },
           };
         }
-        setStoredSession(data.session);
-        return { data: { session: toSupabaseSession(data.session) }, error: null };
+        setStoredSession(session);
+        return { data: { session: toSupabaseSession(session) }, error: null };
       } catch (err: any) {
         return { data: { session: null }, error: { message: err.message } };
       }

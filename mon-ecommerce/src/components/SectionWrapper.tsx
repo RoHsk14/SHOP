@@ -1,11 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { SectionContext } from "@/lib/editor-context";
 
 interface SectionWrapperProps {
   settings?: Record<string, any>;
+  blocks?: Array<any>;
   children: ReactNode;
   className?: string;
+  sectionId?: string;
 }
 
 function parseSpacing(val: any): string | undefined {
@@ -15,8 +18,14 @@ function parseSpacing(val: any): string | undefined {
   return `${n}px`;
 }
 
-export default function SectionWrapper({ settings, children, className }: SectionWrapperProps) {
-  if (!settings) return <>{children}</>;
+export default function SectionWrapper({ settings, blocks, children, className, sectionId }: SectionWrapperProps) {
+  if (!settings) {
+    return (
+      <SectionContext.Provider value={{ sectionId: sectionId || "", settings, blocks }}>
+        {children}
+      </SectionContext.Provider>
+    );
+  }
 
   const paddingTop = parseSpacing(settings.padding_top);
   const paddingBottom = parseSpacing(settings.padding_bottom);
@@ -59,8 +68,10 @@ export default function SectionWrapper({ settings, children, className }: Sectio
   }
 
   return (
-    <div style={Object.keys(style).length > 0 ? style : undefined} className={className} {...dataAttrs as any}>
-      {children}
-    </div>
+    <SectionContext.Provider value={{ sectionId: sectionId || "", settings, blocks }}>
+      <div style={Object.keys(style).length > 0 ? style : undefined} className={className} {...dataAttrs as any}>
+        {children}
+      </div>
+    </SectionContext.Provider>
   );
 }

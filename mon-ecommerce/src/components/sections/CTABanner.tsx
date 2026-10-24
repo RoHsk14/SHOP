@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import EditableText, { hasTextValue } from "@/components/EditableText";
+import { useShop } from "@/lib/shop-context";
+import { useEditor } from "@/lib/editor-context";
 
 interface Props {
   settings: {
@@ -19,6 +21,9 @@ interface Props {
 }
 
 export default function CTABanner({ settings }: Props) {
+  const { shopLink } = useShop();
+  const { isEditor } = useEditor();
+
   if (!hasTextValue(settings.title)) return null;
 
   const textAlign = settings.text_align || "center";
@@ -49,15 +54,16 @@ export default function CTABanner({ settings }: Props) {
         )}
         {hasTextValue(settings.button_text) && (
           <Link
-            href={settings.button_url || "#"}
+            href={shopLink(settings.button_url || "/products")}
             className="inline-flex items-center px-8 py-3 text-sm font-semibold rounded-xl transition-all hover:opacity-90"
             style={{
               background: settings.button_color || "#ffffff",
               color: settings.background || "var(--theme-primary, #059669)",
             }}
             onClick={(e) => {
-              // Allow selecting/editing button text in the canvas
-              if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+              if (isEditor || (e.target as HTMLElement)?.isContentEditable) {
+                e.preventDefault();
+              }
             }}
           >
             <EditableText as="span" value={settings.button_text} />

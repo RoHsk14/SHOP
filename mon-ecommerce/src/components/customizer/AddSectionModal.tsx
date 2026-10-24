@@ -19,6 +19,7 @@ import {
   MessageSquare,
   FileText,
   Percent,
+  Sliders,
 } from "lucide-react";
 import { sectionRegistry, createDefaultSection, SectionDefinition } from "@/lib/sections";
 import type { SectionSetting } from "@/lib/theme-config";
@@ -30,12 +31,12 @@ interface AddSectionModalProps {
 }
 
 const SECTION_CATEGORIES = [
-  { id: "all", label: "Toutes les sections" },
-  { id: "products", label: "🛍️ Produits & Vente" },
-  { id: "banners", label: "🖼️ Bannières & Médias" },
-  { id: "trust", label: "⭐ Confiance & Avis" },
-  { id: "conversion", label: "⚡ Conversion & Urgence" },
-  { id: "structure", label: "🛠️ Structure & Avancé" },
+  { id: "all", label: "Toutes les sections", icon: Sparkles },
+  { id: "products", label: "Produits & Vente", icon: ShoppingBag },
+  { id: "banners", label: "Bannières & Médias", icon: ImageIcon },
+  { id: "trust", label: "Confiance & Avis", icon: Star },
+  { id: "conversion", label: "Conversion & Urgence", icon: Zap },
+  { id: "structure", label: "Structure & Avancé", icon: Sliders },
 ];
 
 const SECTION_METADATA: Record<
@@ -80,12 +81,18 @@ const SECTION_METADATA: Record<
     color: "bg-emerald-50 text-emerald-600",
     description: "Barre de recherche interactive pour trouver instantanément un article.",
   },
-  slideshow: {
+  "image-banner": {
     category: "banners",
     icon: ImageIcon,
     color: "bg-blue-50 text-blue-600",
-    description: "Grand carrousel d'images plein écran avec textes dynamiques et boutons d'action.",
+    description: "Bannière d'accueil moderne avec image ou couleur de fond, titre, sous-titre et bouton d'action.",
     badge: "Recommandé",
+  },
+  slideshow: {
+    category: "banners",
+    icon: Layers,
+    color: "bg-indigo-50 text-indigo-600",
+    description: "Carrousel d'images défilantes avec diapositives configurables.",
   },
   "cta-banner": {
     category: "banners",
@@ -246,19 +253,23 @@ export default function AddSectionModal({
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {SECTION_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === cat.id
-                    ? "bg-gray-900 text-white shadow-sm"
-                    : "bg-white text-gray-600 border border-gray-200/80 hover:bg-gray-100"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {SECTION_CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === cat.id
+                      ? "bg-gray-900 text-white shadow-sm"
+                      : "bg-white text-gray-600 border border-gray-200/80 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

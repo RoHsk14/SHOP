@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, FileJson, Check, AlertCircle, Archive, Code, ImageIcon, FileText } from "lucide-react";
+import { Upload, FileJson, Check, AlertCircle, Archive, Code, ImageIcon, FileText, Palette, Folder } from "lucide-react";
 import { toast } from "sonner";
 
 interface ShopifySettings {
@@ -392,11 +392,11 @@ function FullResult({
           <span className="text-sm font-semibold">{result.settings.themeName || "Thème importé"}</span>
           <span className="text-xs text-emerald-500 ml-auto">{result.totalFiles} fichiers</span>
         </div>
-        <div className="flex flex-wrap gap-3 mt-2 text-xs text-emerald-600">
-          <span>🎨 {Object.keys(result.settings.colors).length} couleurs</span>
-          <span>📄 {result.css ? `${(result.css.length / 1024).toFixed(0)} Ko CSS` : "0 CSS"}</span>
-          <span>🖼️ {result.assets.length} assets</span>
-          <span>📁 {result.liquidFiles.length} templates</span>
+        <div className="flex flex-wrap gap-4 mt-2 text-xs text-emerald-700 font-medium">
+          <span className="inline-flex items-center gap-1.5"><Palette className="w-3.5 h-3.5" /> {Object.keys(result.settings.colors).length} couleurs</span>
+          <span className="inline-flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {result.css ? `${(result.css.length / 1024).toFixed(0)} Ko CSS` : "0 CSS"}</span>
+          <span className="inline-flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> {result.assets.length} assets</span>
+          <span className="inline-flex items-center gap-1.5"><Folder className="w-3.5 h-3.5" /> {result.liquidFiles.length} templates</span>
         </div>
       </div>
 

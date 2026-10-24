@@ -22,7 +22,7 @@ function getPreviewParam(): boolean {
 }
 
 export default function ProductPage() {
-  const { subdomain } = useParams<{ subdomain: string }>();
+  const { subdomain, slug } = useParams<{ subdomain: string; slug: string }>();
   const [config, setConfig] = useState<ThemeConfig | null>(null);
   const [shopName, setShopName] = useState("");
 
@@ -98,24 +98,28 @@ export default function ProductPage() {
 
       if (isGallery && nextIsInfo) {
         result.push(
-          <div key={`pair-${i}`} className="grid grid-cols-1 lg:grid-cols-2">
-            <div className="min-w-0">
-              {renderSection(section, i)}
-            </div>
-            <div className="min-w-0">
-              {renderSection(next, i + 1)}
+          <div key={`pair-${i}`} className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-12 items-start">
+              <div className="min-w-0 lg:col-span-7">
+                {renderSection(section, i)}
+              </div>
+              <div className="min-w-0 lg:col-span-5">
+                {renderSection(next, i + 1)}
+              </div>
             </div>
           </div>
         );
         i += 2;
       } else if (isInfo && nextIsGallery) {
         result.push(
-          <div key={`pair-${i}`} className="grid grid-cols-1 lg:grid-cols-2">
-            <div className="min-w-0 lg:order-2">
-              {renderSection(section, i)}
-            </div>
-            <div className="min-w-0 lg:order-1">
-              {renderSection(next, i + 1)}
+          <div key={`pair-${i}`} className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-12 items-start">
+              <div className="min-w-0 lg:col-span-5 lg:order-2">
+                {renderSection(section, i)}
+              </div>
+              <div className="min-w-0 lg:col-span-7 lg:order-1">
+                {renderSection(next, i + 1)}
+              </div>
             </div>
           </div>
         );
@@ -131,7 +135,7 @@ export default function ProductPage() {
 
   return (
     <ShopProvider config={c} shopName={shopName} subdomain={subdomain}>
-      <ProductProvider>
+      <ProductProvider subdomain={subdomain} slug={slug}>
         <SearchModal />
         <CartDrawer />
         <GoogleFontsLoader fonts={{ heading: c.global.fonts.heading, body: c.global.fonts.body }} />

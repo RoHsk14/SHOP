@@ -1,6 +1,21 @@
 "use client";
 
 import EditableText from "@/components/EditableText";
+import { ShoppingBag, Users, Truck, Star, Award, ShieldCheck, Heart } from "lucide-react";
+
+const STAT_ICONS: Record<string, any> = {
+  ShoppingBag,
+  Users,
+  Truck,
+  Star,
+  Award,
+  ShieldCheck,
+  Heart,
+  "🛍️": ShoppingBag,
+  "😊": Users,
+  "🚚": Truck,
+  "⭐": Star,
+};
 
 interface Stat {
   settings: { value?: any; label?: any; icon?: string };
@@ -25,25 +40,35 @@ export default function StatsBar({ settings, blocks }: Props) {
     <section style={{ background: settings.background || "var(--theme-primary, #059669)" }}>
       <div className="mx-auto px-4 sm:px-6 py-10 sm:py-14" style={{ maxWidth: "var(--theme-container-width, 1200px)" }}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8" style={{ textAlign: textAlign as any }}>
-          {stats.map((stat, i) => (
-            <div key={(stat as any).id ?? i} className="text-center" style={{ fontFamily }}>
-              {typeof stat.settings.icon === "string" && stat.settings.icon && (
-                <div className="text-2xl sm:text-3xl mb-2">{stat.settings.icon}</div>
-              )}
-              <EditableText
-                as="p"
-                value={stat.settings.value}
-                className={`${valueSize} font-bold`}
-                style={{ color: settings.text_color || "#ffffff" }}
-              />
-              <EditableText
-                as="p"
-                value={stat.settings.label}
-                className={`${labelSize} mt-1 opacity-80`}
-                style={{ color: settings.text_color || "#ffffff" }}
-              />
-            </div>
-          ))}
+          {stats.map((stat, i) => {
+            const IconComponent = STAT_ICONS[stat.settings.icon || ""];
+
+            return (
+              <div key={(stat as any).id ?? i} className="text-center" style={{ fontFamily }}>
+                {IconComponent ? (
+                  <div className="flex items-center justify-center mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-xs">
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                  </div>
+                ) : stat.settings.icon ? (
+                  <div className="text-xl sm:text-2xl mb-2">{stat.settings.icon}</div>
+                ) : null}
+                <EditableText
+                  as="p"
+                  value={stat.settings.value}
+                  className={`${valueSize} font-bold`}
+                  style={{ color: settings.text_color || "#ffffff" }}
+                />
+                <EditableText
+                  as="p"
+                  value={stat.settings.label}
+                  className={`${labelSize} mt-1 opacity-80`}
+                  style={{ color: settings.text_color || "#ffffff" }}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -44,6 +44,7 @@ import SectionInspector from "@/components/customizer/SectionInspector";
 import AddSectionModal from "@/components/customizer/AddSectionModal";
 import ThemeSettingsPanel from "@/components/customizer/ThemeSettingsPanel";
 import CustomizerCanvas from "@/components/customizer/CustomizerCanvas";
+import { EditorContext } from "@/lib/editor-context";
 
 export default function CustomizePage() {
   const { subdomain } = useParams<{ subdomain: string }>();
@@ -74,6 +75,13 @@ export default function CustomizePage() {
   const [activeTab, setActiveTab] = useState<"sections" | "theme">("sections");
   const [activePageSlug, setActivePageSlug] = useState<string>("/");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [hoveredField, setHoveredField] = useState<{
+    sectionId: string;
+    fieldKey: string;
+    blockId?: string;
+  } | null>(null);
   const [viewport, setViewport] = useState<"desktop" | "mobile" | "fullscreen">("desktop");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -369,6 +377,42 @@ export default function CustomizePage() {
     setSectionsForActivePage(list);
   };
 
+  // Update specific text field (inline on preview or sidebar)
+  const handleUpdateText = useCallback(
+    (sectionId: string, fieldKey: string, newValue: string, blockId?: string) => {
+      const list = currentSections.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        if (blockId && sec.blocks) {
+          return {
+            ...sec,
+            blocks: sec.blocks.map((b) =>
+              b.id === blockId
+                ? { ...b, settings: { ...b.settings, [fieldKey]: newValue } }
+                : b
+            ),
+          };
+        }
+        return {
+          ...sec,
+          settings: {
+            ...sec.settings,
+            [fieldKey]: newValue,
+          },
+        };
+      });
+      setSectionsForActivePage(list);
+    },
+    [currentSections, setSectionsForActivePage]
+  );
+
+  // Focus a specific field in the sidebar inspector
+  const handleFocusField = useCallback((sectionId: string, fieldKey: string, blockId?: string) => {
+    setSelectedSectionId(sectionId);
+    setActiveTab("sections");
+    setActiveFieldKey(fieldKey);
+    setActiveBlockId(blockId || null);
+  }, []);
+
   // Save draft manually
   const handleSaveDraft = async () => {
     const ok = await saveToDb(config, false);
@@ -382,7 +426,7 @@ export default function CustomizePage() {
     setPublishing(true);
     const ok = await saveToDb(config, true);
     if (ok) {
-      toast.success("🎉 Félicitations ! Votre boutique est publiée et en direct !");
+      toast.success("Félicitations ! Votre boutique est publiée et en direct !");
       setSaveStatus("saved");
     }
     setPublishing(false);
@@ -429,7 +473,19 @@ export default function CustomizePage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-100 flex flex-col overflow-hidden z-40 select-none">
+    <EditorContext.Provider
+      value={{
+        isEditor: true,
+        selectedSectionId,
+        activeFieldKey,
+        activeBlockId,
+        onUpdateText: handleUpdateText,
+        onFocusField: handleFocusField,
+        hoveredField,
+        setHoveredField,
+      }}
+    >
+      <div className="fixed inset-0 bg-gray-100 flex flex-col overflow-hidden z-40 select-none">
       {/* ──────────────────────────────────────────────────────── */}
       {/*  TOP BAR — SHOPIFY DAWN STYLE                           */}
       {/* ──────────────────────────────────────────────────────── */}
@@ -470,11 +526,11 @@ export default function CustomizePage() {
               }}
               className="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 text-xs font-bold py-1.5 px-3 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             >
-              <option value="/">🏠 Page d&apos;accueil</option>
-              <option value="/products/[slug]">🛍️ Fiche Produit</option>
-              <option value="/products">📦 Catalogue / Produits</option>
-              <option value="/wishlist">💝 Wishlist</option>
-              <option value="/thank-you">🎉 Remerciement</option>
+              <option value="/">Page d&apos;accueil</option>
+              <option value="/products/[slug]">Fiche Produit</option>
+              <option value="/products">Catalogue / Produits</option>
+              <option value="/wishlist">Favoris (Wishlist)</option>
+              <option value="/thank-you">Page de remerciement</option>
             </select>
           </div>
         </div>
@@ -841,6 +897,10 @@ export default function CustomizePage() {
           onMoveSection={handleMoveSection}
           onToggleVisibility={handleToggleVisibility}
           onDeleteSection={handleDeleteSection}
+          onNavigatePage={(slug) => {
+            setActivePageSlug(slug);
+            setSelectedSectionId(null);
+          }}
         />
       </div>
 
@@ -851,5 +911,6 @@ export default function CustomizePage() {
         onAddSection={handleAddSection}
       />
     </div>
+  </EditorContext.Provider>
   );
 }

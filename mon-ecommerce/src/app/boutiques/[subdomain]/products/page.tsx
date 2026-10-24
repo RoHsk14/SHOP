@@ -61,7 +61,7 @@ export default function ProductsPage() {
 
   return (
     <ShopProvider config={c} shopName={shopName} subdomain={subdomain}>
-      <ProductGridProvider>
+      <ProductGridProvider subdomain={subdomain}>
         <SearchModal />
         <CartDrawer />
         <GoogleFontsLoader fonts={{ heading: c.global.fonts.heading, body: c.global.fonts.body }} />

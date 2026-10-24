@@ -16,7 +16,7 @@ const MOBILE_COLS: Record<number, string> = {
 };
 
 export default function SectionProductGrid() {
-  const { config, subdomain } = useShop();
+  const { config, subdomain, isMobile } = useShop();
   const { filtered = [], loading } = useProductGrid();
 
   const showBadges = config?.layout?.showBadges !== false;
@@ -50,7 +50,15 @@ export default function SectionProductGrid() {
           ))}
         </div>
       ) : (
-        <div className={`grid ${mobileClass} ${gridClass} gap-4 sm:gap-6`}>
+        <div
+          className={`grid ${
+            isMobile
+              ? filtered.length === 1
+                ? "grid-cols-1 max-w-[320px] mx-auto"
+                : mobileClass
+              : `${mobileClass} ${gridClass}`
+          } gap-3 sm:gap-6`}
+        >
           {filtered.map((product) => (
             <ProductCard key={product.id} product={product} subdomain={subdomain} showBadges={showBadges} showWishlist={showWishlist} />
           ))}

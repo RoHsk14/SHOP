@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import EditableText, { hasTextValue, plainText } from "@/components/EditableText";
+import { useShop } from "@/lib/shop-context";
+import { useEditor } from "@/lib/editor-context";
 
 interface Props {
   settings: {
@@ -19,6 +21,9 @@ interface Props {
 }
 
 export default function TextWithImage({ settings }: Props) {
+  const { shopLink } = useShop();
+  const { isEditor } = useEditor();
+
   if (!hasTextValue(settings.title) && !settings.image) return null;
 
   const isLeft = settings.image_position !== "right";
@@ -65,7 +70,7 @@ export default function TextWithImage({ settings }: Props) {
             )}
             {hasTextValue(settings.button_text) && (
               <Link
-                href={settings.button_url || "#"}
+                href={shopLink(settings.button_url || "/products")}
                 className="inline-block px-6 py-2.5 text-sm font-semibold transition-all hover:opacity-90"
                 style={{
                   background: "var(--theme-primary)",
@@ -73,7 +78,9 @@ export default function TextWithImage({ settings }: Props) {
                   borderRadius: "var(--theme-radius-button)",
                 }}
                 onClick={(e) => {
-                  if ((e.target as HTMLElement)?.isContentEditable) e.preventDefault();
+                  if (isEditor || (e.target as HTMLElement)?.isContentEditable) {
+                    e.preventDefault();
+                  }
                 }}
               >
                 <EditableText as="span" value={settings.button_text} />
