@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useProduct } from "@/lib/product-context";
 import { useShop } from "@/lib/shop-context";
+import * as metaPixel from "@/lib/metaPixel";
 import CheckoutForm from "@/components/CheckoutForm";
 import ReassuranceMarquee from "@/components/ReassuranceMarquee";
 import ProductDescriptionViewer from "@/components/ProductDescriptionViewer";
@@ -52,6 +53,17 @@ export default function SectionProductInfo({ settings }: Props) {
 
   const [bundleOffers, setBundleOffers] = useState<any[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    metaPixel.trackViewContent({
+      content_name: product.name,
+      content_ids: [product.id],
+      content_type: "product",
+      value: product.price || 0,
+      currency: "XOF",
+    });
+  }, [product?.id, product?.name, product?.price]);
 
   useEffect(() => {
     if (!subdomain || !product?.id) return;
