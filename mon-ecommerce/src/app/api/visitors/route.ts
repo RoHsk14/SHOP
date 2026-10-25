@@ -9,7 +9,12 @@ export async function POST(request: NextRequest) {
     const { session_id, path } = body;
 
     const host = request.headers.get("host") || "";
-    const shopSlug = extractSubdomain(host) || "default";
+    let shopSlug = extractSubdomain(host);
+    if (!shopSlug && path) {
+      const match = path.match(/^\/boutiques\/([^\/]+)/);
+      if (match) shopSlug = match[1];
+    }
+    if (!shopSlug) shopSlug = "default";
 
     if (!session_id) {
       return NextResponse.json({ error: "session_id required" }, { status: 400 });

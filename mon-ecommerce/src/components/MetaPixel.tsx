@@ -5,20 +5,27 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { extractSubdomain } from "@/lib/host";
 
+function getEffectiveShopSlug(): string | null {
+  if (typeof window === "undefined") return null;
+  const sub = extractSubdomain(window.location.host);
+  if (sub) return sub;
+  const match = window.location.pathname.match(/^\/boutiques\/([^\/]+)/);
+  return match ? match[1] : null;
+}
+
 export default function MetaPixel({ pixelId }: { pixelId?: string }) {
   const [dbPixelId, setDbPixelId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPixelId = async () => {
-      const host = window.location.host;
-      const subdomain = extractSubdomain(host);
-      if (!subdomain) return;
+      const shopSlug = getEffectiveShopSlug();
+      if (!shopSlug) return;
 
       const { data, error } = await supabase
         .from("settings")
         .select("pixel_id")
-        .eq("shop_slug", subdomain)
-        .single();
+        .eq("shop_slug", shopSlug)
+        .maybeSingle();
 
       if (error) {
         console.error("MetaPixel: Supabase error", error);
@@ -39,7 +46,7 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
   useEffect(() => {
     if (!id) return;
 
-    const shopSlug = extractSubdomain(window.location.host);
+    const shopSlug = getEffectiveShopSlug();
     if (!shopSlug) return;
 
     const eventId = `pv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

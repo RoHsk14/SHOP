@@ -16,7 +16,10 @@ function generateEventId(): string {
 
 function getShopSlug(): string | null {
   if (typeof window === "undefined") return null;
-  return extractSubdomain(window.location.host);
+  const sub = extractSubdomain(window.location.host);
+  if (sub) return sub;
+  const match = window.location.pathname.match(/^\/boutiques\/([^\/]+)/);
+  return match ? match[1] : null;
 }
 
 function trackCAPI(event_name: string, data?: Record<string, any>, eventId?: string) {
