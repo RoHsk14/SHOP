@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import PwaInstallButton from "@/components/pwa/PwaInstallButton";
 import NotificationBell from "@/components/pwa/NotificationBell";
+import AdminPwaHead from "@/components/pwa/AdminPwaHead";
 
 export default function AdminLayout({
  children,
@@ -282,7 +283,7 @@ const menuItems = [
 
   return (
   <>
-
+  <AdminPwaHead />
   <div data-admin-theme={adminTheme} className="min-h-screen bg-gray-50 flex">
   {/* Mobile menu button */}
   <button

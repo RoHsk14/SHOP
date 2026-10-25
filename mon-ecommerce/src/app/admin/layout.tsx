@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Store, ShoppingCart, Package, Settings, LogOut, Menu, X, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import AdminPwaHead from "@/components/pwa/AdminPwaHead";
 
 export default function SuperAdminLayout({
   children,
@@ -98,7 +99,9 @@ export default function SuperAdminLayout({
   const isActive = (href: string) => pathname === href;
 
   return (
-    <div data-admin-theme="dark" className="min-h-screen bg-zinc-950 flex">
+    <>
+      <AdminPwaHead />
+      <div data-admin-theme="dark" className="min-h-screen bg-zinc-950 flex">
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-all"
@@ -230,5 +233,6 @@ export default function SuperAdminLayout({
         </div>
       </main>
     </div>
+    </>
   );
 }

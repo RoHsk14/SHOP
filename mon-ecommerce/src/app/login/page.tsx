@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
 import { getSiteUrl } from "@/lib/site-url";
+import AdminPwaHead from "@/components/pwa/AdminPwaHead";
 
 type Shop = { shop_slug: string; updated_at?: string };
 
@@ -94,7 +95,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <>
+      <AdminPwaHead />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <div className="text-center mb-8">
@@ -172,5 +175,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

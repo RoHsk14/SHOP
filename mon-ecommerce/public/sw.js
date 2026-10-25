@@ -1,9 +1,11 @@
-// Shopeazy Admin Service Worker
-const CACHE_NAME = "shopeazy-admin-v2";
+// Shopeazy Merchant Admin Service Worker
+// Strictly scoped to merchant dashboard and login - Never intercepts customer storefronts
+const CACHE_NAME = "shopeazy-admin-v3";
 const STATIC_ASSETS = [
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/apple-touch-icon.png",
+  "/admin-manifest.json",
   "/icon.svg"
 ];
 
@@ -36,26 +38,39 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Ignore non-GET requests
+  // 1. Ignore non-GET requests
   if (req.method !== "GET") {
     return;
   }
 
-  // Never intercept external requests (Meta Pixel, CDN, APIs)
+  // 2. Never intercept external requests (Meta Pixel, CDN, APIs)
   if (url.origin !== self.location.origin) {
     return;
   }
 
-  // Never intercept API routes or Next.js server actions
+  // 3. Never intercept API routes or Next.js server actions
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/data/")) {
     return;
   }
 
-  // Static assets (images, fonts, icons) -> Cache first, then network
-  if (
+  // 4. STRICT MERCHANT ISOLATION:
+  // If the request is for a customer storefront or product page (not admin and not login), DO NOT INTERCEPT!
+  const isAdminOrLogin =
+    url.pathname.includes("/admin") ||
+    url.pathname.startsWith("/login") ||
+    url.pathname === "/admin-manifest.json";
+
+  const isStaticPwaIcon =
     url.pathname.startsWith("/icons/") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|webp|ico|woff|woff2)$/)
-  ) {
+    url.pathname === "/apple-touch-icon.png";
+
+  if (!isAdminOrLogin && !isStaticPwaIcon) {
+    // Let browser handle customer storefront requests directly
+    return;
+  }
+
+  // 5. Static assets for admin PWA -> Cache first
+  if (isStaticPwaIcon) {
     event.respondWith(
       caches.match(req).then((cached) => {
         if (cached) return cached;
@@ -71,7 +86,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // HTML pages -> Network first, fallback to offline cache if available
+  // 6. Admin HTML navigation -> Network first with cache fallback
   event.respondWith(
     fetch(req).catch(() => {
       return caches.match(req);
@@ -79,7 +94,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Native Push Notifications
+// Native Push Notifications for orders
 self.addEventListener("push", (event) => {
   let data = {};
   try {
