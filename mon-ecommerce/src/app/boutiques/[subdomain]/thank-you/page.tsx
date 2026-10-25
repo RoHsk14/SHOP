@@ -14,6 +14,7 @@ import CartDrawer from "@/components/CartDrawer";
 import BackToTop from "@/components/BackToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import { ShopProvider } from "@/lib/shop-context";
+import * as metaPixel from "@/lib/metaPixel";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 
@@ -33,6 +34,17 @@ export default function ThankYouPage() {
   const currency = searchParams.get("currency") || "EUR";
   const product = searchParams.get("product");
   const qty = searchParams.get("qty");
+
+  useEffect(() => {
+    if (!price) return;
+    const numPrice = parseFloat(price);
+    metaPixel.trackPurchase({
+      value: !isNaN(numPrice) ? numPrice : 0,
+      currency: currency || "XOF",
+      num_items: parseInt(qty || "1", 10) || 1,
+      content_name: product || "Commande",
+    });
+  }, [price, currency, product, qty]);
 
   useEffect(() => {
     const fetchSettings = async () => {

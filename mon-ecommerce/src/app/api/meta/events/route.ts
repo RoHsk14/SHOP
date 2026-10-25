@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (settingsError || !settings?.pixel_id || !settings?.capi_token) {
-      return NextResponse.json({ error: "Pixel ID or CAPI token not configured" }, { status: 400 });
+      return NextResponse.json({ skipped: true, reason: "Pixel ID or CAPI token not configured" }, { status: 200 });
     }
 
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()

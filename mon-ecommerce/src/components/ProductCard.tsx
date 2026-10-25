@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { addToCart } from "@/components/CartDrawer";
+import * as metaPixel from "@/lib/metaPixel";
 import WishlistButton from "@/components/WishlistButton";
 import { useEditor } from "@/lib/editor-context";
 
@@ -71,6 +72,13 @@ export default function ProductCard({ product, subdomain, showBadges = true, sho
       price: product.price || 0,
       image: imageUrl,
       slug,
+    });
+    metaPixel.trackAddToCart({
+      content_name: product.name,
+      content_ids: [product.id],
+      content_type: "product",
+      value: product.price || 0,
+      currency: "XOF",
     });
   };
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCart, Ruler } from "lucide-react";
 import { addToCart } from "@/components/CartDrawer";
+import * as metaPixel from "@/lib/metaPixel";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import WishlistButton from "@/components/WishlistButton";
 
@@ -62,6 +63,17 @@ export default function ProductDetail({ product, subdomain, showBreadcrumbs = tr
     return () => observer.disconnect();
   }, [stickyAddToCart]);
 
+  useEffect(() => {
+    if (!product?.id) return;
+    metaPixel.trackViewContent({
+      content_name: product.name,
+      content_ids: [product.id],
+      content_type: "product",
+      value: product.price || 0,
+      currency: "XOF",
+    });
+  }, [product?.id, product?.name, product?.price]);
+
   const handleAdd = () => {
     addToCart({
       id: product.id,
@@ -69,6 +81,13 @@ export default function ProductDetail({ product, subdomain, showBreadcrumbs = tr
       price: product.price || 0,
       image: images[0],
       slug,
+    });
+    metaPixel.trackAddToCart({
+      content_name: product.name,
+      content_ids: [product.id],
+      content_type: "product",
+      value: (product.price || 0) * quantity,
+      currency: "XOF",
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
