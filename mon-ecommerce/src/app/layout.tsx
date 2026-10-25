@@ -1,11 +1,12 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import MetaPixel from "@/components/MetaPixel";
 import ToasterWrapper from "@/components/ToasterWrapper";
 import VisitorTracker from "@/components/VisitorTracker";
 import AuthInitializer from "@/components/AuthInitializer";
+import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 
 const instrumentSans = Instrument_Sans({
   variable: "--font-heading",
@@ -23,6 +24,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ShopEazy",
   description: "Créez votre boutique e-commerce en quelques minutes",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Shopeazy Admin",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#059669",
 };
 
 export default function RootLayout({
@@ -46,6 +60,7 @@ export default function RootLayout({
           <MetaPixel />
           <VisitorTracker />
           <AuthInitializer />
+          <ServiceWorkerRegister />
         </Suspense>
         {children}
         <ToasterWrapper />

@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
+import PwaInstallButton from "@/components/pwa/PwaInstallButton";
 
 export default function AdminLayout({
  children,
@@ -395,7 +396,8 @@ const menuItems = [
  </nav>
 
   {/* Footer sidebar */}
-   <div className="p-3 border-t border-gray-100 space-y-1">
+   <div className="p-3 border-t border-gray-100 space-y-2">
+   <PwaInstallButton />
    <button
   onClick={handleLogout}
   className="admin-red-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all group"
