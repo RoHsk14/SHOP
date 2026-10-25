@@ -415,7 +415,7 @@ export default function SettingsAdmin() {
       const { data: { session } } = await supabase.auth.getSession();
       const settingsData = {
         owner_name: ownerName, shop_name: shopName, shop_description: shopDescription, shop_country: shopCountry,
-        pixel_id: pixelId, capi_token: capiToken, default_currency: defaultCurrency,
+        pixel_id: pixelId.trim(), capi_token: capiToken.trim(), default_currency: defaultCurrency,
         google_sheet_url: googleSheetUrl,
         custom_form_fields: formFields,
         updated_at: new Date().toISOString(),

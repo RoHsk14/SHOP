@@ -78,7 +78,6 @@ export default function AnalyticsTracker({ analytics }: Props) {
 
         return () => {
           noscript.remove();
-          document.head.querySelector('script[src*="fbevents.js"]')?.remove();
         };
       }
     }
