@@ -10,6 +10,7 @@ import { generateUniqueShopSlug } from "@/lib/slug";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notification-sound";
 import PwaInstallButton from "@/components/pwa/PwaInstallButton";
+import NotificationBell from "@/components/pwa/NotificationBell";
 
 export default function AdminLayout({
  children,
@@ -205,6 +206,30 @@ export default function AdminLayout({
  duration: 6000,
  }
  );
+
+ // Notification native PWA / Navigateur
+ if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+   const notifTitle = "Nouvelle commande !";
+   const notifBody = `${newOrder.customer_name || "Client"} — ${newOrder.total_price?.toLocaleString()} XOF`;
+   const ordersUrl = `${window.location.origin}/boutiques/${slug}/admin/orders`;
+
+   if ("serviceWorker" in navigator) {
+     navigator.serviceWorker.ready.then((reg) => {
+       reg.showNotification(notifTitle, {
+         body: notifBody,
+         icon: "/icons/icon-192x192.png",
+         badge: "/icons/icon-192x192.png",
+         tag: `order-${newOrder.id}`,
+         data: { url: ordersUrl },
+         vibrate: [200, 100, 200],
+       } as any);
+     }).catch(() => {
+       new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
+     });
+   } else {
+     new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
+   }
+ }
  }
  )
  .subscribe();
@@ -429,6 +454,9 @@ const menuItems = [
  </div>
 
  <div className="flex items-center gap-2 ml-auto">
+  {/* Notification Bell */}
+  <NotificationBell shopSlug={slug} />
+
   {/* Theme Toggle */}
   <button
     onClick={toggleAdminTheme}
