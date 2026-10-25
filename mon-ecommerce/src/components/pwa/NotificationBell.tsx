@@ -1,21 +1,69 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, BellRing, Check, Volume2, X } from "lucide-react";
+import { Bell, BellOff, BellRing, Check, Volume2, X, Smartphone, Info } from "lucide-react";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { toast } from "sonner";
 
 export default function NotificationBell({ shopSlug }: { shopSlug?: string }) {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [open, setOpen] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setPermission(Notification.permission);
-    } else {
-      setPermission("unsupported");
+    if (typeof window !== "undefined") {
+      const ua = window.navigator.userAgent.toLowerCase();
+      setIsIos(/iphone|ipad|ipod/.test(ua));
+
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+
+      if ("Notification" in window) {
+        setPermission(Notification.permission);
+      } else {
+        setPermission("unsupported");
+      }
     }
   }, []);
+
+  const getSwRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+    try {
+      const readyPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
+      const reg = await Promise.race([readyPromise, timeoutPromise]);
+      if (reg) return reg;
+      return (await navigator.serviceWorker.getRegistration()) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const dispatchNotification = async (title: string, body: string, url: string) => {
+    try {
+      const reg = await getSwRegistration();
+      if (reg && "showNotification" in reg) {
+        await reg.showNotification(title, {
+          body,
+          icon: "/icons/icon-192x192.png",
+          badge: "/icons/icon-192x192.png",
+          tag: `notif-${Date.now()}`,
+          vibrate: [200, 100, 200],
+          data: { url },
+        } as any);
+        return true;
+      } else if (typeof window !== "undefined" && "Notification" in window) {
+        new Notification(title, { body, icon: "/icons/icon-192x192.png" });
+        return true;
+      }
+    } catch (e) {
+      console.warn("Could not dispatch native notification:", e);
+    }
+    return false;
+  };
 
   const requestPermission = async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -30,22 +78,11 @@ export default function NotificationBell({ shopSlug }: { shopSlug?: string }) {
       if (result === "granted") {
         playNotificationSound();
         toast.success("Notifications activées !");
-
-        // Send a test notification
-        if ("serviceWorker" in navigator) {
-          const reg = await navigator.serviceWorker.ready;
-          reg.showNotification("Notifications Shopeazy actives", {
-            body: "Vous recevrez une alerte en temps réel pour chaque commande reçue.",
-            icon: "/icons/icon-192x192.png",
-            badge: "/icons/icon-192x192.png",
-            vibrate: [200, 100, 200],
-          } as any);
-        } else {
-          new Notification("Notifications Shopeazy actives", {
-            body: "Vous recevrez une alerte en temps réel pour chaque commande reçue.",
-            icon: "/icons/icon-192x192.png",
-          });
-        }
+        await dispatchNotification(
+          "Notifications Shopeazy actives",
+          "Vous recevrez une alerte en temps réel pour chaque commande reçue.",
+          shopSlug ? `/boutiques/${shopSlug}/admin/orders` : "/admin/orders"
+        );
       } else if (result === "denied") {
         toast.error("Autorisation refusée. Veuillez activer les notifications dans les réglages de votre navigateur.");
       }
@@ -58,27 +95,18 @@ export default function NotificationBell({ shopSlug }: { shopSlug?: string }) {
     playNotificationSound();
     const title = "Nouvelle commande #1042";
     const body = "Moussa Diop vient de commander pour 24 500 XOF";
+    const ordersUrl = shopSlug ? `/boutiques/${shopSlug}/admin/orders` : "/admin/orders";
 
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      if ("serviceWorker" in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          reg.showNotification(title, {
-            body,
-            icon: "/icons/icon-192x192.png",
-            badge: "/icons/icon-192x192.png",
-            tag: "test-order",
-            vibrate: [200, 100, 200],
-            data: { url: shopSlug ? `/boutiques/${shopSlug}/admin/orders` : "/admin/orders" },
-          } as any);
-        } catch {
-          new Notification(title, { body, icon: "/icons/icon-192x192.png" });
-        }
-      } else {
-        new Notification(title, { body, icon: "/icons/icon-192x192.png" });
-      }
+    if (permission === "granted") {
+      await dispatchNotification(title, body, ordersUrl);
     }
-    toast.success("Alerte de test envoyée !");
+    toast.success("Alerte de test envoyée !", {
+      description: body,
+      action: {
+        label: "Voir",
+        onClick: () => (window.location.href = ordersUrl),
+      },
+    });
   };
 
   return (
@@ -111,9 +139,13 @@ export default function NotificationBell({ shopSlug }: { shopSlug?: string }) {
           <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 text-gray-900 animate-in fade-in slide-in-from-top-2 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                  permission === "granted" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-600"
-                }`}>
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                    permission === "granted"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
                   <Bell className="w-4 h-4" />
                 </div>
                 <div>
@@ -139,6 +171,15 @@ export default function NotificationBell({ shopSlug }: { shopSlug?: string }) {
                       Notifications actives : vous recevez un son et une alerte à chaque commande.
                     </span>
                   </div>
+
+                  {isIos && !isStandalone && (
+                    <div className="flex items-start gap-2 text-amber-800 bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl text-[11px]">
+                      <Info className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                      <span className="leading-tight">
+                        <strong>Sur iPhone / iPad :</strong> Pour que les alertes s'affichent écran verrouillé, installez l'app sur votre écran d'accueil et ouvrez-la depuis l'icône.
+                      </span>
+                    </div>
+                  )}
 
                   <button
                     type="button"

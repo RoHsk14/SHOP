@@ -179,65 +179,105 @@ export default function AdminLayout({
  }
  };
 
- // Realtime subscription pour les nouvelles commandes
+ // Surveillance en temps réel des nouvelles commandes (polling actif + notifications)
  useEffect(() => {
- if (!slug) return;
+   if (!slug) return;
 
- const channel = supabase
- .channel(`orders-${slug}`)
- .on(
- "postgres_changes",
- {
- event: "INSERT",
- schema: "public",
- table: "orders",
- filter: `shop_slug=eq.${slug}`,
- },
- (payload) => {
- const newOrder = payload.new as any;
- playNotificationSound();
- toast.success(
- `Nouvelle commande ! ${newOrder.customer_name} — ${newOrder.total_price?.toLocaleString()} XOF`,
- {
- action: {
- label: "Voir",
- onClick: () =>
- (window.location.href = `/boutiques/${slug}/admin/orders`),
- },
- duration: 6000,
- }
- );
+   let isMounted = true;
+   let lastKnownOrderId: string | null = null;
+   let isFirstCheck = true;
 
- // Notification native PWA / Navigateur
- if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-   const notifTitle = "Nouvelle commande !";
-   const notifBody = `${newOrder.customer_name || "Client"} — ${newOrder.total_price?.toLocaleString()} XOF`;
-   const ordersUrl = `${window.location.origin}/boutiques/${slug}/admin/orders`;
+   const checkNewOrders = async () => {
+     try {
+       const { data: latestOrders, error } = await supabase
+         .from("orders")
+         .select("id, customer_name, total_price, created_at")
+         .eq("shop_slug", slug)
+         .order("created_at", { ascending: false })
+         .limit(1);
 
-   if ("serviceWorker" in navigator) {
-     navigator.serviceWorker.ready.then((reg) => {
-       reg.showNotification(notifTitle, {
-         body: notifBody,
-         icon: "/icons/icon-192x192.png",
-         badge: "/icons/icon-192x192.png",
-         tag: `order-${newOrder.id}`,
-         data: { url: ordersUrl },
-         vibrate: [200, 100, 200],
-       } as any);
-     }).catch(() => {
-       new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
-     });
-   } else {
-     new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
-   }
- }
- }
- )
- .subscribe();
+       if (error || !latestOrders || latestOrders.length === 0 || !isMounted) return;
 
- return () => {
- supabase.removeChannel(channel);
- };
+       const latestOrder = latestOrders[0];
+
+       // Au premier chargement, on enregistre l'identifiant le plus récent sans déclencher d'alerte
+       if (isFirstCheck) {
+         lastKnownOrderId = latestOrder.id;
+         isFirstCheck = false;
+         return;
+       }
+
+       // Si une nouvelle commande est détectée
+       if (latestOrder.id !== lastKnownOrderId) {
+         lastKnownOrderId = latestOrder.id;
+
+         // 1. Alerte sonore caisse
+         playNotificationSound();
+
+         // 2. Notification toast interactive
+         const totalFormatted = latestOrder.total_price ? latestOrder.total_price.toLocaleString() : "0";
+         toast.success(
+           `Nouvelle commande ! ${latestOrder.customer_name || "Client"} — ${totalFormatted} XOF`,
+           {
+             action: {
+               label: "Voir",
+               onClick: () => (window.location.href = `/boutiques/${slug}/admin/orders`),
+             },
+             duration: 8000,
+           }
+         );
+
+         // 3. Notification native PWA / Système
+         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+           const notifTitle = "Nouvelle commande reçue !";
+           const notifBody = `${latestOrder.customer_name || "Client"} — ${totalFormatted} XOF`;
+           const ordersUrl = `${window.location.origin}/boutiques/${slug}/admin/orders`;
+
+           if ("serviceWorker" in navigator) {
+             try {
+               const readyPromise = navigator.serviceWorker.ready;
+               const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("SW timeout")), 1200));
+               const reg = (await Promise.race([readyPromise, timeoutPromise])) as ServiceWorkerRegistration;
+               await reg.showNotification(notifTitle, {
+                 body: notifBody,
+                 icon: "/icons/icon-192x192.png",
+                 badge: "/icons/icon-192x192.png",
+                 tag: `order-${latestOrder.id}`,
+                 data: { url: ordersUrl },
+                 vibrate: [200, 100, 200],
+               } as any);
+             } catch {
+               new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
+             }
+           } else {
+             new Notification(notifTitle, { body: notifBody, icon: "/icons/icon-192x192.png" });
+           }
+         }
+       }
+     } catch (err) {
+       console.warn("[OrdersPolling] Error:", err);
+     }
+   };
+
+   // Premier check immédiat
+   checkNewOrders();
+
+   // Surveillance continue toutes les 5 secondes
+   const interval = setInterval(checkNewOrders, 5000);
+
+   // Vérification instantanée dès que le commerçant réactive son onglet
+   const handleVisibility = () => {
+     if (document.visibilityState === "visible") {
+       checkNewOrders();
+     }
+   };
+   document.addEventListener("visibilitychange", handleVisibility);
+
+   return () => {
+     isMounted = false;
+     clearInterval(interval);
+     document.removeEventListener("visibilitychange", handleVisibility);
+   };
  }, [slug]);
 
   // Initialize admin theme from localStorage
