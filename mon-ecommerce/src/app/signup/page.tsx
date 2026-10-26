@@ -11,7 +11,6 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const handleGoogleSignup = async () => {
     await supabase.auth.signInWithOAuth({
@@ -41,15 +40,10 @@ export default function SignupPage() {
       return;
     }
 
-    if (authData.user) {
-      await supabase.from("settings").insert([{ shop_slug: shopSlug, user_id: authData.user.id }]);
-    }
-
-    if (authData.session) {
+    if (authData?.session) {
       window.location.replace(`${window.location.origin}/boutiques/${shopSlug}/onboarding`);
     } else {
-      setSuccess(true);
-      setMessage("Vérifiez votre boîte email pour confirmer votre inscription. Vous pourrez ensuite vous connecter.");
+      window.location.replace(`${window.location.origin}/login`);
     }
 
     setLoading(false);
@@ -96,18 +90,18 @@ export default function SignupPage() {
             </div>
 
             {message && (
-              <div className={`text-sm p-3 rounded-lg ${success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+              <div className="text-sm p-3 rounded-lg bg-red-50 text-red-700">
                 {message}
               </div>
             )}
 
-            {!success && (
-            <button type="submit" disabled={loading}
+            <button
+              type="submit"
+              disabled={loading}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-sm"
             >
-              {loading ? "Inscription..." : "Créer ma boutique"}
+              {loading ? "Création en cours..." : "Créer ma boutique"}
             </button>
-            )}
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">

@@ -403,15 +403,20 @@ function createAuthProxy() {
       password: string;
     }) => {
       try {
-        const res = await nhostFetch("/signin/email-password", {
+        const res = await fetch("/api/auth/login", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
-        if (res?.session) setStoredSession(res.session);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          return { data: null, error: { message: data.error || "Identifiants invalides." } };
+        }
+        if (data.session) setStoredSession(data.session);
         return {
           data: {
-            user: res?.session?.user,
-            session: toSupabaseSession(res?.session),
+            user: data.session?.user || data.user,
+            session: toSupabaseSession(data.session),
           },
           error: null,
         };
@@ -429,22 +434,21 @@ function createAuthProxy() {
       options?: { data?: any };
     }) => {
       try {
-        const res = await nhostFetch("/signup/email-password", {
+        const shopSlug = options?.data?.shop_slug;
+        const res = await fetch("/api/auth/signup", {
           method: "POST",
-          body: JSON.stringify({
-            email,
-            password,
-            options: {
-              allowedRoles: ["user", "me"],
-              defaultRole: "user",
-            },
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, shopSlug }),
         });
-        if (res?.session) setStoredSession(res.session);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          return { data: null, error: { message: data.error || "Erreur lors de l'inscription." } };
+        }
+        if (data.session) setStoredSession(data.session);
         return {
           data: {
-            user: res?.session?.user,
-            session: toSupabaseSession(res?.session),
+            user: data.session?.user || data.user,
+            session: toSupabaseSession(data.session),
           },
           error: null,
         };
