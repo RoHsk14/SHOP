@@ -20,17 +20,18 @@ function buildWhereClause(filters: FilterOp[]): Record<string, any> {
   const where: Record<string, any> = {};
   for (const f of filters) {
     const v = f.value;
+    const existing = where[f.field] || {};
     switch (f.type) {
-      case "eq": where[f.field] = { _eq: v }; break;
-      case "neq": where[f.field] = { _neq: v }; break;
-      case "in": where[f.field] = { _in: v }; break;
-      case "gte": where[f.field] = { _gte: v }; break;
-      case "lte": where[f.field] = { _lte: v }; break;
-      case "gt": where[f.field] = { _gt: v }; break;
-      case "lt": where[f.field] = { _lt: v }; break;
-      case "is": where[f.field] = v === null ? { _is_null: true } : { _is_null: false }; break;
-      case "like": where[f.field] = { _like: v }; break;
-      case "ilike": where[f.field] = { _ilike: v }; break;
+      case "eq": where[f.field] = { ...existing, _eq: v }; break;
+      case "neq": where[f.field] = { ...existing, _neq: v }; break;
+      case "in": where[f.field] = { ...existing, _in: v }; break;
+      case "gte": where[f.field] = { ...existing, _gte: v }; break;
+      case "lte": where[f.field] = { ...existing, _lte: v }; break;
+      case "gt": where[f.field] = { ...existing, _gt: v }; break;
+      case "lt": where[f.field] = { ...existing, _lt: v }; break;
+      case "is": where[f.field] = v === null ? { ...existing, _is_null: true } : { ...existing, _is_null: false }; break;
+      case "like": where[f.field] = { ...existing, _like: v }; break;
+      case "ilike": where[f.field] = { ...existing, _ilike: v }; break;
     }
   }
   return where;

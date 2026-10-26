@@ -119,17 +119,48 @@ export default function AdminDashboard() {
   }, [subdomain]);
 
   const getDateRange = () => {
-    const now = new Date(); let end = new Date(now); let start = new Date(now);
+    const now = new Date();
+    let start = new Date(now);
+    let end = new Date(now);
     switch (dateFilter) {
-      case 'today': start.setHours(0, 0, 0, 0); break;
-      case 'yesterday': start.setDate(start.getDate() - 1); start.setHours(0, 0, 0, 0); end.setDate(end.getDate() - 1); end.setHours(23, 59, 59, 999); break;
-      case '7days': start.setDate(start.getDate() - 7); break;
-      case '30days': start.setDate(start.getDate() - 30); break;
-      case '90days': start.setDate(start.getDate() - 90); break;
-      case 'year': start = new Date(now.getFullYear(), 0, 1); break;
+      case 'today':
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case 'yesterday':
+        start.setDate(start.getDate() - 1);
+        start.setHours(0, 0, 0, 0);
+        end.setDate(end.getDate() - 1);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case '7days':
+        start.setDate(start.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case '30days':
+        start.setDate(start.getDate() - 29);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case '90days':
+        start.setDate(start.getDate() - 89);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case 'year':
+        start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
       case 'custom':
-        if (customDateRange.start) start = new Date(customDateRange.start);
-        if (customDateRange.end) end = new Date(customDateRange.end);
+        if (customDateRange.start) {
+          start = new Date(customDateRange.start);
+          start.setHours(0, 0, 0, 0);
+        }
+        if (customDateRange.end) {
+          end = new Date(customDateRange.end);
+          end.setHours(23, 59, 59, 999);
+        }
         break;
     }
     return { start: start.toISOString(), end: end.toISOString() };
@@ -247,12 +278,12 @@ export default function AdminDashboard() {
         data.push({ label, current, previous });
       }
     } else {
-      const days = dateFilter === '7days' ? 7 : dateFilter === '30days' ? 30 : 90;
+      const days = dateFilter === '7days' ? 7 : dateFilter === '30days' ? 30 : dateFilter === '90days' ? 90 : 365;
       for (let i = days - 1; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const prevD = new Date(d); prevD.setDate(prevD.getDate() - days);
-        const currDayOrders = filteredOrders.filter(o => o.created_at?.startsWith(d.toISOString().split('T')[0]));
-        const prevDayOrders = prevOrders.filter(o => o.created_at?.startsWith(prevD.toISOString().split('T')[0]));
+        const currDayOrders = filteredOrders.filter(o => new Date(o.created_at).toDateString() === d.toDateString());
+        const prevDayOrders = prevOrders.filter(o => new Date(o.created_at).toDateString() === prevD.toDateString());
         const label = d.toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' });
 
         let current = 0, previous = 0;
