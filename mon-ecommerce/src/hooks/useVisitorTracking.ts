@@ -3,27 +3,52 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes d'inactivite
+
+function isExcludedPath(p: string | null): boolean {
+  if (!p) return true;
+  return (
+    p.includes("/admin") ||
+    p.startsWith("/admin") ||
+    p.startsWith("/login") ||
+    p.startsWith("/signup") ||
+    p.startsWith("/auth") ||
+    p.startsWith("/api")
+  );
+}
+
 export function useVisitorTracking() {
   const sessionIdRef = useRef<string | null>(null);
   const pathname = usePathname();
-  const prevPathRef = useRef<string>("");
 
   const getSessionId = () => {
-    if (sessionIdRef.current) return sessionIdRef.current;
+    if (typeof window === "undefined") return null;
 
-    if (typeof window !== "undefined") {
-      let sessionId = localStorage.getItem("session_id");
-      if (!sessionId) {
-        sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem("session_id", sessionId);
-      }
-      sessionIdRef.current = sessionId;
-      return sessionId;
+    const now = Date.now();
+    const storedSessionId =
+      sessionStorage.getItem("shopeazy_session_id") ||
+      localStorage.getItem("shopeazy_session_id");
+    const lastActivityStr = localStorage.getItem("shopeazy_session_last_activity");
+    const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : 0;
+
+    if (storedSessionId && now - lastActivity < SESSION_TIMEOUT_MS) {
+      localStorage.setItem("shopeazy_session_last_activity", now.toString());
+      sessionIdRef.current = storedSessionId;
+      return storedSessionId;
     }
-    return null;
+
+    const newSessionId = `sess_${now}_${Math.random().toString(36).slice(2, 11)}`;
+    localStorage.setItem("shopeazy_session_id", newSessionId);
+    sessionStorage.setItem("shopeazy_session_id", newSessionId);
+    localStorage.setItem("shopeazy_session_last_activity", now.toString());
+    sessionIdRef.current = newSessionId;
+    return newSessionId;
   };
 
   const track = async (type: "pageview" | "heartbeat") => {
+    if (typeof window === "undefined") return;
+    if (isExcludedPath(window.location.pathname)) return;
+
     const sessionId = getSessionId();
     if (!sessionId) return;
 
@@ -43,13 +68,22 @@ export function useVisitorTracking() {
   };
 
   useEffect(() => {
-    track("pageview");
+    if (!isExcludedPath(pathname)) {
+      track("pageview");
+    }
   }, [pathname]);
 
   useEffect(() => {
-    const interval = setInterval(() => track("heartbeat"), 30 * 1000);
+    if (isExcludedPath(pathname)) return;
+
+    const interval = setInterval(() => {
+      if (!isExcludedPath(window.location.pathname)) {
+        track("heartbeat");
+      }
+    }, 30 * 1000);
 
     const handleUnload = () => {
+      if (isExcludedPath(window.location.pathname)) return;
       const sessionId = getSessionId();
       if (sessionId) {
         const blob = new Blob(
@@ -66,5 +100,5 @@ export function useVisitorTracking() {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleUnload);
     };
-  }, []);
+  }, [pathname]);
 }

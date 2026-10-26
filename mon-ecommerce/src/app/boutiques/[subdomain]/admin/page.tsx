@@ -87,10 +87,15 @@ export default function AdminDashboard() {
       const prevEnd = new Date(new Date(start).getTime() - 1);
       const prevStart = new Date(prevEnd.getTime() - (new Date(end).getTime() - new Date(start).getTime()));
 
-      const [bucketRes, prevBucketRes] = await Promise.all([
+      const [visitsRes, bucketRes, prevBucketRes] = await Promise.all([
+        fetch(`/api/visitors?type=visits&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&shop_slug=${subdomain}`),
         fetch(`/api/visitors?type=bucketed&bucket=hour&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&shop_slug=${subdomain}`),
         fetch(`/api/visitors?type=bucketed&bucket=hour&start=${encodeURIComponent(prevStart.toISOString())}&end=${encodeURIComponent(prevEnd.toISOString())}&shop_slug=${subdomain}`)
       ]);
+      if (visitsRes.ok) {
+        const vData = await visitsRes.json();
+        setTotalVisits(vData.visits || 0);
+      }
       if (bucketRes.ok) {
         const data = await bucketRes.json();
         setVisitorBuckets(data.buckets || []);

@@ -58,7 +58,7 @@ const KNOWN_COLUMNS: Record<string, string[]> = {
   products: ["id", "shop_slug", "name", "description", "price", "slug", "sku", "track_stock", "stock_quantity", "images", "status", "barcode", "category", "tags", "created_at", "updated_at"],
   orders: ["id", "shop_slug", "customer_name", "customer_phone", "customer_address", "total_price", "currency", "product_id", "product_name", "quantity", "status", "payment_method", "notes", "created_at", "updated_at"],
   offers: ["id", "shop_slug", "name", "description", "type", "discount_type", "discount_value", "min_quantity", "max_quantity", "products", "status", "active", "created_at", "updated_at"],
-  visitors: ["id", "session_id", "shop_slug", "is_online", "last_seen", "created_at"],
+  visitors: ["id", "session_id", "shop_slug", "is_online", "last_seen", "path", "referrer", "ip_address", "user_agent", "created_at"],
   admin_devices: ["id", "shop_slug", "push_token", "created_at"],
 };
 
