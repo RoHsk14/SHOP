@@ -30,7 +30,9 @@ export default function StorefrontPage() {
   const [shopName, setShopName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewThemeTitle, setPreviewThemeTitle] = useState<string | null>(null);
   const isPreview = getPreviewParam();
+  const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1";
 
   useEffect(() => {
     let cancelled = false;
@@ -45,13 +47,28 @@ export default function StorefrontPage() {
 
         if (cancelled) return;
 
+        const previewThemeId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview_theme_id") : null;
+
         if (settings) {
           setShopName(settings.shop_name || "");
-          if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
-            if (isPreview && (settings.theme_config as any).__draft) {
-              setConfig((settings.theme_config as any).__draft as ThemeConfig);
+          const rawConfig = settings.theme_config;
+          const savedThemesList = rawConfig?.savedThemes || [];
+
+          if (previewThemeId && savedThemesList.length > 0) {
+            const targetTheme = savedThemesList.find((t: any) => t.id === previewThemeId);
+            if (targetTheme?.config) {
+              setConfig(targetTheme.config);
+              setPreviewThemeTitle(targetTheme.name);
+            } else if (rawConfig && typeof rawConfig === "object" && rawConfig.global?.colors) {
+              setConfig(getPublishedConfig(rawConfig));
             } else {
-              setConfig(getPublishedConfig(settings.theme_config));
+              setConfig(buildDefaultConfig(settings.theme_id || "classic"));
+            }
+          } else if (rawConfig && typeof rawConfig === "object" && rawConfig.global?.colors) {
+            if (isPreview && rawConfig.__draft) {
+              setConfig(rawConfig.__draft as ThemeConfig);
+            } else {
+              setConfig(getPublishedConfig(rawConfig));
             }
           } else {
             setConfig(buildDefaultConfig(settings.theme_id || "classic"));
@@ -106,9 +123,20 @@ export default function StorefrontPage() {
       <CustomCssInjector customCss={config.customCss} />
       <ScriptInjector scripts={config.scripts} />
       <AnalyticsTracker analytics={config.analytics} />
-      <CookieBanner settings={config.cookie} />
-      <BackToTop settings={config.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />
-      <NewsletterPopup settings={config.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />
+      {!isEmbed && <CookieBanner settings={config.cookie} />}
+      {!isEmbed && <BackToTop settings={config.backToTop || { enabled: true, position: "right", backgroundColor: "#1f2937", iconColor: "#ffffff", borderRadius: "9999px" }} />}
+      {!isEmbed && <NewsletterPopup settings={config.newsletterPopup || { enabled: false, title: "", content: "", image: "", delay: 10, exitIntent: true, backgroundColor: "#ffffff", textColor: "#111827", buttonBg: "#059669", buttonText: "#ffffff" }} />}
+
+      {isEmbed && (
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            [data-nextjs-toast], nextjs-portal, [data-nextjs-dialog-overlay], div[data-nextjs-route-announcer] { display: none !important; }
+            #__next-build-watcher, [data-next-badge], [data-nextjs-dev-tools-button] { display: none !important; }
+            html, body { overflow-x: hidden !important; scrollbar-width: none !important; }
+            ::-webkit-scrollbar { display: none !important; }
+          `,
+        }} />
+      )}
 
       <div
         style={{
@@ -148,6 +176,23 @@ export default function StorefrontPage() {
             </div>
           );
         })}
+
+        {previewThemeTitle && !isEmbed && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900/95 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-4 text-xs font-medium border border-gray-700 backdrop-blur-md animate-in fade-in slide-in-from-bottom-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>Aperçu en direct du thème : <strong className="text-amber-300">{previewThemeTitle}</strong> (Brouillon non publié)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={`/boutiques/${subdomain}/admin/themes`}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-semibold transition-colors shadow-sm"
+              >
+                Gérer les thèmes
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </ShopProvider>
   );

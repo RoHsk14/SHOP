@@ -5,9 +5,41 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import Papa from "papaparse";
-import { Pencil, Trash2, Package, ExternalLink, ChevronRight, Search, Download, Upload, Plus, ArrowUpRight, ArrowDownRight, AlertCircle, Globe } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Package,
+  ExternalLink,
+  ChevronRight,
+  Search,
+  Download,
+  Upload,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  AlertCircle,
+  Globe,
+  Flame,
+  Check,
+  CheckSquare,
+  Square,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Layers,
+  FileSpreadsheet,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { slugify } from "@/lib/slug";
 import RichTextEditor from "@/components/RichTextEditor";
+import {
+  parseShopifyOrStandardCsv,
+  prepareProductsForDatabase,
+  removeEmojis,
+  ParsedImportProduct,
+  ProductImportAnalysis,
+} from "@/lib/shopify-product-import";
 
 type Product = {
   id: string;
@@ -61,6 +93,14 @@ export default function ProductsPage() {
   const [importUrl, setImportUrl] = useState("");
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ name: string; price: string; description: string; images: string[]; sizes: string[] } | null>(null);
+
+  // États d'import CSV (fonction intermédiaire compatible Afro-Spy & Shopify)
+  const [csvPreviewModalOpen, setCsvPreviewModalOpen] = useState(false);
+  const [csvAnalysis, setCsvAnalysis] = useState<ProductImportAnalysis | null>(null);
+  const [csvParsedProducts, setCsvParsedProducts] = useState<ParsedImportProduct[]>([]);
+  const [cleanEmojisInImport, setCleanEmojisInImport] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [expandedDescId, setExpandedDescId] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -234,37 +274,117 @@ export default function ProductsPage() {
     }
   };
 
-  const handleCsvImport = () => {
-    if (!csvFile) return;
-    Papa.parse(csvFile, {
-      header: true,
-      complete: async (results) => {
-        const productsToInsert = results.data
-          .filter((row: any) => row.name)
-          .map((row: any) => ({
-            name: row.name,
-            shop_slug: subdomain,
-            description: row.description || null,
-            price: row.price ? parseFloat(row.price) : null,
-            sku: row.sku || null,
-            track_stock: row.track_stock !== "false",
-            stock_quantity: row.stock_quantity ? parseInt(row.stock_quantity) : null,
-            images: row.images ? row.images.split(",").map((i: string) => i.trim()) : null,
-            status: "active",
-          }));
-        const { error } = await supabase
-          .from("products")
-          .insert(productsToInsert);
-        if (error) {
-          console.error("CSV import error:", error);
-          toast.error(error.message || "Erreur d'import CSV");
-        } else {
-          toast.success(`${productsToInsert.length} produits importés`);
-          setCsvFile(null);
-          fetchProducts();
-        }
+  // Fonction intermédiaire d'analyse et d'import CSV (Shopify / Afro-Spy / Standard)
+  const handleCsvFileSelect = async (file: File) => {
+    try {
+      const text = await file.text();
+      const analysis = parseShopifyOrStandardCsv(text);
+
+      if (analysis.errors && analysis.errors.length > 0) {
+        toast.error(analysis.errors[0]);
+        return;
       }
+
+      if (analysis.products.length === 0) {
+        toast.error("Aucun produit détecté dans le fichier CSV");
+        return;
+      }
+
+      setCsvAnalysis(analysis);
+      setCsvParsedProducts(analysis.products);
+      setCsvPreviewModalOpen(true);
+      toast.success(
+        `${analysis.products.length} produit(s) analysé(s) (${analysis.formatLabel})`
+      );
+    } catch (err: any) {
+      console.error("Erreur lecture CSV:", err);
+      toast.error(err?.message || "Impossible de lire le fichier CSV");
+    }
+  };
+
+  const handleToggleProductSelection = (id: string) => {
+    setCsvParsedProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p))
+    );
+  };
+
+  const handleToggleSelectAllCsv = (selectAll: boolean) => {
+    setCsvParsedProducts((prev) =>
+      prev.map((p) => ({ ...p, selected: selectAll }))
+    );
+  };
+
+  const handleUpdateParsedProduct = (
+    id: string,
+    updates: Partial<ParsedImportProduct>
+  ) => {
+    setCsvParsedProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+    );
+  };
+
+  const handleOpenInFullEditor = (product: ParsedImportProduct) => {
+    const finalName = cleanEmojisInImport ? removeEmojis(product.name) : product.name;
+    setForm({
+      name: finalName,
+      description: product.description || "",
+      price: product.price !== null ? String(product.price) : "",
+      sku: product.sku || "",
+      track_stock: product.track_stock,
+      stock_quantity: product.stock_quantity !== null ? String(product.stock_quantity) : "",
+      images: product.images || [],
+      sizes: product.sizes || [],
     });
+    setEditingProduct(null);
+    setCsvPreviewModalOpen(false);
+    setModalOpen(true);
+  };
+
+  const handleConfirmCsvImport = async () => {
+    const selected = csvParsedProducts.filter((p) => p.selected !== false);
+    if (selected.length === 0) {
+      toast.error("Veuillez sélectionner au moins un produit à importer");
+      return;
+    }
+
+    setCsvImporting(true);
+    try {
+      // Slugs existants pour la boutique afin d'éviter les collisions
+      const { data: existing } = await supabase
+        .from("products")
+        .select("slug")
+        .eq("shop_slug", subdomain);
+
+      const existingSlugs = (existing || [])
+        .map((p: any) => p.slug)
+        .filter(Boolean);
+
+      const productsToPrepare = selected.map((p) => ({
+        ...p,
+        name: cleanEmojisInImport ? removeEmojis(p.name) : p.name,
+      }));
+
+      const dbRecords = prepareProductsForDatabase(
+        productsToPrepare,
+        subdomain,
+        existingSlugs
+      );
+
+      const { error } = await supabase.from("products").insert(dbRecords);
+      if (error) throw error;
+
+      toast.success(`${dbRecords.length} produit(s) importé(s) avec succès !`);
+      setCsvPreviewModalOpen(false);
+      setCsvParsedProducts([]);
+      setCsvAnalysis(null);
+      setCsvFile(null);
+      fetchProducts();
+    } catch (err: any) {
+      console.error("Erreur insertion produits CSV:", err);
+      toast.error(err?.message || "Erreur lors de l'enregistrement des produits");
+    } finally {
+      setCsvImporting(false);
+    }
   };
 
   const toggleSelectProduct = (id: string) => {
@@ -351,13 +471,41 @@ export default function ProductsPage() {
             </button>
             <label className="px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 cursor-pointer text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-all">
               <Upload className="w-3.5 h-3.5" /> Importer CSV
-              <input type="file" accept=".csv" className="hidden" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setCsvFile(file);
+                    await handleCsvFileSelect(file);
+                    e.target.value = "";
+                  }
+                }}
+              />
             </label>
-            {csvFile && (
-              <button onClick={handleCsvImport} className="px-3 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-xs sm:text-sm font-medium transition-all">
-                Importer {csvFile.name}
+            {csvParsedProducts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCsvPreviewModalOpen(true)}
+                className="px-3 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-800 rounded-xl hover:from-amber-100 hover:to-orange-100 text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-all shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Aperçu import ({csvParsedProducts.length})</span>
               </button>
             )}
+            <a
+              href="https://afro-spy.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-300 text-amber-900 rounded-xl hover:from-amber-500/20 hover:to-orange-500/20 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all shadow-xs group"
+              title="Trouvez des produits gagnants & espionnez les publicités qui cartonnent en Afrique sur Afro-Spy"
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+              <span>Produits gagnants (Afro-Spy)</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </a>
             <button
               onClick={() => {
                 setImportUrl("");
@@ -449,13 +597,62 @@ export default function ProductsPage() {
             <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-600 rounded-full animate-spin"></div>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">Aucun produit trouvé</p>
-            <p className="text-gray-400 text-sm mt-1">
-              {statusFilter === "all" ? "Ajoutez votre premier produit" : `Aucun produit ${statusFilter}`}
-            </p>
-          </div>
+          products.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 text-center max-w-2xl mx-auto shadow-xs animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto mb-4 shadow-md shadow-emerald-500/20">
+                <Package className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Votre catalogue est encore vide</h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                Commencez par ajouter vos premiers articles ou explorez les produits gagnants du moment en Afrique.
+              </p>
+              
+              <div className="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left">
+                <button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setForm(initialForm);
+                    setModalOpen(true);
+                  }}
+                  className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-50/40 hover:bg-emerald-50/70 hover:border-emerald-500/50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 font-bold text-sm text-emerald-800 mb-1">
+                    <Plus className="w-4 h-4 text-emerald-600" />
+                    <span>Créer un produit</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Ajoutez manuellement ou importez un lien e-commerce / CSV.
+                  </p>
+                </button>
+
+                <a
+                  href="https://afro-spy.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-4 rounded-xl border border-amber-300 bg-gradient-to-br from-amber-50/80 to-orange-50/40 hover:border-amber-400 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5 font-bold text-sm text-amber-900">
+                      <Flame className="w-4 h-4 text-amber-600" />
+                      <span>Idées sur Afro-Spy</span>
+                    </div>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Découvrez les pubs Facebook et produits qui cartonnent en Afrique.
+                  </p>
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">Aucun produit trouvé</p>
+              <p className="text-gray-400 text-sm mt-1">
+                Aucun produit {statusFilter}
+              </p>
+            </div>
+          )
         ) : (
           <>
             {/* Desktop Table */}
@@ -950,6 +1147,369 @@ export default function ProductsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale intermédiaire d'import CSV (Compatible Shopify & Afro-Spy) */}
+      {csvPreviewModalOpen && csvAnalysis && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-slide-up border border-gray-100">
+            {/* Header avec gradient stylé */}
+            <div
+              className={`shrink-0 px-6 py-4 flex items-center justify-between text-white ${
+                csvAnalysis.format === "shopify_afrospy"
+                  ? "bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-700"
+                  : "bg-gradient-to-r from-emerald-600 to-teal-700"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-xs">
+                  {csvAnalysis.format === "shopify_afrospy" ? (
+                    <Flame className="w-5 h-5 text-amber-200 animate-pulse" />
+                  ) : (
+                    <FileSpreadsheet className="w-5 h-5 text-emerald-200" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold">
+                      Import de produits &bull; Étape intermédiaire
+                    </h2>
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-xs">
+                      {csvAnalysis.formatLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/80 mt-0.5">
+                    {csvAnalysis.totalRows} ligne(s) CSV analysée(s) &bull;{" "}
+                    {csvParsedProducts.length} produit(s) prêt(s) à être importé(s)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCsvPreviewModalOpen(false)}
+                className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors text-white text-sm"
+                title="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Barre de synthèse & options globales */}
+            <div className="bg-gray-50/80 border-b border-gray-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 font-medium text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={
+                      csvParsedProducts.length > 0 &&
+                      csvParsedProducts.every((p) => p.selected !== false)
+                    }
+                    onChange={(e) => handleToggleSelectAllCsv(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span>Tout sélectionner</span>
+                </label>
+                <span className="text-gray-400">|</span>
+                <span className="text-gray-600 font-medium">
+                  {csvParsedProducts.filter((p) => p.selected !== false).length} sur{" "}
+                  {csvParsedProducts.length} sélectionné(s)
+                </span>
+                <span className="text-gray-400">|</span>
+                <span className="text-gray-600 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-gray-400" />
+                  {csvParsedProducts.reduce(
+                    (acc, p) => acc + (p.images?.length || 0),
+                    0
+                  )}{" "}
+                  images extraites
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-gray-700 cursor-pointer select-none font-medium">
+                  <input
+                    type="checkbox"
+                    checked={cleanEmojisInImport}
+                    onChange={(e) => setCleanEmojisInImport(e.target.checked)}
+                    className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500 cursor-pointer"
+                  />
+                  <span>Nettoyer les émojis des titres</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Avertissements éventuels */}
+            {csvAnalysis.warnings && csvAnalysis.warnings.length > 0 && (
+              <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Remarque: Certaines lignes secondaires ont été regroupées avec leur
+                  produit parent.
+                </span>
+              </div>
+            )}
+
+            {/* Liste des produits détectés */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {csvParsedProducts.map((prod, index) => {
+                const isSelected = prod.selected !== false;
+                const displayName = cleanEmojisInImport
+                  ? removeEmojis(prod.name)
+                  : prod.name;
+                const isDescExpanded = expandedDescId === prod.id;
+
+                return (
+                  <div
+                    key={prod.id || index}
+                    className={`rounded-xl border transition-all duration-200 ${
+                      isSelected
+                        ? "border-emerald-300 bg-white shadow-sm ring-1 ring-emerald-500/20"
+                        : "border-gray-200 bg-gray-50/60 opacity-60"
+                    }`}
+                  >
+                    <div className="p-4 flex flex-col sm:flex-row items-start gap-4">
+                      {/* Checkbox sélection */}
+                      <div className="pt-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleProductSelection(prod.id)}
+                          className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Image principale & galerie */}
+                      <div className="relative shrink-0 w-24 h-24 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                        {prod.images && prod.images.length > 0 ? (
+                          <img
+                            src={prod.images[0]}
+                            alt={displayName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "https://placehold.co/100x100?text=Image";
+                            }}
+                          />
+                        ) : (
+                          <Package className="w-8 h-8 text-gray-400" />
+                        )}
+                        {prod.images && prod.images.length > 1 && (
+                          <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+                            +{prod.images.length - 1} photos
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Détails éditables */}
+                      <div className="flex-1 min-w-0 space-y-2 w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          {/* Titre éditable */}
+                          <div className="flex-1 min-w-0">
+                            <label className="text-[11px] text-gray-500 font-medium block mb-0.5">
+                              Nom du produit ({prod.handle || "handle"})
+                            </label>
+                            <input
+                              type="text"
+                              value={displayName}
+                              onChange={(e) =>
+                                handleUpdateParsedProduct(prod.id, {
+                                  name: e.target.value,
+                                })
+                              }
+                              className="w-full text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                          </div>
+
+                          {/* Prix éditable */}
+                          <div className="w-full sm:w-44 shrink-0">
+                            <label className="text-[11px] text-gray-500 font-medium block mb-0.5">
+                              Prix (XOF / CFA)
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                value={prod.price !== null ? prod.price : ""}
+                                onChange={(e) =>
+                                  handleUpdateParsedProduct(prod.id, {
+                                    price: e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : null,
+                                  })
+                                }
+                                placeholder="0"
+                                className="w-full text-sm font-bold text-emerald-700 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 pr-12"
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium pointer-events-none">
+                                XOF
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Badges métadonnées & comparaison de prix */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              prod.status === "active"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {prod.status === "active" ? "Actif" : "Inactif"}
+                          </span>
+
+                          {prod.comparePrice && prod.price && prod.comparePrice > prod.price && (
+                            <span className="text-[11px] text-gray-400 line-through">
+                              Prix barré : {prod.comparePrice.toLocaleString()} XOF
+                            </span>
+                          )}
+
+                          {prod.vendor && (
+                            <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md font-medium border border-purple-200/60">
+                              Vendeur: {prod.vendor}
+                            </span>
+                          )}
+
+                          {prod.category && (
+                            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium border border-blue-200/60">
+                              {prod.category}
+                            </span>
+                          )}
+
+                          {prod.sizes && prod.sizes.length > 0 && (
+                            <span className="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md font-medium border border-amber-200/60">
+                              Variantes : {prod.sizes.join(", ")}
+                            </span>
+                          )}
+
+                          <span className="text-[10px] text-gray-400">
+                            {prod.rawRowsCount} ligne(s) groupée(s)
+                          </span>
+                        </div>
+
+                        {/* Bouton pour voir/masquer la description et bouton éditeur complet */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-gray-100 mt-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedDescId(isDescExpanded ? null : prod.id)
+                            }
+                            className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 font-medium transition-colors"
+                          >
+                            {isDescExpanded ? (
+                              <>
+                                <ChevronUp className="w-3.5 h-3.5" /> Masquer la
+                                description
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3.5 h-3.5" /> Voir la
+                                description ({prod.description.length} car.)
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenInFullEditor(prod)}
+                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Modifier dans l'éditeur complet</span>
+                          </button>
+                        </div>
+
+                        {/* Accordéon Description Preview */}
+                        {isDescExpanded && (
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-700 max-h-60 overflow-y-auto space-y-2">
+                            <div className="font-semibold text-gray-900 flex items-center justify-between">
+                              <span>Aperçu de la page produit (HTML) :</span>
+                              <span className="text-[10px] text-gray-400 font-normal">
+                                Rendu visuel
+                              </span>
+                            </div>
+                            <div
+                              className="prose prose-sm max-w-none bg-white p-3 rounded border border-gray-200 text-xs overflow-x-auto"
+                              dangerouslySetInnerHTML={{
+                                __html: prod.description || "<em>Aucune description</em>",
+                              }}
+                            />
+                            {prod.images && prod.images.length > 0 && (
+                              <div>
+                                <div className="font-semibold text-gray-900 mb-1">
+                                  Galerie d'images ({prod.images.length}) :
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {prod.images.map((img, i) => (
+                                    <img
+                                      key={i}
+                                      src={img}
+                                      alt=""
+                                      className="w-12 h-12 object-cover rounded border border-gray-200"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display =
+                                          "none";
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer de la modale intermédiaire */}
+            <div className="shrink-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-gray-500">
+                Les produits sélectionnés seront automatiquement ajoutés à votre boutique{" "}
+                <span className="font-semibold text-gray-800">{subdomain}</span>.
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCsvPreviewModalOpen(false)}
+                  disabled={csvImporting}
+                  className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-100 text-sm font-medium transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCsvImport}
+                  disabled={
+                    csvImporting ||
+                    csvParsedProducts.filter((p) => p.selected !== false).length === 0
+                  }
+                  className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 text-sm font-medium transition-all shadow-sm shadow-emerald-200 flex items-center gap-2"
+                >
+                  {csvImporting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Importation en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>
+                        Importer{" "}
+                        {
+                          csvParsedProducts.filter((p) => p.selected !== false).length
+                        }{" "}
+                        produit(s)
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

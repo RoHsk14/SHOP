@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Package, Search } from "lucide-react";
+import { Package, Search, ExternalLink } from "lucide-react";
 
 export default function SuperAdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
@@ -92,7 +93,14 @@ export default function SuperAdminProducts() {
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className="text-sm text-zinc-400">{product.shop_slug}</span>
+                    <Link
+                      href={`/boutiques/${product.shop_slug}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-sm text-zinc-300 hover:text-emerald-400 transition-colors font-mono"
+                    >
+                      <span>{product.shop_slug}</span>
+                      <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                    </Link>
                   </td>
                   <td className="px-5 py-3.5">
                     <span className="text-sm text-zinc-500 font-mono">{product.sku || "—"}</span>

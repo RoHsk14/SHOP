@@ -532,7 +532,17 @@ function createStorageProxy() {
           }
           const formData = new FormData();
           formData.append("file[]", body, path.split("/").pop() || "file");
-          const res = await fetch("/api/upload", {
+
+          let uploadUrl = "/api/upload";
+          if (typeof window === "undefined") {
+            const baseUrl =
+              process.env.NEXT_PUBLIC_SITE_URL ||
+              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+              `http://localhost:${process.env.PORT || 3000}`;
+            uploadUrl = `${baseUrl}/api/upload`;
+          }
+
+          const res = await fetch(uploadUrl, {
             method: "POST",
             body: formData,
           });
@@ -574,7 +584,7 @@ export function createSupabaseClient(adminSecret?: string) {
       try {
         const h: Record<string, string> = {};
         if (adminSecret) h["x-hasura-admin-secret"] = adminSecret;
-        const url = typeof window !== "undefined" ? "/api/graphql" : getNhostGraphqlUrl();
+        const url = typeof window !== "undefined" ? `${window.location.origin}/api/graphql` : getNhostGraphqlUrl();
         const gql = new GraphQLClient(url, { headers: h });
         const args = params ? `(${Object.entries(params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ")})` : "";
         const r: any = await gql.request(`query { ${name}${args} }`);

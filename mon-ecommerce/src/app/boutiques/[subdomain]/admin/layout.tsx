@@ -3,7 +3,7 @@
 import "@puckeditor/core/dist/index.css";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle, ShieldCheck, LayoutGrid, Flame, ArrowUpRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -28,6 +28,7 @@ export default function AdminLayout({
  const [shopName, setShopName] = useState("");
  const [ownerName, setOwnerName] = useState("");
  const [profileModalOpen, setProfileModalOpen] = useState(false);
+ const [appsMenuOpen, setAppsMenuOpen] = useState(false);
  const [userShops, setUserShops] = useState<{ shop_slug: string; shop_name: string }[]>([]);
  const [fullUserEmail, setFullUserEmail] = useState("");
  const [creatingShop, setCreatingShop] = useState(false);
@@ -111,13 +112,14 @@ export default function AdminLayout({
  }
 
  // Check if user is super admin
+ const isKnownSuperAdmin = (session?.user?.email || "").toLowerCase() === "rodriguehessou14@gmail.com";
  const { data: adminCheck } = await supabase
  .from("settings")
  .select("is_super_admin")
  .eq("user_id", currentUserId)
  .eq("is_super_admin", true)
  .maybeSingle();
- if (adminCheck) {
+ if (adminCheck || isKnownSuperAdmin) {
  setIsSuperAdmin(true);
  }
  } catch (e) {
@@ -311,7 +313,7 @@ const menuItems = [
   { href: `${base}/admin/orders`, label: "Commandes", icon: ShoppingCart },
   { href: `${base}/admin/products`, label: "Produits", icon: Package },
   { href: `${base}/admin/offers`, label: "Offres", icon: Tag },
-  { href: `${base}/admin/customize`, label: "Personnaliser", icon: Palette },
+  { href: `${base}/admin/themes`, label: "Personnaliser", icon: Palette },
 ];
 
   const secondaryItems = [
@@ -319,7 +321,12 @@ const menuItems = [
     { href: `${base}/admin/whatsapp`, label: "WhatsApp", icon: MessageCircle },
   ];
 
- const isActive = (href: string) => barePath === href;
+ const isActive = (href: string) => {
+   if (href.endsWith("/admin/themes")) {
+     return barePath === "/admin/themes" || barePath.startsWith("/admin/customize");
+   }
+   return barePath === href;
+ };
 
   return (
   <>
@@ -341,7 +348,7 @@ const menuItems = [
     ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
    `}>
  {/* Logo */}
- <div className="p-5 border-b border-gray-100">
+ <div className="p-4 border-b border-gray-100">
  <Link href="/admin" className="flex items-center gap-3 hover:opacity-80 transition-opacity"
  onClick={() => setSidebarOpen(false)}
  >
@@ -362,7 +369,7 @@ const menuItems = [
  </div>
 
  {/* User profile summary */}
- <div className="profile-box mx-4 mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
+ <div className="profile-box mx-3 mt-3 p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/50">
   <div className="flex items-center gap-3">
   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
   {userEmail.charAt(0).toUpperCase()}
@@ -376,8 +383,8 @@ const menuItems = [
  </div>
 
  {/* Navigation */}
- <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
- <p className="section-label text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
+ <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+ <p className="section-label text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1.5">
  Principal
  </p>
  {menuItems.map((item) => {
@@ -387,7 +394,7 @@ const menuItems = [
  key={item.href}
  href={item.href}
  onClick={() => setSidebarOpen(false)}
-  className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+  className={`nav-item flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group ${
   active
   ? "nav-active bg-emerald-50 text-emerald-700 shadow-sm"
   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -400,7 +407,7 @@ const menuItems = [
   }`}>
  <item.icon className="w-4 h-4" />
  </div>
- <span className="font-medium text-sm">{item.label}</span>
+ <span className="font-medium text-xs sm:text-sm">{item.label}</span>
  {active && (
  <div className="active-dot ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
@@ -416,17 +423,17 @@ const menuItems = [
  target="_blank"
  rel="noopener noreferrer"
  onClick={() => setSidebarOpen(false)}
-  className="store-link flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+  className="store-link flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
   >
   <div className="store-icon p-1.5 rounded-lg bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200 group-hover:text-emerald-700 transition-all">
  <Store className="w-4 h-4" />
  </div>
- <span className="font-medium text-sm">Voir ma boutique</span>
+ <span className="font-medium text-xs sm:text-sm">Voir ma boutique</span>
   <span className="store-badge ml-auto text-[10px] text-emerald-500 font-medium bg-emerald-50 group-hover:bg-emerald-100 px-2 py-0.5 rounded-full">↗</span>
  </a>
  )}
 
- <p className="section-label text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2 mt-4">
+ <p className="section-label text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1.5 mt-2.5">
  Configuration
  </p>
  {secondaryItems.map((item) => {
@@ -436,7 +443,7 @@ const menuItems = [
  key={item.href}
  href={item.href}
  onClick={() => setSidebarOpen(false)}
-  className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+  className={`nav-item flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group ${
   active
   ? "nav-active bg-emerald-50 text-emerald-700 shadow-sm"
   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -449,7 +456,7 @@ const menuItems = [
   }`}>
  <item.icon className="w-4 h-4" />
  </div>
- <span className="font-medium text-sm">{item.label}</span>
+ <span className="font-medium text-xs sm:text-sm">{item.label}</span>
  {active && (
  <div className="active-dot ml-auto w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
@@ -458,6 +465,59 @@ const menuItems = [
  </Link>
  );
  })}
+
+ {/* Afro-Spy Promo Card */}
+ <div className="pt-2.5 px-0.5">
+   <div className="relative overflow-hidden rounded-2xl p-3 border border-orange-200/80 bg-gradient-to-br from-orange-50/80 via-amber-50/40 to-slate-50/60 group hover:shadow-md transition-all">
+     <div className="flex items-center justify-between gap-1.5 mb-1.5">
+       <div className="flex items-center gap-1.5">
+         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white text-[9px] font-black shadow-xs tracking-wider">
+           A-S
+         </div>
+         <span className="font-bold text-xs text-gray-900 tracking-tight font-heading">Afro Spy</span>
+       </div>
+       <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded-full">
+         Winning Ads
+       </span>
+     </div>
+     <p className="text-[11px] text-gray-600 leading-snug mb-2">
+       Trouvez vos produits gagnants &amp; espionnez les pubs en Afrique.
+     </p>
+     <a
+       href="https://afro-spy.com"
+       target="_blank"
+       rel="noopener noreferrer"
+       className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white text-[11px] font-semibold shadow-xs transition-all active:scale-[0.98]"
+     >
+       <span>Découvrir Afro Spy</span>
+       <ArrowUpRight className="w-3.5 h-3.5" />
+     </a>
+   </div>
+ </div>
+
+ {isSuperAdmin && (
+ <div className="pt-3 mt-3 border-t border-gray-100/80">
+  <p className="section-label text-[10px] font-semibold text-emerald-600 uppercase tracking-wider px-3 mb-2 flex items-center gap-1.5">
+   <ShieldCheck className="w-3 h-3 text-emerald-600" />
+   Super Administration
+  </p>
+  <Link
+   href="/admin"
+   onClick={() => setSidebarOpen(false)}
+   className="nav-item flex items-center justify-between px-3 py-2 rounded-xl transition-all group bg-zinc-900 text-zinc-100 hover:bg-zinc-800 shadow-sm"
+  >
+   <div className="flex items-center gap-2.5">
+    <div className="p-1 rounded-md bg-emerald-500/20 text-emerald-400">
+     <ShieldCheck className="w-3.5 h-3.5" />
+    </div>
+    <span className="font-semibold text-xs">Console Admin</span>
+   </div>
+   <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded">
+    Root ↗
+   </span>
+  </Link>
+ </div>
+ )}
 
  </nav>
 
@@ -497,6 +557,92 @@ const menuItems = [
  <div className="flex items-center gap-2 ml-auto">
   {/* Notification Bell */}
   <NotificationBell shopSlug={slug} />
+
+  {/* Apps / Ecosystem switcher */}
+  <div className="relative">
+   <button
+     onClick={() => {
+       setAppsMenuOpen(!appsMenuOpen);
+       if (profileModalOpen) setProfileModalOpen(false);
+     }}
+     className="w-8 h-8 bg-white border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-all text-gray-500 hover:text-gray-900"
+     title="Écosystème & Solutions"
+   >
+     <LayoutGrid className="w-4 h-4" />
+   </button>
+
+   {appsMenuOpen && (
+     <>
+       <div
+         className="fixed inset-0 z-40 bg-transparent"
+         onClick={() => setAppsMenuOpen(false)}
+       />
+       <div className="admin-profile-dropdown absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-fade-in origin-top-right">
+         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+           <div>
+             <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Écosystème E-commerce</h4>
+             <p className="text-xs font-semibold text-gray-900">Nos solutions pour l&apos;Afrique</p>
+           </div>
+           <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full">
+             Suite Ecom
+           </span>
+         </div>
+
+         <div className="space-y-2 pt-3">
+           {/* ShopEazy (Current) */}
+           <div className="flex items-start gap-3 p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 transition-all">
+             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shrink-0 shadow-xs">
+               <Store className="w-4 h-4" />
+             </div>
+             <div className="min-w-0 flex-1">
+               <div className="flex items-center justify-between">
+                 <span className="text-xs font-bold text-gray-900">ShopEazy</span>
+                 <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-full">
+                   Actif
+                 </span>
+               </div>
+               <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">
+                 Boutique en ligne & tunnels de vente COD optimisés.
+               </p>
+             </div>
+           </div>
+
+           {/* Afro-Spy */}
+           <a
+             href="https://afro-spy.com"
+             target="_blank"
+             rel="noopener noreferrer"
+             onClick={() => setAppsMenuOpen(false)}
+             className="flex items-start gap-3 p-2.5 rounded-xl border border-orange-100 hover:border-orange-300 hover:bg-orange-50/40 transition-all group"
+           >
+             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white text-xs font-black shrink-0 shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform tracking-wider">
+               A-S
+             </div>
+             <div className="min-w-0 flex-1">
+               <div className="flex items-center justify-between">
+                 <span className="text-xs font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                   Afro Spy
+                 </span>
+                 <span className="text-[10px] font-semibold text-orange-600 flex items-center gap-0.5">
+                   afro-spy.com <ArrowUpRight className="w-3 h-3" />
+                 </span>
+               </div>
+               <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">
+                 Espionnez les pubs &amp; trouvez des produits gagnants en Afrique.
+               </p>
+             </div>
+           </a>
+         </div>
+
+         <div className="mt-3 pt-2.5 border-t border-gray-100 text-center">
+           <p className="text-[10px] text-gray-400">
+             Trouvez les produits avec Afro-Spy, vendez-les avec ShopEazy.
+           </p>
+         </div>
+       </div>
+     </>
+   )}
+  </div>
 
   {/* Theme Toggle */}
   <button

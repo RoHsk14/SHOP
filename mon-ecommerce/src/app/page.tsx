@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Menu, X, Star, Play, TrendingUp, Palette, BarChart4, Store, Upload, ShoppingBag } from "lucide-react";
+import { ChevronDown, Menu, X, Star, Play, TrendingUp, Palette, BarChart4, Store, Upload, ShoppingBag, Flame, ArrowUpRight, Sparkles } from "lucide-react";
 
 const testimonials = [
   {
@@ -596,6 +596,119 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Complete Ecosystem Showcase (ShopEazy + Afro-Spy) ── */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
+          <div className="text-center mb-14">
+            <div className="animate-fade-up inline-flex items-center gap-2 bg-white/10 text-amber-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 border border-white/15 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              L&apos;Écosystème E-commerce d&apos;Afrique
+            </div>
+            <h2 className="animate-fade-up delay-2 text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight font-heading">
+              Trouvez vos produits gagnants, vendez sans friction
+            </h2>
+            <p className="animate-fade-up delay-3 text-gray-300 mt-4 text-base sm:text-lg max-w-2xl mx-auto">
+              Deux plateformes complémentaires créées spécifiquement pour les e-commerçants et dropshippers en Afrique.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {/* Step 1: Afro-Spy */}
+            <div className="rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-indigo-950/80 to-purple-950/60 p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between hover:border-indigo-400/50 transition-all shadow-xl">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-amber-500 flex items-center justify-center text-white shadow-lg">
+                    <Flame className="w-6 h-6 text-amber-200" />
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+                    Étape 1 &bull; Recherche
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-white font-heading mb-2">
+                  Afro-Spy
+                </h3>
+                <p className="text-sm font-semibold text-amber-300 mb-4">
+                  Outil d&apos;Ad Spy &amp; Détection de Winners
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-6">
+                  Analysez les publicités actives sur Facebook &amp; TikTok, repérez les boutiques qui scalent en Afrique (Shopify, YouCan) et téléchargez les meilleures créatives pour vos campagnes.
+                </p>
+                <ul className="space-y-2.5 text-xs text-gray-300 mb-8">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>Espionnage publicitaire ciblé Afrique (CI, SN, CM, etc.)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>Indicateurs de scaling et winning products</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>Téléchargement direct des vidéos et visuels pubs</span>
+                  </li>
+                </ul>
+              </div>
+              <a
+                href="https://afro-spy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold text-sm shadow-md transition-all active:scale-[0.98] group"
+              >
+                <span>Découvrir Afro-Spy</span>
+                <ArrowUpRight className="w-4 h-4 text-slate-950 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+            </div>
+
+            {/* Step 2: ShopEazy */}
+            <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 to-slate-950/80 p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between hover:border-emerald-500/50 transition-all shadow-xl">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg">
+                    <Store className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full">
+                    Étape 2 &bull; Conversion
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-white font-heading mb-2">
+                  ShopEazy
+                </h3>
+                <p className="text-sm font-semibold text-emerald-400 mb-4">
+                  Boutiques Ultra-Rapides &amp; Cash On Delivery
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed mb-6">
+                  Créez des pages de vente à fort taux de conversion, encaissez vos commandes en paiement à la livraison (COD) et automatisez le suivi WhatsApp et Google Sheets.
+                </p>
+                <ul className="space-y-2.5 text-xs text-gray-300 mb-8">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Tunnels de vente sans friction adaptés aux téléphones</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Notifications automatiques WhatsApp instantanées</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Export et synchronisation temps réel Google Sheets</span>
+                  </li>
+                </ul>
+              </div>
+              <Link
+                href="/signup"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md transition-all active:scale-[0.98]"
+              >
+                <span>Créer ma boutique sur ShopEazy</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Payment Methods ── */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-50/50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -862,12 +975,30 @@ export default function LandingPage() {
               </p>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Plateforme</h4>
-              {/* <ul className="space-y-2">
-                {["Fonctionnalités", "Tarifs", "Contact", "Blog"].map((l) => (
-                  <li key={l}><Link href={`/${l.toLowerCase()}`} className="text-sm text-gray-400 hover:text-white transition-colors">{l}</Link></li>
-                ))}
-              </ul> */}
+              <h4 className="text-sm font-semibold text-white mb-3">Écosystème &amp; Outils</h4>
+              <ul className="space-y-2">
+                <li>
+                  <a
+                    href="https://afro-spy.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-amber-400 transition-colors"
+                  >
+                    <span>Afro-Spy (Ad Spy &amp; Winners)</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-amber-500" />
+                  </a>
+                </li>
+                <li>
+                  <a href="#fonctionnalités" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    Fonctionnalités ShopEazy
+                  </a>
+                </li>
+                <li>
+                  <a href="#tarifs" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    Tarifs
+                  </a>
+                </li>
+              </ul>
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Légal</h4>

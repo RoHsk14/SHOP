@@ -35,6 +35,19 @@ export default function ProductsPage() {
       .then(({ data: settings }) => {
         if (settings) {
           setShopName(settings.shop_name || "");
+          const previewThemeId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("preview_theme_id") : null;
+          const savedThemesList = (settings.theme_config as any)?.savedThemes || [];
+
+          if (previewThemeId && savedThemesList.length > 0) {
+            const targetTheme = savedThemesList.find((t: any) => t.id === previewThemeId);
+            if (targetTheme?.config) {
+              let c = targetTheme.config;
+              c = ensureSystemPageInConfig(c, "/products");
+              setConfig(c);
+              return;
+            }
+          }
+
           if (settings.theme_config && typeof settings.theme_config === "object" && (settings.theme_config as any).global?.colors) {
             const isPreview = getPreviewParam();
             if (isPreview && (settings.theme_config as any).__draft) {

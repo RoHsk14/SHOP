@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Store, ShoppingCart, Package, TrendingUp, Search } from "lucide-react";
+import { Store, ShoppingCart, Package, TrendingUp, Search, ExternalLink } from "lucide-react";
 
 export default function SuperAdminShops() {
   const [shops, setShops] = useState<any[]>([]);
@@ -45,24 +46,6 @@ export default function SuperAdminShops() {
           if (v.count > topProductData.count) topProductData = v;
         });
         setTopProduct(topProductData.name ? topProductData : null);
-
-        // Try RPC for shops + topShop
-        const { data, error } = await supabase.rpc("get_admin_shops");
-        if (error) {
-          console.error("[Shops] RPC error, falling back to direct query:", error);
-        }
-
-        if (data) {
-          // Compute topShop from RPC result
-          let top = { shop_slug: "", revenue: 0 };
-          (data as any[]).forEach((s: any) => {
-            if ((s.revenue || 0) > top.revenue) top = { shop_slug: s.shop_slug, revenue: s.revenue || 0 };
-          });
-          setTopShop(top.shop_slug ? top : null);
-          setShops(data as any[]);
-          setLoading(false);
-          return;
-        }
 
         const { data: settingsData, error: settingsError } = await supabase
           .from("settings")
@@ -194,6 +177,7 @@ export default function SuperAdminShops() {
                 <th className="text-center px-5 py-3.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Produits</th>
                 <th className="text-center px-5 py-3.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Commandes</th>
                 <th className="text-right px-5 py-3.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Revenu</th>
+                <th className="text-right px-5 py-3.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -214,6 +198,28 @@ export default function SuperAdminShops() {
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <span className="text-sm font-semibold text-zinc-100 tabular-nums">{formatPrice(shop.revenue)}</span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Link
+                        href={`/boutiques/${shop.shop_slug}`}
+                        target="_blank"
+                        className="px-2 py-1 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-[11px] text-zinc-300 hover:text-white flex items-center gap-1 transition-colors"
+                        title="Ouvrir la vitrine client"
+                      >
+                        <span>Vitrine</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </Link>
+                      <Link
+                        href={`/boutiques/${shop.shop_slug}/admin`}
+                        target="_blank"
+                        className="px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors font-medium"
+                        title="Ouvrir le panneau admin de la boutique"
+                      >
+                        <span>Admin</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

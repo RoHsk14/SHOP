@@ -94,6 +94,7 @@ export default function CustomizePage() {
     (savedConfig: ThemeConfig, isPublish: boolean, themes?: SavedTheme[]) => Promise<boolean>
   >(async () => false);
   const lastSaveRef = useRef<number>(0);
+  const isDirtyRef = useRef<boolean>(false);
 
   // Load store settings & theme config
   const fetchSettings = useCallback(async () => {
@@ -177,19 +178,18 @@ export default function CustomizePage() {
     let configToSave: any;
 
     if (editingThemeId) {
+      const updatedThemes = st.map((t) =>
+        t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t
+      );
+      setSavedThemes(updatedThemes);
+
       if (isPublish) {
         configToSave = { ...publishDraft(savedConfig) };
-        const updatedThemes = st.map((t) =>
-          t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t
-        );
         configToSave.savedThemes = updatedThemes;
         configToSave.themeName = editingThemeName || "Thème Principal";
         setLastPublished(savedConfig);
       } else {
         const published = lastPublished || savedConfig;
-        const updatedThemes = st.map((t) =>
-          t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t
-        );
         configToSave = { ...published, savedThemes: updatedThemes };
       }
     } else {
@@ -201,8 +201,10 @@ export default function CustomizePage() {
         configToSave = { ...published, __draft: { ...savedConfig } };
       }
 
-      if (st.length > 0) {
-        configToSave.savedThemes = st;
+      // Toujours préserver savedThemes : priorité aux thèmes en mémoire, sinon ceux déjà chargés
+      const themesToPersist = st && st.length > 0 ? st : (savedThemes || []);
+      if (themesToPersist.length > 0) {
+        configToSave.savedThemes = themesToPersist;
       }
     }
 
@@ -216,6 +218,41 @@ export default function CustomizePage() {
       }
     } catch (e) {
       console.error("Erreur de nettoyage des images base64:", e);
+    }
+
+    // 1. Sauvegarde robuste via API route serveur (avec privilèges admin et sans perte de thèmes)
+    try {
+      const themesToPersist = st && st.length > 0 ? st : (savedThemes || []);
+      const apiRes = await fetch("/api/admin/theme-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shopSlug: subdomain,
+          themeConfig: isPublish
+            ? publishDraft(savedConfig)
+            : editingThemeId
+            ? undefined
+            : configToSave,
+          savedThemes: editingThemeId
+            ? st.map((t) => (t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t))
+            : themesToPersist,
+          themeName: editingThemeId && isPublish ? editingThemeName : undefined,
+          themeId: selectedThemeId,
+          publishThemeId: editingThemeId && isPublish ? editingThemeId : undefined,
+        }),
+      });
+
+      if (apiRes.ok) {
+        const apiJson = await apiRes.json();
+        if (apiJson.savedThemes) {
+          setSavedThemes(apiJson.savedThemes);
+        }
+        setSaving(false);
+        isDirtyRef.current = false;
+        return true;
+      }
+    } catch (apiErr) {
+      console.warn("Sauvegarde API échouée, bascule sur client Supabase:", apiErr);
     }
 
     const updateData: Record<string, any> = {
@@ -256,14 +293,15 @@ export default function CustomizePage() {
     }
 
     setSaving(false);
+    isDirtyRef.current = false;
     return true;
   };
 
   saveToDbRef.current = saveToDb;
 
-  // Auto-save debounce (silent background draft save)
+  // Auto-save debounce (silent background draft save, UNIQUEMENT si l'utilisateur a modifié le thème)
   useEffect(() => {
-    if (!themeConfig || !settingsId) return;
+    if (!themeConfig || !settingsId || !isDirtyRef.current) return;
     setSaveStatus("unsaved");
 
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -276,8 +314,12 @@ export default function CustomizePage() {
 
       try {
         const ok = await saveToDbRef.current(themeConfig, false);
-        if (ok) setSaveStatus("saved");
-        else setSaveStatus("unsaved");
+        if (ok) {
+          setSaveStatus("saved");
+          isDirtyRef.current = false;
+        } else {
+          setSaveStatus("unsaved");
+        }
       } catch {
         setSaveStatus("unsaved");
       }
@@ -291,6 +333,7 @@ export default function CustomizePage() {
   // Update config with Undo/Redo tracking
   const updateConfig = useCallback(
     (updater: (prev: ThemeConfig) => ThemeConfig) => {
+      isDirtyRef.current = true;
       setThemeConfig((prev) => {
         const current = prev || buildDefaultConfig(selectedThemeId);
         // Record undo state
