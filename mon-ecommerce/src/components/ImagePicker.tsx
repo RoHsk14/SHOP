@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { uploadImageFile } from "@/lib/image-upload";
 import {
   Upload,
   Image as ImageIcon,
@@ -309,25 +310,27 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
   const [searchQuery, setSearchQuery] = useState("");
   const [inputUrl, setInputUrl] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 3 * 1024 * 1024) {
-      alert("L'image est trop lourde (max 3 Mo). Choisissez une image plus légère ou utilisez la bibliothèque gratuite.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      onChange(reader.result as string);
+    setUploading(true);
+    try {
+      const publicUrl = await uploadImageFile(file, "theme");
+      onChange(publicUrl);
       setModalOpen(false);
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      alert("Erreur lors du téléchargement de l'image : " + (err.message || "Erreur inconnue"));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const allImages = useMemo(() => {
@@ -622,23 +625,35 @@ export default function ImagePicker({ value, onChange, compact }: ImagePickerPro
               {modalTab === "upload" && (
                 <div className="flex-1 p-8 sm:p-12 flex flex-col items-center justify-center bg-gray-50/50">
                   <div
-                    onClick={() => fileRef.current?.click()}
-                    className="w-full max-w-lg h-64 border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-3xl bg-white hover:bg-emerald-50/20 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all shadow-sm group p-6 text-center"
+                    onClick={() => {
+                      if (!uploading) fileRef.current?.click();
+                    }}
+                    className={`w-full max-w-lg h-64 border-2 border-dashed rounded-3xl bg-white flex flex-col items-center justify-center gap-3 transition-all shadow-sm p-6 text-center ${
+                      uploading
+                        ? "border-emerald-500 bg-emerald-50/30 cursor-wait"
+                        : "border-gray-300 hover:border-emerald-500 hover:bg-emerald-50/20 cursor-pointer group"
+                    }`}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 flex items-center justify-center transition-transform">
-                      <Upload className="w-7 h-7" />
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center transition-transform">
+                      {uploading ? (
+                        <div className="w-7 h-7 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Upload className="w-7 h-7 group-hover:scale-110 transition-transform" />
+                      )}
                     </div>
                     <div>
                       <span className="text-sm sm:text-base font-bold text-gray-900 block">
-                        Cliquez pour importer un fichier
+                        {uploading ? "Téléchargement et optimisation en cours..." : "Cliquez pour importer un fichier"}
                       </span>
                       <span className="text-xs text-gray-400 mt-1 block">
-                        PNG, JPG, WEBP jusqu&apos;à 3 Mo
+                        {uploading ? "Veuillez patienter un instant" : "PNG, JPG, WEBP, GIF (optimisé automatiquement)"}
                       </span>
                     </div>
-                    <span className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
-                      Parcourir les fichiers
-                    </span>
+                    {!uploading && (
+                      <span className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs">
+                        Parcourir les fichiers
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

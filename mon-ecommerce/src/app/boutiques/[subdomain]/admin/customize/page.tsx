@@ -16,6 +16,7 @@ import {
 } from "@/lib/theme-config";
 import type { ThemeConfig, SavedTheme, SectionSetting } from "@/lib/theme-config";
 import { getSectionDefinition } from "@/lib/sections";
+import { sanitizeThemeConfigImages } from "@/lib/image-upload";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -58,6 +59,8 @@ export default function CustomizePage() {
   const [defaultCurrency, setDefaultCurrency] = useState("EUR");
   const [selectedThemeId, setSelectedThemeId] = useState("classic");
   const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
+  const [editingThemeId, setEditingThemeId] = useState<string | null>(null);
+  const [editingThemeName, setEditingThemeName] = useState<string | null>(null);
 
   // Config & State
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null);
@@ -109,19 +112,50 @@ export default function CustomizePage() {
       setDefaultCurrency(data.default_currency || "EUR");
       setSelectedThemeId(data.theme_id || "classic");
 
+      const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const targetThemeId = urlParams?.get("themeId");
+
       if (data.theme_config && typeof data.theme_config === "object" && data.theme_config.global?.colors) {
         const published = getPublishedConfig(data.theme_config);
         const draft = getDraftConfig(data.theme_config, published);
-        setLastPublished(published);
-        setThemeConfig(draft);
-        if (data.theme_config.savedThemes) {
-          setSavedThemes(data.theme_config.savedThemes);
+        const stList: SavedTheme[] = data.theme_config.savedThemes || [];
+        setSavedThemes(stList);
+
+        if (targetThemeId && stList.length > 0) {
+          const targetTheme = stList.find((t) => t.id === targetThemeId);
+          if (targetTheme) {
+            setEditingThemeId(targetThemeId);
+            setEditingThemeName(targetTheme.name);
+            setThemeConfig(targetTheme.config);
+            setLastPublished(targetTheme.config);
+          } else {
+            setLastPublished(published);
+            setThemeConfig(draft);
+          }
+        } else {
+          setLastPublished(published);
+          setThemeConfig(draft);
         }
       } else if (data.theme_config?.__draft) {
-        setLastPublished(buildDefaultConfig(data.theme_id || "classic"));
-        setThemeConfig(data.theme_config.__draft as ThemeConfig);
-        if (data.theme_config.savedThemes) {
-          setSavedThemes(data.theme_config.savedThemes);
+        const published = buildDefaultConfig(data.theme_id || "classic");
+        const draft = data.theme_config.__draft as ThemeConfig;
+        const stList: SavedTheme[] = data.theme_config.savedThemes || [];
+        setSavedThemes(stList);
+
+        if (targetThemeId && stList.length > 0) {
+          const targetTheme = stList.find((t) => t.id === targetThemeId);
+          if (targetTheme) {
+            setEditingThemeId(targetThemeId);
+            setEditingThemeName(targetTheme.name);
+            setThemeConfig(targetTheme.config);
+            setLastPublished(targetTheme.config);
+          } else {
+            setLastPublished(published);
+            setThemeConfig(draft);
+          }
+        } else {
+          setLastPublished(published);
+          setThemeConfig(draft);
         }
       } else {
         const fallback = buildDefaultConfig(data.theme_id || "classic");
@@ -142,16 +176,46 @@ export default function CustomizePage() {
     const st = themesList ?? savedThemes;
     let configToSave: any;
 
-    if (isPublish) {
-      configToSave = { ...publishDraft(savedConfig) };
-      setLastPublished(savedConfig);
+    if (editingThemeId) {
+      if (isPublish) {
+        configToSave = { ...publishDraft(savedConfig) };
+        const updatedThemes = st.map((t) =>
+          t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t
+        );
+        configToSave.savedThemes = updatedThemes;
+        configToSave.themeName = editingThemeName || "Thème Principal";
+        setLastPublished(savedConfig);
+      } else {
+        const published = lastPublished || savedConfig;
+        const updatedThemes = st.map((t) =>
+          t.id === editingThemeId ? { ...t, config: savedConfig, updatedAt: new Date().toISOString() } : t
+        );
+        configToSave = { ...published, savedThemes: updatedThemes };
+      }
     } else {
-      const published = lastPublished || savedConfig;
-      configToSave = { ...published, __draft: { ...savedConfig } };
+      if (isPublish) {
+        configToSave = { ...publishDraft(savedConfig) };
+        setLastPublished(savedConfig);
+      } else {
+        const published = lastPublished || savedConfig;
+        configToSave = { ...published, __draft: { ...savedConfig } };
+      }
+
+      if (st.length > 0) {
+        configToSave.savedThemes = st;
+      }
     }
 
-    if (st.length > 0) {
-      configToSave.savedThemes = st;
+    // Auto-migre les images Base64 présentes vers le stockage pour éviter l'erreur GraphQL 413
+    try {
+      configToSave = await sanitizeThemeConfigImages(configToSave, "theme");
+      if (configToSave.__draft) {
+        setThemeConfig(configToSave.__draft);
+      } else {
+        setThemeConfig(configToSave);
+      }
+    } catch (e) {
+      console.error("Erreur de nettoyage des images base64:", e);
     }
 
     const updateData: Record<string, any> = {
@@ -165,8 +229,8 @@ export default function CustomizePage() {
       updated_at: new Date().toISOString(),
     };
 
-    const brand = savedConfig.brand;
-    if (brand?.logo && brand.logo.startsWith("data:")) {
+    const brand = configToSave.__draft?.brand || configToSave.brand;
+    if (brand?.logo) {
       updateData.logo_url = brand.logo;
     }
 
@@ -497,12 +561,12 @@ export default function CustomizePage() {
         {/* Left: Exit & Page selector */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
-            href={`/boutiques/${subdomain}/admin`}
+            href={`/boutiques/${subdomain}/admin/themes`}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-            title="Quitter et retourner au tableau de bord"
+            title="Quitter et retourner aux thèmes"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden md:inline">Tableau de bord</span>
+            <span className="hidden md:inline">Thèmes</span>
           </Link>
 
           <div className="h-5 w-px bg-gray-200" />
@@ -512,10 +576,17 @@ export default function CustomizePage() {
             <span className="text-xs font-extrabold text-gray-900 tracking-tight truncate max-w-[140px] sm:max-w-none">
               {shopName || subdomain}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              En direct
-            </span>
+            {editingThemeId ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Brouillon : {editingThemeName}
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                En direct
+              </span>
+            )}
           </div>
 
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />

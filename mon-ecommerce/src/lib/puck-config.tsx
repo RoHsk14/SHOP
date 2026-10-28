@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Field } from "@puckeditor/core";
 import { RichTextMenu } from "@puckeditor/core";
 import { Trash2, Eye, EyeOff, Copy, Eraser } from "lucide-react";
@@ -5,6 +6,7 @@ import { sectionRegistry, getSectionDefinition } from "./sections";
 import { sectionComponents } from "@/components/sections";
 import { usePreview } from "./preview-context";
 import SectionWrapper from "@/components/SectionWrapper";
+import { uploadImageFile } from "./image-upload";
 
 /** Fields that must stay plain (URLs, IDs) — no inline edit */
 const NON_EDITABLE_TEXT_KEYS = new Set([
@@ -131,17 +133,24 @@ function ColorField({ value, onChange }: { value: string; onChange: (v: string) 
 }
 
 function ImageField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [uploading, setUploading] = useState(false);
   const pickFile = () => {
+    if (uploading) return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.onchange = (e: any) => {
+    input.onchange = async (e: any) => {
       const file = e.target?.files?.[0];
       if (!file) return;
-      if (file.size > 2 * 1024 * 1024) { alert("L'image ne doit pas dépasser 2 Mo"); return; }
-      const reader = new FileReader();
-      reader.onload = () => onChange(reader.result as string);
-      reader.readAsDataURL(file);
+      setUploading(true);
+      try {
+        const url = await uploadImageFile(file, "theme");
+        onChange(url);
+      } catch (err: any) {
+        alert("Erreur lors de l'envoi de l'image : " + (err.message || "Erreur"));
+      } finally {
+        setUploading(false);
+      }
     };
     input.click();
   };
@@ -204,19 +213,21 @@ function ImageField({ value, onChange }: { value: string; onChange: (v: string) 
         />
         <button
           onClick={pickFile}
+          disabled={uploading}
           style={{
             padding: "6px 12px",
             fontSize: 12,
             fontWeight: 500,
-            background: "#f3f4f6",
+            background: uploading ? "#e5e7eb" : "#f3f4f6",
             border: "1px solid #e5e7eb",
             borderRadius: 8,
-            cursor: "pointer",
+            cursor: uploading ? "wait" : "pointer",
             whiteSpace: "nowrap",
             color: "#374151",
+            opacity: uploading ? 0.7 : 1,
           }}
         >
-          Importer
+          {uploading ? "Envoi..." : "Importer"}
         </button>
       </div>
     </div>
