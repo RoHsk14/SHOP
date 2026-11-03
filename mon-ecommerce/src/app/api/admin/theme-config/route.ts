@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serviceSupabase } from "@/lib/supabase-admin";
-import { ThemeConfig, SavedTheme, getPublishedConfig } from "@/lib/theme-config";
+import { ThemeConfig, SavedTheme, getPublishedConfig, buildDefaultConfig } from "@/lib/theme-config";
 
 export const runtime = "nodejs";
 
@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     const rawConfig = typeof data.theme_config === "string" ? JSON.parse(data.theme_config) : (data.theme_config || {});
-    const published = getPublishedConfig(rawConfig);
+    const defaultThemeId = data.theme_id || "classic";
+    const published = (rawConfig && typeof rawConfig === "object" && rawConfig.global?.colors)
+      ? getPublishedConfig(rawConfig)
+      : buildDefaultConfig(defaultThemeId);
     const savedThemes: SavedTheme[] = rawConfig.savedThemes || [];
     const themeName = rawConfig.themeName || `${data.shop_name || shopSlug} - Principal`;
 
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest) {
       success: true,
       settingsId: data.id,
       shopName: data.shop_name || shopSlug,
-      themeId: data.theme_id || "classic",
+      themeId: defaultThemeId,
       themeName,
       publishedConfig: published,
       savedThemes,
@@ -92,12 +95,18 @@ export async function POST(request: NextRequest) {
         ? JSON.parse(currentSettings.theme_config)
         : currentSettings.theme_config || {};
 
-    let newPublishedConfig: ThemeConfig = themeConfig || getPublishedConfig(existingConfig);
+    const defaultThemeId = themeId || currentSettings.theme_id || "classic";
+    const existingPublished: ThemeConfig =
+      existingConfig && typeof existingConfig === "object" && existingConfig.global?.colors
+        ? getPublishedConfig(existingConfig)
+        : buildDefaultConfig(defaultThemeId);
+
+    let newPublishedConfig: ThemeConfig = themeConfig || existingPublished;
     let newSavedThemes: SavedTheme[] =
       savedThemes !== undefined ? savedThemes : (existingConfig.savedThemes || []);
     let newThemeName: string =
       themeName || existingConfig.themeName || `${currentSettings.shop_name || shopSlug} - Principal`;
-    let newThemeId: string = themeId || currentSettings.theme_id || "classic";
+    let newThemeId: string = defaultThemeId;
 
     // 2. Traitement si publication atomique d'un thème brouillon
     if (publishThemeId) {

@@ -144,8 +144,10 @@ export default function ThemesHubPage() {
                 })
               : "Récemment"
           );
-          if (data.publishedConfig) {
+          if (data.publishedConfig && typeof data.publishedConfig === "object" && data.publishedConfig.global?.colors) {
             setCurrentThemeConfig(data.publishedConfig);
+          } else {
+            setCurrentThemeConfig(buildDefaultConfig(data.themeId || "classic"));
           }
           setCurrentThemeName(data.themeName || `${data.shopName || subdomain} - Principal`);
           setSavedThemes(data.savedThemes || []);
@@ -269,7 +271,11 @@ export default function ThemesHubPage() {
         throw new Error(data.error || "Erreur lors de la publication");
       }
 
-      setCurrentThemeConfig(data.publishedConfig);
+      if (data.publishedConfig && typeof data.publishedConfig === "object" && data.publishedConfig.global?.colors) {
+        setCurrentThemeConfig(data.publishedConfig);
+      } else {
+        setCurrentThemeConfig(buildDefaultConfig(data.themeId || currentThemeId || "classic"));
+      }
       setCurrentThemeName(data.themeName);
       setSavedThemes(data.savedThemes || []);
       setPublishModal({ open: false, theme: null });
@@ -289,11 +295,12 @@ export default function ThemesHubPage() {
 
   // 2. Action: Dupliquer un thème (actif ou de la bibliothèque)
   const handleDuplicateTheme = async (themeId?: string) => {
+    const configToUse = currentThemeConfig || effectiveConfig;
     const isCurrent = !themeId || themeId === "current";
-    const sourceConfig = isCurrent ? currentThemeConfig : savedThemes.find((t) => t.id === themeId)?.config;
+    const sourceConfig = isCurrent ? configToUse : savedThemes.find((t) => t.id === themeId)?.config;
     const sourceName = isCurrent ? currentThemeName : savedThemes.find((t) => t.id === themeId)?.name;
 
-    if (!sourceConfig || !currentThemeConfig) return;
+    if (!sourceConfig) return;
     setActionLoading(themeId || "current");
 
     try {
@@ -307,7 +314,7 @@ export default function ThemesHubPage() {
 
       const newSavedThemes = [copy, ...savedThemes];
       const success = await updateDatabaseConfig(
-        currentThemeConfig,
+        configToUse,
         newSavedThemes,
         currentThemeName
       );
@@ -327,7 +334,8 @@ export default function ThemesHubPage() {
   // 3. Action: Renommer un thème
   const handleSaveRename = async () => {
     const name = renameModal.newName.trim();
-    if (!name || !currentThemeConfig) {
+    const configToUse = currentThemeConfig || effectiveConfig;
+    if (!name) {
       toast.error("Le nom du thème ne peut pas être vide");
       return;
     }
@@ -336,7 +344,7 @@ export default function ThemesHubPage() {
       if (renameModal.themeId === null) {
         // Renommer thème actif
         const success = await updateDatabaseConfig(
-          currentThemeConfig,
+          configToUse,
           savedThemes,
           name
         );
@@ -350,7 +358,7 @@ export default function ThemesHubPage() {
           t.id === renameModal.themeId ? { ...t, name, updatedAt: new Date().toISOString() } : t
         );
         const success = await updateDatabaseConfig(
-          currentThemeConfig,
+          configToUse,
           newSavedThemes,
           currentThemeName
         );
@@ -367,13 +375,13 @@ export default function ThemesHubPage() {
 
   // 4. Action: Supprimer un thème de la bibliothèque
   const handleDeleteTheme = async (themeId: string) => {
-    if (!currentThemeConfig) return;
+    const configToUse = currentThemeConfig || effectiveConfig;
     setActionLoading(themeId);
 
     try {
       const newSavedThemes = savedThemes.filter((t) => t.id !== themeId);
       const success = await updateDatabaseConfig(
-        currentThemeConfig,
+        configToUse,
         newSavedThemes,
         currentThemeName
       );
@@ -423,7 +431,7 @@ export default function ThemesHubPage() {
 
   // 6. Action: Ajouter un thème officiel ShopEazy
   const handleAddPresetTheme = async (presetId: string) => {
-    if (!currentThemeConfig) return;
+    const configToUse = currentThemeConfig || effectiveConfig;
     const preset = officialPresets.find((p) => p.id === presetId);
     if (!preset) return;
 
@@ -440,7 +448,7 @@ export default function ThemesHubPage() {
 
       const newSavedThemes = [newTheme, ...savedThemes];
       const success = await updateDatabaseConfig(
-        currentThemeConfig,
+        configToUse,
         newSavedThemes,
         currentThemeName
       );
@@ -459,7 +467,7 @@ export default function ThemesHubPage() {
 
   // 7. Action: Importer un fichier (JSON ou ZIP Shopify)
   const handleProcessImportFile = async (file: File) => {
-    if (!currentThemeConfig) return;
+    const configToUse = currentThemeConfig || effectiveConfig;
     setIsUploading(true);
 
     try {
@@ -484,7 +492,7 @@ export default function ThemesHubPage() {
 
         const newSavedThemes = [newTheme, ...savedThemes];
         const success = await updateDatabaseConfig(
-          currentThemeConfig,
+          configToUse,
           newSavedThemes,
           currentThemeName
         );
@@ -529,7 +537,7 @@ export default function ThemesHubPage() {
 
         const newSavedThemes = [newTheme, ...savedThemes];
         const success = await updateDatabaseConfig(
-          currentThemeConfig,
+          configToUse,
           newSavedThemes,
           currentThemeName
         );
@@ -570,7 +578,10 @@ export default function ThemesHubPage() {
     );
   }
 
-  const currentColors = currentThemeConfig?.global.colors;
+  const effectiveConfig = (currentThemeConfig && currentThemeConfig.global?.colors)
+    ? currentThemeConfig
+    : buildDefaultConfig(currentThemeId || "classic");
+  const currentColors = effectiveConfig?.global?.colors;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -737,7 +748,7 @@ export default function ThemesHubPage() {
                         theme: {
                           id: "current_live",
                           name: currentThemeName,
-                          config: currentThemeConfig!,
+                          config: effectiveConfig,
                           createdAt: new Date().toISOString(),
                           updatedAt: new Date().toISOString(),
                         },
@@ -820,7 +831,7 @@ export default function ThemesHubPage() {
                               theme: {
                                 id: "current_live",
                                 name: currentThemeName,
-                                config: currentThemeConfig!,
+                                config: effectiveConfig,
                                 createdAt: new Date().toISOString(),
                                 updatedAt: new Date().toISOString(),
                               },
@@ -889,7 +900,7 @@ export default function ThemesHubPage() {
                                 theme: {
                                   id: "current_live",
                                   name: currentThemeName,
-                                  config: currentThemeConfig!,
+                                  config: effectiveConfig,
                                   createdAt: new Date().toISOString(),
                                   updatedAt: new Date().toISOString(),
                                 },
@@ -975,7 +986,7 @@ export default function ThemesHubPage() {
                           <span>Dupliquer ce thème</span>
                         </button>
                         <button
-                          onClick={() => currentThemeConfig && handleExportTheme(currentThemeConfig, currentThemeName)}
+                          onClick={() => handleExportTheme(effectiveConfig, currentThemeName)}
                           className="w-full px-3 py-2 text-left font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         >
                           <Download className="w-3.5 h-3.5 text-gray-400" />
@@ -1037,7 +1048,7 @@ export default function ThemesHubPage() {
                         Typographies
                       </p>
                       <p className="text-xs font-semibold text-gray-700">
-                        {currentThemeConfig.global.fonts.heading.split(",")[0]} / {currentThemeConfig.global.fonts.body.split(",")[0]}
+                        {effectiveConfig?.global?.fonts?.heading ? effectiveConfig.global.fonts.heading.split(",")[0] : "Inter"} / {effectiveConfig?.global?.fonts?.body ? effectiveConfig.global.fonts.body.split(",")[0] : "Inter"}
                       </p>
                     </div>
                   </div>
@@ -1064,7 +1075,7 @@ export default function ThemesHubPage() {
                 </button>
 
                 <button
-                  onClick={() => currentThemeConfig && handleExportTheme(currentThemeConfig, currentThemeName)}
+                  onClick={() => handleExportTheme(effectiveConfig, currentThemeName)}
                   className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-semibold text-sm rounded-xl shadow-2xs transition-all"
                 >
                   <Download className="w-4 h-4 text-gray-400" />
