@@ -73,17 +73,18 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
   const cartCount = useCartCount();
   const showCart = config?.layout?.showCart !== false;
   const headerStyle = config?.layout?.headerStyle || "standard";
-  const isSticky = config?.layout?.stickyHeader !== false;
+  const isSticky = typeof settings.sticky === "boolean" ? settings.sticky : config?.layout?.stickyHeader !== false;
   const mainMenu = menus?.find((m) => m.id === "main-menu")?.items;
   const menuItems: { label: string; url: string; openInNewTab?: boolean; children?: any[] }[] = (mainMenu as any) || settings.menu_items || [
     { label: "Accueil", url: "/" },
     { label: "Produits", url: "/products" },
   ];
-  const logoUrl = brand?.logo || settings.logo_url;
-  const logoMaxWidth = brand?.logoMaxWidth || settings.logo_max_width || 140;
+  const logoUrl = settings.logo_url || brand?.logo;
+  const logoMaxWidth = Number(settings.logo_max_width !== undefined ? settings.logo_max_width : (brand?.logoMaxWidth || 140));
+  const navStyle = settings.navigation_style || (headerStyle === "centered" ? "center" : "inline");
   const isTransparent = headerStyle === "transparent";
-  const isCentered = headerStyle === "centered";
-  const isMinimal = headerStyle === "minimal";
+  const isCentered = navStyle === "center";
+  const isMinimal = headerStyle === "minimal" && !settings.navigation_style;
 
   const hasChildren = (item: any) => item.children && item.children.length > 0;
 
@@ -111,19 +112,18 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
   const renderLogo = () => (
     <Link
       href={shopLink("/")}
-      className="flex-shrink-0 inline-block hover:opacity-85 transition-opacity max-w-[170px] sm:max-w-none truncate"
+      className="flex-shrink-0 inline-flex items-center hover:opacity-85 transition-opacity max-w-full"
+      style={{ maxWidth: `${logoMaxWidth}px` }}
       onClick={(e) => {
         if (isEditor) e.preventDefault();
       }}
     >
       {logoUrl ? (
-        <Image
+        <img
           src={logoUrl}
-          alt="Logo"
-          width={logoMaxWidth}
-          height={40}
-          className="object-contain max-h-8 sm:max-h-10 w-auto"
-          unoptimized
+          alt={shopName || "Logo"}
+          style={{ maxWidth: `${logoMaxWidth}px`, maxHeight: "56px" }}
+          className="w-auto h-auto object-contain max-h-12 sm:max-h-14"
         />
       ) : (
         <span
@@ -131,6 +131,7 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
           style={{
             color: "var(--theme-header-text, var(--theme-text))",
             fontFamily: "var(--theme-font-heading)",
+            maxWidth: `${logoMaxWidth}px`,
           }}
         >
           {shopName || "Ma Boutique"}
@@ -201,12 +202,9 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
             </div>
           </div>
         ) : isCentered ? (
-          /* Centered layout: logo centered, nav above, icons absolute */
-          <div className="flex flex-col items-center py-3">
-            <nav className="hidden sm:flex items-center gap-0 mb-2">
-              {renderNavItems()}
-            </nav>
-            <div className="flex items-center justify-between w-full">
+          /* Centered layout: Logo centered on top, Nav centered below */
+          <div className="flex flex-col items-center py-2">
+            <div className="flex items-center justify-between w-full h-14 relative">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="sm:hidden p-2 -ml-2"
@@ -215,23 +213,26 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <div className="flex-1 flex justify-center">{renderLogo()}</div>
-              <div className="sm:hidden">{renderIcons()}</div>
-              <div className="hidden sm:flex absolute right-4 sm:right-6">{renderIcons()}</div>
+              <div className="hidden sm:block sm:w-24" />
+              <div className="flex-1 flex justify-center px-4 min-w-0">{renderLogo()}</div>
+              <div className="flex items-center justify-end sm:w-24">{renderIcons()}</div>
             </div>
+            <nav className="hidden sm:flex items-center justify-center gap-1 w-full pt-2 border-t border-gray-100/70">
+              {renderNavItems()}
+            </nav>
           </div>
         ) : isMinimal ? (
-          /* Minimal layout: logo left, icons right, no nav text */
+          /* Minimal layout: logo left, icons right */
           <div className="flex items-center justify-between h-16">
             {renderLogo()}
-            <div className="hidden sm:flex items-center gap-0">
+            <div className="hidden sm:flex items-center gap-1">
               {renderNavItems()}
             </div>
             {renderIcons()}
           </div>
         ) : (
-          /* Standard layout: nav left, logo center, icons right */
-          <div className="flex items-center justify-between h-16">
+          /* Inline layout: Logo left, Nav inline, Icons right */
+          <div className="flex items-center justify-between h-16 gap-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="sm:hidden p-2 -ml-2"
@@ -240,11 +241,15 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <nav className="hidden sm:flex items-center gap-0">
-              {renderNavItems()}
-            </nav>
-            {renderLogo()}
-            {renderIcons()}
+            <div className="flex items-center gap-6 min-w-0 flex-1">
+              {renderLogo()}
+              <nav className="hidden sm:flex items-center gap-1">
+                {renderNavItems()}
+              </nav>
+            </div>
+            <div className="flex-shrink-0">
+              {renderIcons()}
+            </div>
           </div>
         )}
       </div>

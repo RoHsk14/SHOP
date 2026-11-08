@@ -256,6 +256,9 @@ export interface SettingDefinition {
   default: ConfigValue;
   options?: { label: string; value: string }[];
   placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export function colorsToCSS(colors: ColorSettings): Record<string, string> {

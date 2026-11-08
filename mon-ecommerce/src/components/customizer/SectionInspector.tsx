@@ -325,24 +325,40 @@ export default function SectionInspector({
           </div>
         );
 
-      case "number":
+      case "number": {
+        const minVal = setting.min ?? 0;
+        const maxVal = setting.max ?? (setting.key.includes("width") || setting.key.includes("logo") ? 400 : 200);
+        const stepVal = setting.step ?? 1;
+        const numVal = Number(value !== undefined && value !== null && value !== "" ? value : (setting.default ?? minVal));
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <input
+                id={inputId}
                 type="range"
-                min={0}
-                max={150}
-                value={Number(value ?? setting.default ?? 0)}
+                min={minVal}
+                max={maxVal}
+                step={stepVal}
+                value={numVal}
                 onChange={(e) => onChange(Number(e.target.value))}
                 className="flex-1 accent-emerald-600 cursor-pointer"
               />
-              <span className="w-12 text-center text-xs font-mono font-semibold px-2 py-1 bg-gray-100 rounded-lg text-gray-700">
-                {value ?? setting.default ?? 0}px
-              </span>
+              <div className="flex items-center shrink-0">
+                <input
+                  type="number"
+                  min={minVal}
+                  max={maxVal}
+                  step={stepVal}
+                  value={numVal}
+                  onChange={(e) => onChange(Number(e.target.value))}
+                  className="w-16 text-center text-xs font-mono font-semibold px-1 py-1 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <span className="ml-1 text-xs text-gray-400">px</span>
+              </div>
             </div>
           </div>
         );
+      }
 
       default:
         return null;

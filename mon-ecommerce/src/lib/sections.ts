@@ -96,7 +96,7 @@ export const sectionRegistry: SectionDefinition[] = enhanceRegistry([
     category: "header",
     settings: [
       { key: "logo_url", label: "Logo (URL)", type: "image", default: "" },
-      { key: "logo_max_width", label: "Largeur max du logo (px)", type: "number", default: 140 },
+      { key: "logo_max_width", label: "Largeur max du logo (px)", type: "number", default: 140, min: 40, max: 400, step: 5 },
       {
         key: "navigation_style",
         label: "Style de navigation",

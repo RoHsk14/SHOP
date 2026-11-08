@@ -162,8 +162,17 @@ export default function StorefrontPage() {
             section.hideOnMobile ? "hidden sm:block" : "",
             section.hideOnDesktop ? "sm:hidden" : "",
           ].filter(Boolean).join(" ");
+          const isHeader = section.type === "header";
+          const isHeaderSticky =
+            isHeader &&
+            (typeof section.settings?.sticky === "boolean"
+              ? section.settings.sticky
+              : config?.layout?.stickyHeader !== false);
           return (
-            <div key={`${section.id}-${idx}`} className={visClass || undefined}>
+            <div
+              key={`${section.id}-${idx}`}
+              className={`${visClass || ""} ${isHeaderSticky ? "sticky top-0 z-40" : ""}`.trim() || undefined}
+            >
             <SectionWrapper settings={section.settings}>
             <Component
               key={`${section.id}-${idx}`}

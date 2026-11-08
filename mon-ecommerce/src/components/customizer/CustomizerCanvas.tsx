@@ -148,6 +148,11 @@ export default function CustomizerCanvas({
                     const isSelected = selectedSectionId === section.id;
                     const isHovered = hoveredSectionId === section.id;
                     const def = getSectionDefinition(section.type);
+                    const isHeaderSticky =
+                      section.type === "header" &&
+                      (typeof section.settings?.sticky === "boolean"
+                        ? section.settings.sticky
+                        : config?.layout?.stickyHeader !== false);
 
                     return (
                       <div
@@ -158,7 +163,9 @@ export default function CustomizerCanvas({
                           e.stopPropagation();
                           onSelectSection(section.id);
                         }}
-                        className={`relative group transition-all duration-150 cursor-pointer ${
+                        className={`transition-all duration-150 cursor-pointer ${
+                          isHeaderSticky ? "sticky top-0 z-40 group" : "relative group"
+                        } ${
                           isSelected
                             ? "ring-2 ring-emerald-500 ring-offset-2 z-20 shadow-md"
                             : isHovered

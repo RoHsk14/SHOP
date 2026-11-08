@@ -9,7 +9,8 @@ import {
 } from "recharts";
 import {
   ShoppingCart, Euro, TrendingUp, RefreshCw, ArrowUpRight, ArrowDownRight,
-  Bell, Package, ChevronRight, CircleDollarSign, Pencil, AlertTriangle, Flame
+  Bell, Package, ChevronRight, CircleDollarSign, Pencil, AlertTriangle, Flame,
+  Radar, Download
 } from "lucide-react";
 
 interface Order {
@@ -353,57 +354,64 @@ export default function AdminDashboard() {
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
 
       {/* Afro-Spy Growth Banner (Au-dessus du header) */}
-      <div className="relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-zinc-950 p-4 sm:p-5 text-white shadow-lg shadow-orange-950/20">
+      <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 bg-gradient-to-r from-slate-950 via-slate-900 to-zinc-950 p-4 sm:p-5 text-white shadow-xl shadow-black/40">
         <div className="absolute top-0 right-0 w-96 h-full bg-gradient-to-l from-orange-500/15 via-amber-500/5 to-transparent pointer-events-none" />
-        <div className="absolute -bottom-8 left-1/3 w-48 h-48 bg-orange-600/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 left-1/4 w-60 h-60 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            {/* Afro-Spy A-S Badge */}
-            <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 text-white font-black text-sm tracking-wider shadow-lg shadow-orange-500/30 border border-orange-400/40">
-              A-S
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-start gap-4">
+            {/* Afro-Spy Icon Badge */}
+            <div className="relative flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 text-white shadow-lg shadow-orange-500/25 border border-orange-400/30">
+              <Radar className="w-6 h-6 text-white" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-slate-950"></span>
+              </span>
             </div>
             
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-heading">
                   Afro Spy
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-orange-300 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
                   Winning Ads Tracker
                 </span>
-                <span className="hidden sm:inline-block text-[10px] font-semibold text-slate-400 bg-slate-800/80 border border-slate-700/60 px-2 py-0.5 rounded-full">
+                <span className="hidden sm:inline-flex items-center text-[11px] font-medium text-slate-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
                   Shopify &bull; YouCan
                 </span>
               </div>
               
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-300/90 max-w-2xl leading-relaxed">
                 Trouvez vos produits gagnants en Afrique en quelques clics. Espionnez les meilleures pubs Facebook &amp; TikTok et téléchargez les créatives qui cartonnent.
               </p>
 
-              <div className="flex items-center gap-2 sm:gap-3 text-[11px] text-slate-400 mt-2 flex-wrap">
-                <span className="flex items-center gap-1 text-orange-400 font-medium">
-                  <Flame className="w-3 h-3 text-orange-400" /> +5 000 Ads actives
+              <div className="flex items-center gap-3 sm:gap-4 text-xs text-slate-300 mt-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <Flame className="w-3.5 h-3.5 text-orange-400" />
+                  <span><strong className="text-white font-semibold">+5 000</strong> Ads actives</span>
                 </span>
-                <span className="text-slate-700">•</span>
-                <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                  ✓ Indicateurs de Scaling
+                <span className="text-slate-700 text-xs">•</span>
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Indicateurs de Scaling</span>
                 </span>
-                <span className="text-slate-700">•</span>
-                <span className="flex items-center gap-1 text-amber-300 font-medium">
-                  ✓ Téléchargement de Créatives
+                <span className="text-slate-700 text-xs">•</span>
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <Download className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Téléchargement de Créatives</span>
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center">
+          <div className="shrink-0 flex items-center md:self-center">
             <a
               href="https://afro-spy.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-400 hover:to-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] group border border-orange-400/25"
             >
               <span>Découvrir Afro Spy</span>
               <ArrowUpRight className="w-4 h-4 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />

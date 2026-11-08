@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
 import { getSiteUrl } from "@/lib/site-url";
@@ -9,8 +9,6 @@ import { getNhostAuthUrl } from "@/lib/nhost";
 const AUTH_URL = getNhostAuthUrl();
 
 export default function AuthCallbackPage() {
-  const [diag, setDiag] = useState<string>("");
-
   const redirectTo = (slug: string, path: string) => {
     window.location.replace(`${getSiteUrl()}/boutiques/${slug}${path}`);
   };
@@ -49,7 +47,7 @@ export default function AuthCallbackPage() {
   }
 
   async function handleCallback() {
-    const log = (s: string) => setDiag((d) => d + s + "\n");
+    const log = (s: string) => console.log("[auth/callback]", s);
     const qs = new URLSearchParams(window.location.search);
     const hashRaw = window.location.hash.replace(/^#/, "");
     const hash = hashRaw ? new URLSearchParams(hashRaw) : new URLSearchParams();
@@ -132,10 +130,8 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     handleCallback().catch((e) => {
-      setDiag((d) => d + "EXCEPTION: " + String(e) + "\n");
-      setTimeout(() => {
-        window.location.replace(`${getSiteUrl()}/login?error=callback_error`);
-      }, 8000);
+      console.error("[auth/callback] EXCEPTION:", e);
+      window.location.replace(`${getSiteUrl()}/login?error=callback_error`);
     });
   }, []);
 
@@ -143,12 +139,7 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="text-center max-w-md w-full">
         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm text-gray-500 mb-3">Connexion en cours...</p>
-        {diag && (
-          <pre className="text-left text-xs bg-gray-100 rounded p-3 overflow-auto max-h-72 whitespace-pre-wrap">
-            {diag}
-          </pre>
-        )}
+        <p className="text-sm text-gray-500">Connexion en cours...</p>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import "@puckeditor/core/dist/index.css";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle, ShieldCheck, LayoutGrid, Flame, ArrowUpRight } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Menu, X, Store, Palette, Plus, Tag, Sun, Moon, MessageCircle, ShieldCheck, LayoutGrid, Flame, ArrowUpRight, Radar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { generateUniqueShopSlug } from "@/lib/slug";
@@ -471,8 +471,8 @@ const menuItems = [
    <div className="relative overflow-hidden rounded-2xl p-3 border border-orange-200/80 bg-gradient-to-br from-orange-50/80 via-amber-50/40 to-slate-50/60 group hover:shadow-md transition-all">
      <div className="flex items-center justify-between gap-1.5 mb-1.5">
        <div className="flex items-center gap-1.5">
-         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white text-[9px] font-black shadow-xs tracking-wider">
-           A-S
+         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs">
+           <Radar className="w-3 h-3 text-white" />
          </div>
          <span className="font-bold text-xs text-gray-900 tracking-tight font-heading">Afro Spy</span>
        </div>
@@ -615,8 +615,8 @@ const menuItems = [
              onClick={() => setAppsMenuOpen(false)}
              className="flex items-start gap-3 p-2.5 rounded-xl border border-orange-100 hover:border-orange-300 hover:bg-orange-50/40 transition-all group"
            >
-             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white text-xs font-black shrink-0 shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform tracking-wider">
-               A-S
+             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white shrink-0 shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform">
+               <Radar className="w-5 h-5 text-white" />
              </div>
              <div className="min-w-0 flex-1">
                <div className="flex items-center justify-between">
