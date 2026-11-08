@@ -294,6 +294,9 @@ export default function AdminLayout({
     const next = adminTheme === "dark" ? "light" : "dark";
     setAdminTheme(next);
     localStorage.setItem("admin-theme", next);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-theme-changed", { detail: next }));
+    }
   };
 
  if (barePath === "/admin/login") return <>{children}</>;
@@ -468,19 +471,41 @@ const menuItems = [
 
  {/* Afro-Spy Promo Card */}
  <div className="pt-2.5 px-0.5">
-   <div className="relative overflow-hidden rounded-2xl p-3 border border-orange-200/80 bg-gradient-to-br from-orange-50/80 via-amber-50/40 to-slate-50/60 group hover:shadow-md transition-all">
+   <div
+     className={`relative overflow-hidden rounded-2xl p-3 border group hover:shadow-md transition-all ${
+       adminTheme === "dark"
+         ? "border-orange-500/25 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 text-white shadow-lg shadow-black/40"
+         : "border-orange-200/80 bg-gradient-to-br from-orange-50/80 via-amber-50/40 to-white text-gray-900 shadow-xs"
+     }`}
+   >
      <div className="flex items-center justify-between gap-1.5 mb-1.5">
        <div className="flex items-center gap-1.5">
          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs">
            <Radar className="w-3 h-3 text-white" />
          </div>
-         <span className="font-bold text-xs text-gray-900 tracking-tight font-heading">Afro Spy</span>
+         <span
+           className={`font-bold text-xs tracking-tight font-heading ${
+             adminTheme === "dark" ? "text-white" : "text-gray-900"
+           }`}
+         >
+           Afro Spy
+         </span>
        </div>
-       <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded-full">
+       <span
+         className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+           adminTheme === "dark"
+             ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+             : "bg-orange-100 text-orange-800 border border-orange-200"
+         }`}
+       >
          Winning Ads
        </span>
      </div>
-     <p className="text-[11px] text-gray-600 leading-snug mb-2">
+     <p
+       className={`text-[11px] leading-snug mb-2 ${
+         adminTheme === "dark" ? "text-slate-300" : "text-gray-600"
+       }`}
+     >
        Trouvez vos produits gagnants &amp; espionnez les pubs en Afrique.
      </p>
      <a

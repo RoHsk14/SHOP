@@ -60,6 +60,45 @@ export default function AdminDashboard() {
   const [visitorBuckets, setVisitorBuckets] = useState<{ label: string; count: number }[]>([]);
   const [prevVisitorBuckets, setPrevVisitorBuckets] = useState<{ label: string; count: number }[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'visits' | 'sales' | 'orders' | 'conversion'>('sales');
+  const [adminTheme, setAdminTheme] = useState<"dark" | "light">("light");
+
+  useEffect(() => {
+    const readTheme = () => {
+      const el = document.querySelector("[data-admin-theme]");
+      const attr = el?.getAttribute("data-admin-theme");
+      if (attr === "dark" || attr === "light") {
+        setAdminTheme(attr);
+        return;
+      }
+      const stored = typeof window !== "undefined" ? localStorage.getItem("admin-theme") : null;
+      if (stored === "dark" || stored === "light") {
+        setAdminTheme(stored);
+      }
+    };
+    readTheme();
+
+    const handleThemeChange = (e: any) => {
+      if (e?.detail === "dark" || e?.detail === "light") {
+        setAdminTheme(e.detail);
+      } else {
+        readTheme();
+      }
+    };
+    window.addEventListener("admin-theme-changed", handleThemeChange);
+    window.addEventListener("storage", readTheme);
+
+    const observer = new MutationObserver(() => readTheme());
+    const rootEl = document.querySelector("[data-admin-theme]");
+    if (rootEl) {
+      observer.observe(rootEl, { attributes: true, attributeFilter: ["data-admin-theme"] });
+    }
+
+    return () => {
+      window.removeEventListener("admin-theme-changed", handleThemeChange);
+      window.removeEventListener("storage", readTheme);
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => { if (subdomain) fetchData(); }, [dateFilter, customDateRange, subdomain]);
 
@@ -354,9 +393,25 @@ export default function AdminDashboard() {
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
 
       {/* Afro-Spy Growth Banner (Au-dessus du header) */}
-      <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 bg-gradient-to-r from-slate-950 via-slate-900 to-zinc-950 p-4 sm:p-5 text-white shadow-xl shadow-black/40">
-        <div className="absolute top-0 right-0 w-96 h-full bg-gradient-to-l from-orange-500/15 via-amber-500/5 to-transparent pointer-events-none" />
-        <div className="absolute -bottom-10 left-1/4 w-60 h-60 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div
+        className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all ${
+          adminTheme === "dark"
+            ? "border border-orange-500/25 bg-gradient-to-r from-slate-950 via-slate-900 to-zinc-950 text-white shadow-xl shadow-black/40"
+            : "border border-orange-200/90 bg-gradient-to-r from-orange-50/90 via-amber-50/40 to-white text-gray-900 shadow-md shadow-orange-950/5"
+        }`}
+      >
+        <div
+          className={`absolute top-0 right-0 w-96 h-full pointer-events-none ${
+            adminTheme === "dark"
+              ? "bg-gradient-to-l from-orange-500/15 via-amber-500/5 to-transparent"
+              : "bg-gradient-to-l from-orange-200/20 via-amber-200/10 to-transparent"
+          }`}
+        />
+        <div
+          className={`absolute -bottom-10 left-1/4 w-60 h-60 rounded-full blur-3xl pointer-events-none ${
+            adminTheme === "dark" ? "bg-orange-600/10" : "bg-orange-200/30"
+          }`}
+        />
 
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
@@ -371,35 +426,84 @@ export default function AdminDashboard() {
             
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-heading">
+                <span
+                  className={`font-extrabold text-base sm:text-lg tracking-tight font-heading ${
+                    adminTheme === "dark" ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   Afro Spy
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-orange-300 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                <span
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
+                    adminTheme === "dark"
+                      ? "text-orange-300 bg-orange-500/10 border border-orange-500/25"
+                      : "text-orange-800 bg-orange-100 border border-orange-200"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                      adminTheme === "dark" ? "bg-orange-400" : "bg-orange-500"
+                    }`}
+                  />
                   Winning Ads Tracker
                 </span>
-                <span className="hidden sm:inline-flex items-center text-[11px] font-medium text-slate-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                <span
+                  className={`hidden sm:inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
+                    adminTheme === "dark"
+                      ? "text-slate-300 bg-white/5 border border-white/10"
+                      : "text-gray-700 bg-white/80 border border-gray-200"
+                  }`}
+                >
                   Shopify &bull; YouCan
                 </span>
               </div>
               
-              <p className="text-xs sm:text-sm text-slate-300/90 max-w-2xl leading-relaxed">
+              <p
+                className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
+                  adminTheme === "dark" ? "text-slate-300/90" : "text-gray-600"
+                }`}
+              >
                 Trouvez vos produits gagnants en Afrique en quelques clics. Espionnez les meilleures pubs Facebook &amp; TikTok et téléchargez les créatives qui cartonnent.
               </p>
 
-              <div className="flex items-center gap-3 sm:gap-4 text-xs text-slate-300 mt-2.5 flex-wrap">
+              <div
+                className={`flex items-center gap-3 sm:gap-4 text-xs mt-2.5 flex-wrap ${
+                  adminTheme === "dark" ? "text-slate-300" : "text-gray-700"
+                }`}
+              >
                 <span className="inline-flex items-center gap-1.5 font-medium">
-                  <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  <span><strong className="text-white font-semibold">+5 000</strong> Ads actives</span>
+                  <Flame
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
+                    }`}
+                  />
+                  <span>
+                    <strong
+                      className={`font-semibold ${
+                        adminTheme === "dark" ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      +5 000
+                    </strong>{" "}
+                    Ads actives
+                  </span>
                 </span>
-                <span className="text-slate-700 text-xs">•</span>
+                <span className={`text-xs ${adminTheme === "dark" ? "text-slate-700" : "text-gray-300"}`}>•</span>
                 <span className="inline-flex items-center gap-1.5 font-medium">
-                  <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
+                  <TrendingUp
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
+                    }`}
+                  />
                   <span>Indicateurs de Scaling</span>
                 </span>
-                <span className="text-slate-700 text-xs">•</span>
+                <span className={`text-xs ${adminTheme === "dark" ? "text-slate-700" : "text-gray-300"}`}>•</span>
                 <span className="inline-flex items-center gap-1.5 font-medium">
-                  <Download className="w-3.5 h-3.5 text-orange-400" />
+                  <Download
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
+                    }`}
+                  />
                   <span>Téléchargement de Créatives</span>
                 </span>
               </div>
