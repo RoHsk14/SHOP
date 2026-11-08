@@ -84,6 +84,7 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
   const navStyle = settings.navigation_style || (headerStyle === "centered" ? "center" : "inline");
   const isTransparent = headerStyle === "transparent";
   const isCentered = navStyle === "center";
+  const isMenuCentered = navStyle === "menu-center";
   const isMinimal = headerStyle === "minimal" && !settings.navigation_style;
 
   const hasChildren = (item: any) => item.children && item.children.length > 0;
@@ -112,7 +113,7 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
   const renderLogo = () => (
     <Link
       href={shopLink("/")}
-      className="flex-shrink-0 inline-flex items-center hover:opacity-85 transition-opacity max-w-full"
+      className="flex-shrink-0 inline-flex items-center justify-center hover:opacity-85 transition-opacity max-w-full"
       style={{ maxWidth: `${logoMaxWidth}px` }}
       onClick={(e) => {
         if (isEditor) e.preventDefault();
@@ -123,11 +124,11 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
           src={logoUrl}
           alt={shopName || "Logo"}
           style={{ maxWidth: `${logoMaxWidth}px`, maxHeight: "56px" }}
-          className="w-auto h-auto object-contain max-h-12 sm:max-h-14"
+          className="w-auto h-auto object-contain max-h-12 sm:max-h-14 mx-auto"
         />
       ) : (
         <span
-          className="text-base sm:text-lg font-bold tracking-tight truncate block"
+          className="text-base sm:text-lg font-bold tracking-tight truncate block text-center"
           style={{
             color: "var(--theme-header-text, var(--theme-text))",
             fontFamily: "var(--theme-font-heading)",
@@ -202,24 +203,46 @@ export default function Header({ settings, shopName, menus, brand }: Props) {
             </div>
           </div>
         ) : isCentered ? (
-          /* Centered layout: Logo centered on top, Nav centered below */
-          <div className="flex flex-col items-center py-2">
-            <div className="flex items-center justify-between w-full h-14 relative">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="sm:hidden p-2 -ml-2"
-                aria-label="Menu"
-                style={{ color: "var(--theme-header-text, var(--theme-text))" }}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-              <div className="hidden sm:block sm:w-24" />
-              <div className="flex-1 flex justify-center px-4 min-w-0">{renderLogo()}</div>
-              <div className="flex items-center justify-end sm:w-24">{renderIcons()}</div>
-            </div>
-            <nav className="hidden sm:flex items-center justify-center gap-1 w-full pt-2 border-t border-gray-100/70">
+          /* Centered Logo layout (Single row): Nav left, Logo center, Icons right */
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden p-2 -ml-2 hover:opacity-75 transition-opacity"
+              aria-label="Menu"
+              style={{ color: "var(--theme-header-text, var(--theme-text))" }}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <nav className="hidden sm:flex items-center gap-1 flex-1 justify-start min-w-0">
               {renderNavItems()}
             </nav>
+            <div className="flex-shrink-0 flex items-center justify-center px-4">
+              {renderLogo()}
+            </div>
+            <div className="flex items-center justify-end flex-1">
+              {renderIcons()}
+            </div>
+          </div>
+        ) : isMenuCentered ? (
+          /* Centered Menu layout (Single row): Logo left, Nav center, Icons right */
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden p-2 -ml-2 hover:opacity-75 transition-opacity"
+              aria-label="Menu"
+              style={{ color: "var(--theme-header-text, var(--theme-text))" }}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="flex items-center justify-start flex-1 min-w-0">
+              {renderLogo()}
+            </div>
+            <nav className="hidden sm:flex items-center justify-center gap-1 flex-shrink-0">
+              {renderNavItems()}
+            </nav>
+            <div className="flex items-center justify-end flex-1">
+              {renderIcons()}
+            </div>
           </div>
         ) : isMinimal ? (
           /* Minimal layout: logo left, icons right */

@@ -103,8 +103,9 @@ export const sectionRegistry: SectionDefinition[] = enhanceRegistry([
         type: "select",
         default: "inline",
         options: [
-          { label: "En ligne", value: "inline" },
-          { label: "Centré", value: "center" },
+          { label: "En ligne (Logo à gauche, menu à gauche)", value: "inline" },
+          { label: "Logo centré (Menu à gauche, logo au centre)", value: "center" },
+          { label: "Menu centré (Logo à gauche, menu au centre)", value: "menu-center" },
         ],
       },
       { key: "sticky", label: "En-tête fixe", type: "boolean", default: true },
