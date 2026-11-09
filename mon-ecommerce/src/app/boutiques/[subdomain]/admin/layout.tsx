@@ -472,19 +472,19 @@ const menuItems = [
  {/* Afro-Spy Promo Card */}
  <div className="pt-2.5 px-0.5">
    <div
-     className={`relative overflow-hidden rounded-2xl p-3 border group hover:shadow-md transition-all ${
+     className={`relative overflow-hidden rounded-xl p-3 border group hover:border-gray-300 transition-all ${
        adminTheme === "dark"
-         ? "border-orange-500/25 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 text-white shadow-lg shadow-black/40"
-         : "border-orange-200/80 bg-gradient-to-br from-orange-50/80 via-amber-50/40 to-white text-gray-900 shadow-xs"
+         ? "border-zinc-800 bg-zinc-900/90 text-white shadow-xs"
+         : "border-gray-200/90 bg-white text-gray-900 shadow-xs"
      }`}
    >
      <div className="flex items-center justify-between gap-1.5 mb-1.5">
        <div className="flex items-center gap-1.5">
-         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs">
+         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-xs">
            <Radar className="w-3 h-3 text-white" />
          </div>
          <span
-           className={`font-bold text-xs tracking-tight font-heading ${
+           className={`font-semibold text-xs tracking-tight font-heading ${
              adminTheme === "dark" ? "text-white" : "text-gray-900"
            }`}
          >
@@ -492,10 +492,10 @@ const menuItems = [
          </span>
        </div>
        <span
-         className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+         className={`text-[9px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${
            adminTheme === "dark"
-             ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-             : "bg-orange-100 text-orange-800 border border-orange-200"
+             ? "bg-orange-500/15 text-orange-400 border border-orange-500/20"
+             : "bg-orange-50 text-orange-700 border border-orange-200/60"
          }`}
        >
          Winning Ads
@@ -503,7 +503,7 @@ const menuItems = [
      </div>
      <p
        className={`text-[11px] leading-snug mb-2 ${
-         adminTheme === "dark" ? "text-slate-300" : "text-gray-600"
+         adminTheme === "dark" ? "text-zinc-400" : "text-gray-600"
        }`}
      >
        Trouvez vos produits gagnants &amp; espionnez les pubs en Afrique.
@@ -512,7 +512,7 @@ const menuItems = [
        href="https://afro-spy.com"
        target="_blank"
        rel="noopener noreferrer"
-       className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white text-[11px] font-semibold shadow-xs transition-all active:scale-[0.98]"
+       className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-medium shadow-xs transition-all active:scale-[0.98]"
      >
        <span>Découvrir Afro Spy</span>
        <ArrowUpRight className="w-3.5 h-3.5" />

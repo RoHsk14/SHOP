@@ -9,8 +9,8 @@ import {
 } from "recharts";
 import {
   ShoppingCart, Euro, TrendingUp, RefreshCw, ArrowUpRight, ArrowDownRight,
-  Bell, Package, ChevronRight, CircleDollarSign, Pencil, AlertTriangle, Flame,
-  Radar, Download
+  Bell, Package, ChevronRight, CircleDollarSign, Pencil, AlertTriangle,
+  Radar
 } from "lucide-react";
 
 interface Order {
@@ -396,115 +396,82 @@ export default function AdminDashboard() {
       <div
         className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all ${
           adminTheme === "dark"
-            ? "border border-orange-500/25 bg-gradient-to-r from-slate-950 via-slate-900 to-zinc-950 text-white shadow-xl shadow-black/40"
-            : "border border-orange-200/90 bg-gradient-to-r from-orange-50/90 via-amber-50/40 to-white text-gray-900 shadow-md shadow-orange-950/5"
+            ? "bg-zinc-900/90 border border-zinc-800 text-white shadow-xs"
+            : "bg-white border border-gray-200/90 text-gray-900 shadow-xs"
         }`}
       >
-        <div
-          className={`absolute top-0 right-0 w-96 h-full pointer-events-none ${
-            adminTheme === "dark"
-              ? "bg-gradient-to-l from-orange-500/15 via-amber-500/5 to-transparent"
-              : "bg-gradient-to-l from-orange-200/20 via-amber-200/10 to-transparent"
-          }`}
-        />
-        <div
-          className={`absolute -bottom-10 left-1/4 w-60 h-60 rounded-full blur-3xl pointer-events-none ${
-            adminTheme === "dark" ? "bg-orange-600/10" : "bg-orange-200/30"
-          }`}
-        />
-
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-start gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
             {/* Afro-Spy Icon Badge */}
-            <div className="relative flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 text-white shadow-lg shadow-orange-500/25 border border-orange-400/30">
-              <Radar className="w-6 h-6 text-white" />
-              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-slate-950"></span>
-              </span>
+            <div className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-xs border border-orange-400/20">
+              <Radar className="w-5 h-5 text-white" />
             </div>
             
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span
-                  className={`font-extrabold text-base sm:text-lg tracking-tight font-heading ${
+                  className={`font-bold text-base tracking-tight font-heading ${
                     adminTheme === "dark" ? "text-white" : "text-gray-900"
                   }`}
                 >
                   Afro Spy
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
                     adminTheme === "dark"
-                      ? "text-orange-300 bg-orange-500/10 border border-orange-500/25"
-                      : "text-orange-800 bg-orange-100 border border-orange-200"
+                      ? "text-orange-400 bg-orange-500/10 border border-orange-500/20"
+                      : "text-orange-700 bg-orange-50 border border-orange-200/60"
                   }`}
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                      adminTheme === "dark" ? "bg-orange-400" : "bg-orange-500"
-                    }`}
-                  />
                   Winning Ads Tracker
                 </span>
                 <span
-                  className={`hidden sm:inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
+                  className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-normal ${
                     adminTheme === "dark"
-                      ? "text-slate-300 bg-white/5 border border-white/10"
-                      : "text-gray-700 bg-white/80 border border-gray-200"
+                      ? "text-zinc-400 bg-zinc-800 border border-zinc-700/50"
+                      : "text-gray-500 bg-gray-100 border border-gray-200/60"
                   }`}
                 >
-                  Shopify &bull; YouCan
+                  Facebook &amp; TikTok
                 </span>
               </div>
               
               <p
-                className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
-                  adminTheme === "dark" ? "text-slate-300/90" : "text-gray-600"
+                className={`text-xs sm:text-sm leading-relaxed max-w-2xl ${
+                  adminTheme === "dark" ? "text-zinc-400" : "text-gray-600"
                 }`}
               >
-                Trouvez vos produits gagnants en Afrique en quelques clics. Espionnez les meilleures pubs Facebook &amp; TikTok et téléchargez les créatives qui cartonnent.
+                Trouvez vos produits gagnants en Afrique. Espionnez les meilleures pubs e-commerce et téléchargez les créatives qui convertissent.
               </p>
 
-              <div
-                className={`flex items-center gap-3 sm:gap-4 text-xs mt-2.5 flex-wrap ${
-                  adminTheme === "dark" ? "text-slate-300" : "text-gray-700"
-                }`}
-              >
-                <span className="inline-flex items-center gap-1.5 font-medium">
-                  <Flame
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
-                    }`}
-                  />
-                  <span>
-                    <strong
-                      className={`font-semibold ${
-                        adminTheme === "dark" ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      +5 000
-                    </strong>{" "}
-                    Ads actives
-                  </span>
+              <div className="flex items-center gap-2 mt-2.5 flex-wrap text-xs">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium ${
+                    adminTheme === "dark"
+                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      : "bg-gray-50 text-gray-700 border border-gray-200/70"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  +5 000 ads actives
                 </span>
-                <span className={`text-xs ${adminTheme === "dark" ? "text-slate-700" : "text-gray-300"}`}>•</span>
-                <span className="inline-flex items-center gap-1.5 font-medium">
-                  <TrendingUp
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
-                    }`}
-                  />
-                  <span>Indicateurs de Scaling</span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                    adminTheme === "dark"
+                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      : "bg-gray-50 text-gray-700 border border-gray-200/70"
+                  }`}
+                >
+                  Indicateurs de Scaling
                 </span>
-                <span className={`text-xs ${adminTheme === "dark" ? "text-slate-700" : "text-gray-300"}`}>•</span>
-                <span className="inline-flex items-center gap-1.5 font-medium">
-                  <Download
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      adminTheme === "dark" ? "text-orange-400" : "text-orange-600"
-                    }`}
-                  />
-                  <span>Téléchargement de Créatives</span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                    adminTheme === "dark"
+                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      : "bg-gray-50 text-gray-700 border border-gray-200/70"
+                  }`}
+                >
+                  Téléchargement de Créatives
                 </span>
               </div>
             </div>
@@ -515,7 +482,7 @@ export default function AdminDashboard() {
               href="https://afro-spy.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-400 hover:to-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] group border border-orange-400/25"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition-all active:scale-[0.98] group"
             >
               <span>Découvrir Afro Spy</span>
               <ArrowUpRight className="w-4 h-4 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
