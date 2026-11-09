@@ -928,5 +928,14 @@ input::placeholder, select::placeholder, textarea::placeholder {
   display: block !important;
 }
 
+/* Afro-Spy promo banner & sidebar card - white text in dark theme */
+[data-admin-theme="dark"] .afrospy-banner p,
+[data-admin-theme="dark"] .afrospy-banner-desc,
+[data-admin-theme="dark"] .afrospy-sidebar-card p,
+[data-admin-theme="dark"] .afrospy-sidebar-desc {
+  color: #ffffff !important;
+}
+
+
 
 

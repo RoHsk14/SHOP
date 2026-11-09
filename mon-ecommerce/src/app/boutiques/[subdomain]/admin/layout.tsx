@@ -472,7 +472,7 @@ const menuItems = [
  {/* Afro-Spy Promo Card */}
  <div className="pt-2.5 px-0.5">
    <div
-     className={`relative overflow-hidden rounded-xl p-3 border group hover:border-gray-300 transition-all ${
+     className={`afrospy-sidebar-card relative overflow-hidden rounded-xl p-3 border group hover:border-gray-300 transition-all ${
        adminTheme === "dark"
          ? "border-zinc-800 bg-zinc-900/90 text-white shadow-xs"
          : "border-gray-200/90 bg-white text-gray-900 shadow-xs"
@@ -494,7 +494,7 @@ const menuItems = [
        <span
          className={`text-[9px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${
            adminTheme === "dark"
-             ? "bg-orange-500/15 text-orange-400 border border-orange-500/20"
+             ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
              : "bg-orange-50 text-orange-700 border border-orange-200/60"
          }`}
        >
@@ -502,8 +502,8 @@ const menuItems = [
        </span>
      </div>
      <p
-       className={`text-[11px] leading-snug mb-2 ${
-         adminTheme === "dark" ? "text-zinc-400" : "text-gray-600"
+       className={`afrospy-sidebar-desc text-[11px] leading-snug mb-2 ${
+         adminTheme === "dark" ? "text-white" : "text-gray-600"
        }`}
      >
        Trouvez vos produits gagnants &amp; espionnez les pubs en Afrique.

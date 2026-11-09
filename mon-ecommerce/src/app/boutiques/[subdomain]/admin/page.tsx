@@ -394,7 +394,7 @@ export default function AdminDashboard() {
 
       {/* Afro-Spy Growth Banner (Au-dessus du header) */}
       <div
-        className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all ${
+        className={`afrospy-banner relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all ${
           adminTheme === "dark"
             ? "bg-zinc-900/90 border border-zinc-800 text-white shadow-xs"
             : "bg-white border border-gray-200/90 text-gray-900 shadow-xs"
@@ -419,16 +419,16 @@ export default function AdminDashboard() {
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
                     adminTheme === "dark"
-                      ? "text-orange-400 bg-orange-500/10 border border-orange-500/20"
+                      ? "text-orange-300 bg-orange-500/15 border border-orange-500/30"
                       : "text-orange-700 bg-orange-50 border border-orange-200/60"
                   }`}
                 >
                   Winning Ads Tracker
                 </span>
                 <span
-                  className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-normal ${
+                  className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
                     adminTheme === "dark"
-                      ? "text-zinc-400 bg-zinc-800 border border-zinc-700/50"
+                      ? "text-white bg-zinc-800 border border-zinc-700"
                       : "text-gray-500 bg-gray-100 border border-gray-200/60"
                   }`}
                 >
@@ -437,8 +437,8 @@ export default function AdminDashboard() {
               </div>
               
               <p
-                className={`text-xs sm:text-sm leading-relaxed max-w-2xl ${
-                  adminTheme === "dark" ? "text-zinc-400" : "text-gray-600"
+                className={`afrospy-banner-desc text-xs sm:text-sm leading-relaxed max-w-2xl ${
+                  adminTheme === "dark" ? "text-white" : "text-gray-600"
                 }`}
               >
                 Trouvez vos produits gagnants en Afrique. Espionnez les meilleures pubs e-commerce et téléchargez les créatives qui convertissent.
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                 <span
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium ${
                     adminTheme === "dark"
-                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      ? "bg-zinc-800 text-white border border-zinc-700"
                       : "bg-gray-50 text-gray-700 border border-gray-200/70"
                   }`}
                 >
@@ -458,7 +458,7 @@ export default function AdminDashboard() {
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
                     adminTheme === "dark"
-                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      ? "bg-zinc-800 text-white border border-zinc-700"
                       : "bg-gray-50 text-gray-700 border border-gray-200/70"
                   }`}
                 >
@@ -467,7 +467,7 @@ export default function AdminDashboard() {
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
                     adminTheme === "dark"
-                      ? "bg-zinc-800/80 text-zinc-300 border border-zinc-700/60"
+                      ? "bg-zinc-800 text-white border border-zinc-700"
                       : "bg-gray-50 text-gray-700 border border-gray-200/70"
                   }`}
                 >
